@@ -6,7 +6,10 @@
     <meta name="description" content="SchoolShare — Version control for students. Upload your school work, track changes, and access files from anywhere. No terminal required.">
     <meta property="og:title" content="SchoolShare — Version Control for Students">
     <meta property="og:description" content="Upload your school work, track every change, and access files from home, school, or anywhere. No terminal required.">
+    <meta property="og:image" content="{{ asset('images/og-image.png') }}">
     <meta property="og:url" content="https://schoolshare.ethionext.com.et">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="https://schoolshare.ethionext.com.et">
     <title>SchoolShare — Version Control for Students · by EthioNext</title>
 
@@ -561,7 +564,9 @@
     <div class="ss-nav-links">
         <a href="#how-it-works" class="nav-desktop">How it works</a>
         <a href="#features"     class="nav-desktop">Features</a>
-        <a href="#pricing"      class="nav-desktop">Pricing</a>
+        <a href="{{ route('pricing') }}" class="nav-desktop">Pricing</a>
+        <a href="{{ route('about') }}"   class="nav-desktop">About</a>
+        <a href="{{ route('guide') }}"   class="nav-desktop">Guide</a>
         <a href="{{ config('schoolshare.branding.github_url') }}" target="_blank" class="nav-desktop">
             <i class="bi bi-github me-1"></i>GitHub
         </a>
@@ -598,8 +603,14 @@
     <a href="#features" class="ss-drawer-link" data-drawer-close>
         <i class="bi bi-lightning"></i> Features
     </a>
-    <a href="#pricing" class="ss-drawer-link" data-drawer-close>
+    <a href="{{ route('pricing') }}" class="ss-drawer-link">
         <i class="bi bi-tag"></i> Pricing
+    </a>
+    <a href="{{ route('about') }}" class="ss-drawer-link">
+        <i class="bi bi-info-circle"></i> About
+    </a>
+    <a href="{{ route('guide') }}" class="ss-drawer-link">
+        <i class="bi bi-book"></i> Guide
     </a>
     <a href="{{ config('schoolshare.branding.github_url') }}" target="_blank" class="ss-drawer-link">
         <i class="bi bi-github"></i> GitHub
@@ -1020,7 +1031,8 @@
                 <ul class="ss-footer-links">
                     <li><a href="#how-it-works">How it works</a></li>
                     <li><a href="#features">Features</a></li>
-                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="{{ route('pricing') }}">Pricing</a></li>
+                    <li><a href="{{ route('about') }}">About</a></li>
                     <li><a href="{{ route('register') }}">Sign up free</a></li>
                 </ul>
             </div>

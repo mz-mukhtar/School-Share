@@ -4,7 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="SchoolShare — Your school work, always with you. Upload, version, and access your files anywhere.">
+    <meta name="description" content="@yield('meta_description', 'SchoolShare — Your school work, always with you. Upload, version, and access your files anywhere.')">
+    
+    {{-- SEO / Open Graph Meta Tags --}}
+    <meta property="og:title" content="@yield('title', 'Dashboard') — SchoolShare">
+    <meta property="og:description" content="@yield('meta_description', 'SchoolShare — Your school work, always with you. Upload, version, and access your files anywhere.')">
+    <meta property="og:image" content="{{ asset('images/og-image.png') }}">
+    <meta property="og:url" content="{{ request()->url() }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="{{ request()->url() }}">
+
     <title>@yield('title', 'Dashboard') — SchoolShare by EthioNext</title>
 
     {{-- Bootstrap 5 CSS --}}
@@ -319,6 +329,17 @@
             <i class="bi bi-gear"></i> Settings
         </a>
 
+        <div class="ss-sidebar-section">Help & Info</div>
+        <a href="{{ route('guide') }}" class="ss-sidebar-link {{ request()->routeIs('guide') ? 'active' : '' }}">
+            <i class="bi bi-book"></i> User Guide
+        </a>
+        <a href="{{ route('about') }}" class="ss-sidebar-link {{ request()->routeIs('about') ? 'active' : '' }}">
+            <i class="bi bi-info-circle"></i> About SchoolShare
+        </a>
+        <a href="{{ route('pricing') }}" class="ss-sidebar-link {{ request()->routeIs('pricing') ? 'active' : '' }}">
+            <i class="bi bi-tag"></i> Upgrade / Pricing
+        </a>
+
         {{-- Storage meter --}}
         <div class="ss-storage-meter mt-3">
             @php
@@ -367,6 +388,16 @@
             <a href="{{ route('profile.edit') }}" class="ss-sidebar-link">
                 <i class="bi bi-gear"></i> Settings
             </a>
+            <div class="ss-sidebar-section">Help & Info</div>
+            <a href="{{ route('guide') }}" class="ss-sidebar-link">
+                <i class="bi bi-book"></i> User Guide
+            </a>
+            <a href="{{ route('about') }}" class="ss-sidebar-link">
+                <i class="bi bi-info-circle"></i> About
+            </a>
+            <a href="{{ route('pricing') }}" class="ss-sidebar-link">
+                <i class="bi bi-tag"></i> Pricing
+            </a>
             <form method="POST" action="{{ route('logout') }}" class="p-3">
                 @csrf
                 <button type="submit" class="btn btn-ss-outline w-100">
@@ -408,7 +439,11 @@
     &middot;
     <a href="{{ config('schoolshare.branding.github_url') }}" target="_blank">GitHub</a>
     &middot;
-    <a href="mailto:{{ config('schoolshare.branding.contact_email') }}">Contact</a>
+    <a href="{{ route('terms') }}">Terms</a>
+    &middot;
+    <a href="{{ route('about') }}">About</a>
+    &middot;
+    <a href="{{ route('pricing') }}">Pricing</a>
 </footer>
 
 {{-- Bootstrap 5 JS --}}

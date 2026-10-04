@@ -21,6 +21,26 @@ Route::get('/terms', function () {
     return view('terms');
 })->name('terms');
 
+// About
+Route::get('/about', function () {
+    return view('about');
+})->name('about');
+
+// Pricing
+Route::get('/pricing', function () {
+    return view('pricing');
+})->name('pricing');
+
+// Guide
+Route::get('/guide', function () {
+    return view('guide');
+})->name('guide');
+
+// Sitemap
+Route::get('/sitemap.xml', function () {
+    return response()->view('sitemap')->header('Content-Type', 'text/xml');
+});
+
 // Public User Profile
 Route::get('/u/{username}', [App\Http\Controllers\PublicProfileController::class, 'show'])->name('profile.public');
 Route::get('/u/{username}/followers', [App\Http\Controllers\PublicProfileController::class, 'followers'])->name('profile.followers');
