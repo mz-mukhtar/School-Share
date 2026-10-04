@@ -84,7 +84,7 @@ Route::middleware(['auth', 'otp.verified'])->group(function () {
     Route::prefix('projects/{project}')->name('projects.')->group(function () {
         Route::get('/checkpoints',                   [App\Http\Controllers\CheckpointController::class, 'index']  )->name('checkpoints.index');
         Route::get('/checkpoints/create',            [App\Http\Controllers\CheckpointController::class, 'create'] )->name('checkpoints.create');
-        Route::post('/checkpoints',                  [App\Http\Controllers\CheckpointController::class, 'store']  )->name('checkpoints.store');
+        Route::post('/checkpoints',                  [App\Http\Controllers\CheckpointController::class, 'store']  )->middleware('throttle:uploads')->name('checkpoints.store');
         Route::get('/checkpoints/{checkpoint}',      [App\Http\Controllers\CheckpointController::class, 'show']   )->name('checkpoints.show');
         Route::post('/checkpoints/{checkpoint}/restore', [App\Http\Controllers\CheckpointController::class, 'restore'])->name('checkpoints.restore');
         Route::delete('/checkpoints/{checkpoint}',   [App\Http\Controllers\CheckpointController::class, 'destroy'])->name('checkpoints.destroy');
