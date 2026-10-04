@@ -55,6 +55,15 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Project::class);
     }
 
+    /**
+     * Projects starred by this user.
+     */
+    public function starredProjects()
+    {
+        return $this->belongsToMany(\App\Models\Project::class, 'starred_projects')
+                    ->withTimestamps();
+    }
+
     // -------------------------------------------------------------------------
     // Storage Helpers
     // -------------------------------------------------------------------------

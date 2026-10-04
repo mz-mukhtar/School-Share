@@ -28,13 +28,30 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::middleware('auth')->group(function () {
 
+    // Explore (Public projects search)
+    Route::get('/explore', [App\Http\Controllers\ExploreController::class, 'index'])->name('explore');
+
     // Profile (Breeze default)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Projects (stub — will be fully implemented in Phase 4)
+    // Projects
     Route::resource('projects', App\Http\Controllers\ProjectController::class);
+
+    // Checkpoints (nested under projects)
+    Route::prefix('projects/{project}')->name('projects.')->group(function () {
+        Route::get('/checkpoints',                   [App\Http\Controllers\CheckpointController::class, 'index']  )->name('checkpoints.index');
+        Route::get('/checkpoints/create',            [App\Http\Controllers\CheckpointController::class, 'create'] )->name('checkpoints.create');
+        Route::post('/checkpoints',                  [App\Http\Controllers\CheckpointController::class, 'store']  )->name('checkpoints.store');
+        Route::get('/checkpoints/{checkpoint}',      [App\Http\Controllers\CheckpointController::class, 'show']   )->name('checkpoints.show');
+        Route::delete('/checkpoints/{checkpoint}',   [App\Http\Controllers\CheckpointController::class, 'destroy'])->name('checkpoints.destroy');
+
+        // Files (nested under projects, not checkpoints — for easy access by file ID)
+        Route::get('/files/{file}',          [App\Http\Controllers\FileController::class, 'show']    )->name('files.show');
+        Route::get('/files/{file}/download', [App\Http\Controllers\FileController::class, 'download'])->name('files.download');
+        Route::delete('/files/{file}',       [App\Http\Controllers\FileController::class, 'destroy'] )->name('files.destroy');
+    });
 
 });
 

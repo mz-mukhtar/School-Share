@@ -16,12 +16,12 @@ class DashboardController extends Controller
         $user->save();
         $user->timestamps = true;
 
-        // Stats — these will be real queries once Project model exists
-        $projectCount    = method_exists($user, 'projects') ? $user->projects()->count() : 0;
-        $checkpointCount = 0; // will be populated in Phase 3
-        $recentProjects  = method_exists($user, 'projects')
-            ? $user->projects()->latest()->take(5)->get()
-            : collect();
+        // Stats
+        $projectCount    = $user->projects()->count();
+        $checkpointCount = \App\Models\Checkpoint::whereIn(
+            'project_id', $user->projects()->select('id')
+        )->count();
+        $recentProjects  = $user->projects()->withCount('checkpoints')->latest()->take(5)->get();
 
         return view('dashboard', compact('projectCount', 'checkpointCount', 'recentProjects'));
     }

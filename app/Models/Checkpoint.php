@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Checkpoint extends Model
+{
+    protected $fillable = [
+        'project_id',
+        'user_id',
+        'title',
+        'message',
+        'total_size_bytes',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'total_size_bytes' => 'integer',
+        ];
+    }
+
+    /**
+     * The project this checkpoint belongs to.
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * The user who created this checkpoint.
+     */
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * The files included in this checkpoint.
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(ProjectFile::class);
+    }
+
+    /**
+     * Human-readable total size.
+     */
+    public function totalSizeHuman(): string
+    {
+        $bytes = $this->total_size_bytes;
+        if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+        if ($bytes >= 1048576)    return round($bytes / 1048576, 1) . ' MB';
+        if ($bytes >= 1024)       return round($bytes / 1024, 1) . ' KB';
+        return $bytes . ' B';
+    }
+}
