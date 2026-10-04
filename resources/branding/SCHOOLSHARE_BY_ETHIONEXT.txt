@@ -21,7 +21,7 @@ presentations, PDFs, images, code, and more.
 
 No command line. No technical knowledge needed.
 
-  Live App:    https://ethionext.com.et
+  Live App:    https://schoolshare.ethionext.com.et
   GitHub:      https://github.com/mz-mukhtar/School-Share
   License:     SchoolShare Community License (SCL v1.0)
 
@@ -49,5 +49,5 @@ unless you purchase a Commercial License.
 
 ================================================================================
   © 2026 Mahi Zeki Mukhtar / EthioNext · All rights reserved
-  ethionext.com.et
+  schoolshare.ethionext.com.et
 ================================================================================

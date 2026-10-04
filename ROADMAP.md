@@ -52,7 +52,7 @@ Have a feature request? [Open an issue](https://github.com/mz-mukhtar/School-Sha
 - [ ] Drag-and-drop file upload
 - [ ] Checkpoint messages
 - [ ] Chunked upload for large files
-- [ ] 100 MB per file / 1 GB total storage quota
+- [ ] 100 MB per file / 3 GB total storage quota
 - [ ] Content-based deduplication (MD5 hash)
 
 ### Phase 6 — In-Browser Viewer & Editor

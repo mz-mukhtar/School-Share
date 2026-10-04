@@ -19,7 +19,7 @@ return [
     |
     */
     'max_file_mb'    => (int) env('SCHOOLSHARE_MAX_FILE_MB', 100),
-    'max_storage_gb' => (float) env('SCHOOLSHARE_MAX_STORAGE_GB', 1),
+    'max_storage_gb' => (float) env('SCHOOLSHARE_MAX_STORAGE_GB', 3),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,7 +27,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'max_file_bytes'    => (int) env('SCHOOLSHARE_MAX_FILE_MB', 100) * 1024 * 1024,
-    'max_storage_bytes' => (float) env('SCHOOLSHARE_MAX_STORAGE_GB', 1) * 1024 * 1024 * 1024,
+    'max_storage_bytes' => (float) env('SCHOOLSHARE_MAX_STORAGE_GB', 3) * 1024 * 1024 * 1024,
 
     /*
     |--------------------------------------------------------------------------
@@ -35,9 +35,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'free_plan' => [
-        'max_projects'      => 3,
+        'max_projects'      => 15,
         'max_collaborators' => 5,
-        'storage_gb'        => 1,
+        'storage_gb'        => 3,
     ],
 
     /*
@@ -74,7 +74,7 @@ return [
         'contact_email'=> 'mahizeki037@gmail.com',
         'contact_phone'=> '+251 992 194 042',
         'github_url'   => 'https://github.com/mz-mukhtar/School-Share',
-        'footer_text'  => 'SchoolShare by EthioNext · ethionext.com.et',
+        'footer_text'  => 'SchoolShare by EthioNext · schoolshare.ethionext.com.et',
         'header_value' => 'EthioNext-SchoolShare', // X-Powered-By header value
         'zip_notice'   => 'SCHOOLSHARE_BY_ETHIONEXT.txt', // filename in ZIP downloads
     ],

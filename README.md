@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://ethionext.com.et">🌐 Live App</a> ·
+  <a href="https://schoolshare.ethionext.com.et">🌐 Live App</a> ·
   <a href="https://github.com/mz-mukhtar/School-Share">📦 GitHub</a> ·
   <a href="#self-hosting">🖥️ Self-Host</a> ·
   <a href="LICENSE.md">📄 License</a>
@@ -47,7 +47,7 @@ No command line. No technical knowledge needed. Just:
 | 🔍 **Diff View** | See exactly what changed between versions |
 | 👥 **Collaboration** | Invite classmates/teammates to your project |
 | 🔒 **Private Projects** | Keep personal work private |
-| 📊 **Storage Tracker** | See how much of your 1 GB quota you've used |
+| 📊 **Storage Tracker** | See how much of your 3 GB quota you've used |
 | 📂 **Works With Any File** | .docx, .pptx, .pdf, .png, .mp4, .py, .html — everything |
 
 ---
@@ -166,7 +166,7 @@ schoolshare/
 | Resource | Limit |
 |---|---|
 | Projects | 3 |
-| Storage per user | 1 GB total |
+| Storage per user | 3 GB total |
 | Max file size | 100 MB per file |
 | Collaborators per project | 5 |
 

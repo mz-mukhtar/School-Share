@@ -67,7 +67,7 @@ User uploads files + writes a message
          ▼
 CheckpointService::create()
     1. Validate file sizes (100 MB per file)
-    2. Validate user storage quota (1 GB total)
+    2. Validate user storage quota (3 GB total)
     3. For each file:
        a. Compute MD5 hash of file content
        b. Check if same hash exists in checkpoint_files for this project
@@ -246,7 +246,7 @@ Business logic lives in `app/Services/`, not in controllers.
 | Middleware | Purpose |
 |---|---|
 | `AddBrandingHeaders` | Adds `X-Powered-By: EthioNext-SchoolShare` to all responses |
-| `CheckStorageQuota` | Blocks upload requests if user is at/over 1 GB limit |
+| `CheckStorageQuota` | Blocks upload requests if user is at/over 3 GB limit |
 | `ProjectAccess` | Checks if authenticated user has access to a project |
 
 ---
