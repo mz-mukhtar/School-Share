@@ -1,0 +1,53 @@
+================================================================================
+  SchoolShare — Version Control for Students
+  by EthioNext · ethionext.com.et
+================================================================================
+
+This file was downloaded from SchoolShare, a free and open-source version
+control platform for students, teachers, and creators.
+
+  Project Name:  {PROJECT_NAME}
+  Downloaded by: {USER_NAME}
+  Date:          {DOWNLOAD_DATE}
+  Checkpoint:    {CHECKPOINT_MESSAGE}
+
+--------------------------------------------------------------------------------
+  About SchoolShare
+--------------------------------------------------------------------------------
+
+SchoolShare is a simplified, GUI-based version control system designed for
+high school students and anyone who wants to track their work — essays,
+presentations, PDFs, images, code, and more.
+
+No command line. No technical knowledge needed.
+
+  Live App:    https://ethionext.com.et
+  GitHub:      https://github.com/mz-mukhtar/School-Share
+  License:     SchoolShare Community License (SCL v1.0)
+
+--------------------------------------------------------------------------------
+  Developer & Contact
+--------------------------------------------------------------------------------
+
+  Name:    Mahi Zeki Mukhtar
+  Email:   mahizeki037@gmail.com
+  Phone:   +251 992 194 042
+  Website: https://ethionext.com.et
+
+--------------------------------------------------------------------------------
+  Licensing Notice
+--------------------------------------------------------------------------------
+
+SchoolShare is open source, licensed under the SchoolShare Community License
+(SCL v1.0). Self-hosting is permitted, but EthioNext branding must be retained
+unless you purchase a Commercial License.
+
+  Community License:  Free — branding required
+  Commercial License: Paid — branding can be removed
+
+  For commercial licensing: mahizeki037@gmail.com
+
+================================================================================
+  © 2026 Mahi Zeki Mukhtar / EthioNext · All rights reserved
+  ethionext.com.et
+================================================================================
