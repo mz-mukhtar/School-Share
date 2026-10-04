@@ -111,7 +111,7 @@
                         <i class="bi bi-upload"></i> Upload
                     </a>
                 @endif
-                <a href="{{ route('download-zip', $project->slug) }}" class="btn btn-ss-outline btn-sm">
+                <a href="{{ route('projects.download-zip', $project->slug) }}" class="btn btn-ss-outline btn-sm">
                     <i class="bi bi-file-earmark-zip"></i> Download ZIP
                 </a>
             </div>
@@ -157,7 +157,7 @@
                                 <td class="align-middle text-end text-muted small">-</td>
                                 <td class="align-middle text-end pe-0">
                                     @if(auth()->id() === $project->user_id)
-                                        <form method="POST" action="{{ route('folders.destroy', $folder->id) }}" class="d-inline" onsubmit="return confirm('Delete this folder and ALL its contents?');">
+                                        <form method="POST" action="{{ route('projects.folders.destroy', [$project->slug, $folder->id]) }}" class="d-inline" onsubmit="return confirm('Delete this folder and ALL its contents?');">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-link btn-sm p-0 text-danger" title="Delete Folder">
                                                 <i class="bi bi-trash"></i>
@@ -292,7 +292,7 @@
     <div class="modal fade" id="newFolderModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content" style="background:var(--ss-dark-2); border-color:var(--ss-border);">
-                <form action="{{ route('folders.store') }}" method="POST">
+                <form action="{{ route('projects.folders.store', $project->slug) }}" method="POST">
                     @csrf
                     <input type="hidden" name="project_id" value="{{ $project->id }}">
                     @if($currentFolderId)

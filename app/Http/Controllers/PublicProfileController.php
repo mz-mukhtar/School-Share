@@ -28,6 +28,12 @@ class PublicProfileController extends Controller
             ->pluck('count', 'date')
             ->toArray();
 
+        // Recent activity for the sidebar
+        $recentActivities = \App\Models\Activity::where('user_id', $user->id)
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
         return view('users.show', compact('user', 'projects', 'recentActivities', 'contributions'));
     }
 }

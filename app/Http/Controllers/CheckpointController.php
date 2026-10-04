@@ -19,7 +19,7 @@ class CheckpointController extends Controller
         $this->authorizeView($project);
 
         $checkpoints = $project->checkpoints()
-            ->withCount('files')
+            ->withCount('fileVersions as files_count')
             ->with('author')
             ->paginate(10);
 

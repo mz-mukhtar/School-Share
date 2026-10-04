@@ -99,7 +99,8 @@ class ProjectController extends Controller
         }
 
         $latestCheckpoint = $project->latestCheckpoint;
-        $checkpoints = $project->checkpoints()->limit(5)->get();
+        $checkpoints = $project->checkpoints()->withCount('fileVersions as files_count')->limit(5)->get();
+
 
         // Folder navigation
         $currentFolderId = $request->query('folder');
@@ -129,7 +130,8 @@ class ProjectController extends Controller
 
         $allFolders = $project->folders()->get();
 
-        return view('projects.show', compact('project', 'latestCheckpoint', 'checkpoints', 'currentFolder', 'breadcrumbs', 'folders', 'files', 'readmeHtml', 'allFolders'));
+        return view('projects.show', compact('project', 'latestCheckpoint', 'checkpoints', 'currentFolder', 'currentFolderId', 'breadcrumbs', 'folders', 'files', 'readmeHtml', 'allFolders'));
+
     }
 
     /**
