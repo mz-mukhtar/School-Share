@@ -11,7 +11,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('projects.index') }}" class="text-decoration-none text-muted">{{ $project->owner->name }}</a>
+                        <a href="{{ route('profile.public', $project->owner->username) }}" class="text-decoration-none text-muted">{{ $project->owner->name }}</a>
                     </li>
                     <li class="breadcrumb-item active fw-bold text-white" aria-current="page">{{ $project->name }}</li>
                 </ol>

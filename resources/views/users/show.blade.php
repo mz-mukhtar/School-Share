@@ -35,6 +35,16 @@
                 <p class="mb-3 text-white-50">{{ $user->bio }}</p>
             @endif
 
+            {{-- Followers / Following --}}
+            <div class="d-flex gap-3 mb-4">
+                <a href="{{ route('profile.followers', $user->username) }}" class="text-decoration-none text-white-50">
+                    <strong class="text-white">{{ $user->followers()->count() }}</strong> followers
+                </a>
+                <a href="{{ route('profile.following', $user->username) }}" class="text-decoration-none text-white-50">
+                    <strong class="text-white">{{ $user->following()->count() }}</strong> following
+                </a>
+            </div>
+
             {{-- Follow / Edit Button --}}
             <div class="mb-4">
                 @auth

@@ -95,7 +95,7 @@ class ForkController extends Controller
             $checkpoint = $forkedProject->checkpoints()->create([
                 'user_id' => $user->id,
                 'title' => 'Initial commit (Forked)',
-                'message' => 'Forked from ' . $project->user->username . '/' . $project->slug,
+                'message' => 'Forked from ' . $project->owner->username . '/' . $project->slug,
                 'total_size_bytes' => 0, // Will update as we copy files
             ]);
 

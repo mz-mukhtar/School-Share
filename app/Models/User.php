@@ -74,7 +74,8 @@ class User extends Authenticatable
      */
     public function following()
     {
-        return $this->hasMany(\App\Models\Follow::class, 'follower_id');
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
+                    ->withPivot('created_at');
     }
 
     /**
@@ -82,7 +83,8 @@ class User extends Authenticatable
      */
     public function followers()
     {
-        return $this->hasMany(\App\Models\Follow::class, 'following_id');
+        return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
+                    ->withPivot('created_at');
     }
 
     /**
@@ -99,6 +101,16 @@ class User extends Authenticatable
     public function comments()
     {
         return $this->hasMany(\App\Models\Comment::class);
+    }
+
+    /**
+     * Projects that this user has been added to as a collaborator.
+     */
+    public function sharedProjects()
+    {
+        return $this->belongsToMany(\App\Models\Project::class, 'project_collaborators', 'user_id', 'project_id')
+                    ->withPivot('role')
+                    ->withTimestamps();
     }
 
     // -------------------------------------------------------------------------

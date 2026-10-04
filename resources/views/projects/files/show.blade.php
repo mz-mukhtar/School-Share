@@ -68,14 +68,100 @@
         </iframe>
 
     @elseif($file->isText() && $content !== null)
-        {{-- Text / Code preview --}}
+        {{-- Text / Code preview & editor --}}
         <div class="d-flex justify-content-between align-items-center mb-3">
             <span class="text-muted small">{{ $file->original_name }}</span>
-            <span class="badge" style="background:var(--ss-dark-3);border:1px solid var(--ss-border);color:var(--ss-text-muted);">
-                {{ strtoupper($file->extension()) }}
-            </span>
+            <div class="d-flex gap-2">
+                @if($project->canEdit(auth()->user()))
+                    <button type="button" class="btn btn-sm btn-outline-light" id="toggleEditBtn">
+                        <i class="bi bi-pencil me-1"></i> Edit
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ss-primary d-none" id="saveFileBtn">
+                        <i class="bi bi-save me-1"></i> Save Changes
+                    </button>
+                @endif
+                <span class="badge" style="background:var(--ss-dark-3);border:1px solid var(--ss-border);color:var(--ss-text-muted);">
+                    {{ strtoupper($file->extension()) }}
+                </span>
+            </div>
         </div>
-        <pre class="mb-0 p-3 rounded" style="background:var(--ss-dark-1);color:#e2e8f0;font-size:0.85rem;overflow:auto;max-height:75vh;white-space:pre-wrap;word-break:break-all;"><code>{{ $content }}</code></pre>
+
+        <div id="fileViewer" class="p-3 rounded" style="background:var(--ss-dark-1);color:#e2e8f0;font-size:0.85rem;overflow:auto;max-height:75vh;white-space:pre-wrap;word-break:break-all;border:1px solid var(--ss-border);"><code>{{ $content }}</code></div>
+        
+        <div id="fileEditorContainer" class="d-none" style="border:1px solid var(--ss-border); border-radius:8px; overflow:hidden;"></div>
+
+        @push('scripts')
+        <script type="module">
+            import {EditorView, basicSetup} from "https://esm.sh/codemirror@6.0.1";
+            import {EditorState} from "https://esm.sh/@codemirror/state@6.0.1";
+
+            const toggleEditBtn = document.getElementById('toggleEditBtn');
+            const saveFileBtn = document.getElementById('saveFileBtn');
+            const fileViewer = document.getElementById('fileViewer');
+            const fileEditorContainer = document.getElementById('fileEditorContainer');
+            
+            let editorView = null;
+            let originalContent = {!! json_encode($content) !!};
+
+            if(toggleEditBtn) {
+                toggleEditBtn.addEventListener('click', () => {
+                    fileViewer.classList.add('d-none');
+                    fileEditorContainer.classList.remove('d-none');
+                    toggleEditBtn.classList.add('d-none');
+                    saveFileBtn.classList.remove('d-none');
+
+                    if (!editorView) {
+                        editorView = new EditorView({
+                            state: EditorState.create({
+                                doc: originalContent,
+                                extensions: [basicSetup]
+                            }),
+                            parent: fileEditorContainer
+                        });
+                    }
+                });
+            }
+
+            if(saveFileBtn) {
+                saveFileBtn.addEventListener('click', () => {
+                    if (!editorView) return;
+                    const newContent = editorView.state.doc.toString();
+                    
+                    saveFileBtn.disabled = true;
+                    saveFileBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+                    fetch(`{{ route('projects.files.update', [$project->slug, $file->id]) }}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            content: newContent
+                        })
+                    }).then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            window.location.reload();
+                        } else {
+                            alert('Error: ' + (data.message || 'Unknown error'));
+                            saveFileBtn.disabled = false;
+                            saveFileBtn.innerHTML = '<i class="bi bi-save me-1"></i> Save Changes';
+                        }
+                    }).catch(err => {
+                        alert('An error occurred.');
+                        saveFileBtn.disabled = false;
+                        saveFileBtn.innerHTML = '<i class="bi bi-save me-1"></i> Save Changes';
+                    });
+                });
+            }
+        </script>
+        <style>
+            .cm-editor { height: 600px; background: var(--ss-dark-1); color: var(--ss-text); }
+            .cm-gutters { background: var(--ss-dark-2); color: var(--ss-text-muted); border-right: 1px solid var(--ss-border); }
+        </style>
+        @endpush
 
     @elseif($file->isText() && $content === null)
         {{-- Text file too large to preview --}}

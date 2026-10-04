@@ -23,6 +23,8 @@ Route::get('/terms', function () {
 
 // Public User Profile
 Route::get('/u/{username}', [App\Http\Controllers\PublicProfileController::class, 'show'])->name('profile.public');
+Route::get('/u/{username}/followers', [App\Http\Controllers\PublicProfileController::class, 'followers'])->name('profile.followers');
+Route::get('/u/{username}/following', [App\Http\Controllers\PublicProfileController::class, 'following'])->name('profile.following');
 
 // ── Authenticated pages ───────────────────────────────────────────────────────
 
@@ -74,6 +76,11 @@ Route::middleware('auth')->group(function () {
 
         // Zip
         Route::get('/download-zip', [App\Http\Controllers\ZipController::class, 'downloadProject'])->name('download-zip');
+
+        // Collaborators
+        Route::post('/collaborators', [App\Http\Controllers\CollaboratorController::class, 'store'])->name('collaborators.store');
+        Route::put('/collaborators/{collaborator}', [App\Http\Controllers\CollaboratorController::class, 'update'])->name('collaborators.update');
+        Route::delete('/collaborators/{collaborator}', [App\Http\Controllers\CollaboratorController::class, 'destroy'])->name('collaborators.destroy');
     });
 
 });

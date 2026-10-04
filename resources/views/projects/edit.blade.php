@@ -76,6 +76,61 @@
     </div>
 
     <div class="col-lg-4">
+        <div class="ss-card mb-4">
+            <h4 class="h5 fw-bold mb-3 border-bottom pb-2" style="border-color: var(--ss-border) !important;">Manage Collaborators</h4>
+            
+            <form action="{{ route('projects.collaborators.store', $project->slug) }}" method="POST" class="mb-4">
+                @csrf
+                <div class="mb-2">
+                    <label for="username" class="form-label fw-bold small">Add by Username</label>
+                    <input type="text" class="form-control bg-transparent text-white @error('username') is-invalid @enderror" style="border-color: var(--ss-border);" id="username" name="username" placeholder="Enter username" required>
+                    @error('username')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="mb-3">
+                    <label for="role" class="form-label fw-bold small">Role</label>
+                    <select class="form-select bg-transparent text-white" style="border-color: var(--ss-border);" id="role" name="role" required>
+                        <option value="editor" class="text-dark">Editor (Can edit)</option>
+                        <option value="viewer" class="text-dark">Viewer (Read-only)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-ss-primary w-100">Add Collaborator</button>
+            </form>
+
+            @if($project->collaborators->count() > 0)
+                <div class="list-group list-group-flush mt-3">
+                    @foreach($project->collaborators as $collab)
+                        <div class="list-group-item bg-transparent text-white px-0 py-3" style="border-color: var(--ss-border);">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ $collab->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($collab->name).'&background=random' }}" alt="{{ $collab->name }}" class="rounded-circle" width="32" height="32">
+                                    <div class="lh-sm">
+                                        <div class="fw-bold small">{{ $collab->name }}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">{{ '@'.$collab->username }}</div>
+                                    </div>
+                                </div>
+                                <form action="{{ route('projects.collaborators.destroy', [$project->slug, $collab->username]) }}" method="POST" onsubmit="return confirm('Remove this collaborator?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-x-circle"></i></button>
+                                </form>
+                            </div>
+                            <form action="{{ route('projects.collaborators.update', [$project->slug, $collab->username]) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                <select name="role" class="form-select form-select-sm bg-transparent text-white" style="border-color: var(--ss-border);" onchange="this.form.submit()">
+                                    <option value="editor" class="text-dark" {{ $collab->pivot->role === 'editor' ? 'selected' : '' }}>Editor</option>
+                                    <option value="viewer" class="text-dark" {{ $collab->pivot->role === 'viewer' ? 'selected' : '' }}>Viewer</option>
+                                </select>
+                            </form>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-muted small text-center py-2">No collaborators added.</div>
+            @endif
+        </div>
         <div class="ss-card border-danger mb-4" style="background: rgba(239, 68, 68, 0.05);">
             <h4 class="h5 fw-bold text-danger mb-3">Danger Zone</h4>
             <p class="text-muted small mb-3">Once you delete a project, there is no going back. Please be certain.</p>

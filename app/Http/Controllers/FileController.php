@@ -59,7 +59,7 @@ class FileController extends Controller
 
     public function destroy(Project $project, ProjectFile $file)
     {
-        if (auth()->id() !== $project->user_id) {
+        if (!$project->canEdit(auth()->user())) {
             abort(403);
         }
         abort_if($file->project_id !== $project->id, 404);
@@ -167,36 +167,76 @@ class FileController extends Controller
 
     public function update(Request $request, Project $project, ProjectFile $file)
     {
-        if (auth()->id() !== $project->user_id) {
+        if (!$project->canEdit(auth()->user())) {
             abort(403);
         }
         abort_if($file->project_id !== $project->id, 404);
 
         $request->validate([
-            'original_name' => ['required', 'string', 'max:255', 'regex:/^[\w\-\.]+$/'],
+            'original_name' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[\w\-\.]+$/'],
             'folder_id' => ['nullable', 'exists:project_folders,id'],
+            'content' => ['sometimes', 'string', 'nullable'],
         ], [
             'original_name.regex' => 'The file name may only contain letters, numbers, dashes, underscores, and dots.'
         ]);
 
+        if ($request->has('content')) {
+            $user = auth()->user();
+            $content = $request->input('content') ?? '';
+            $size = strlen($content);
+            
+            // Check quota
+            if ($size > $user->remainingStorageBytes()) {
+                return response()->json(['success' => false, 'message' => 'Storage quota exceeded.']);
+            }
+
+            $checkpoint = $project->checkpoints()->create([
+                'user_id' => $user->id,
+                'title' => 'Updated ' . $file->original_name,
+                'message' => 'Edited via in-browser editor',
+                'total_size_bytes' => $size,
+            ]);
+
+            $dir = "projects/{$user->id}/{$project->id}/{$checkpoint->id}";
+            $storedName = $dir . '/' . uniqid() . '_' . \Illuminate\Support\Str::slug($file->original_name);
+            Storage::disk('local')->put($storedName, $content);
+
+            $version = $file->versions()->create([
+                'checkpoint_id' => $checkpoint->id,
+                'storage_path' => $storedName,
+                'size_bytes' => $size,
+                'mime_type' => $file->mime_type,
+            ]);
+
+            $file->latest_version_id = $version->id;
+            $file->version_count += 1;
+            $file->save();
+
+            $user->increment('storage_used_bytes', $size);
+
+            return response()->json(['success' => true]);
+        }
+
         $folderId = $request->input('folder_id');
         $newName = $request->input('original_name');
 
-        // Check for duplicate name in the target folder
-        $existing = ProjectFile::where('project_id', $project->id)
-            ->where('folder_id', $folderId)
-            ->where('original_name', $newName)
-            ->where('id', '!=', $file->id)
-            ->first();
+        if ($newName) {
+            // Check for duplicate name in the target folder
+            $existing = ProjectFile::where('project_id', $project->id)
+                ->where('folder_id', $folderId)
+                ->where('original_name', $newName)
+                ->where('id', '!=', $file->id)
+                ->first();
 
-        if ($existing) {
-            return back()->with('error', 'A file with this name already exists in the target folder.');
+            if ($existing) {
+                return back()->with('error', 'A file with this name already exists in the target folder.');
+            }
+
+            $file->update([
+                'original_name' => $newName,
+                'folder_id' => $folderId,
+            ]);
         }
-
-        $file->update([
-            'original_name' => $newName,
-            'folder_id' => $folderId,
-        ]);
 
         return back()->with('success', 'File updated successfully.');
     }
@@ -206,7 +246,7 @@ class FileController extends Controller
     private function authorizeView(Project $project, ProjectFile $file): void
     {
         abort_if($file->project_id !== $project->id, 404);
-        if ($project->visibility === 'private' && auth()->id() !== $project->user_id) {
+        if (!$project->hasAccess(auth()->user())) {
             abort(403);
         }
     }

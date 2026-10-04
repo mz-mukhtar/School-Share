@@ -36,4 +36,22 @@ class PublicProfileController extends Controller
 
         return view('users.show', compact('user', 'projects', 'recentActivities', 'contributions'));
     }
+
+    public function followers($username)
+    {
+        $user = User::where('username', $username)->firstOrFail();
+        $connections = $user->followers()->paginate(20);
+        $type = 'followers';
+        
+        return view('users.connections', compact('user', 'connections', 'type'));
+    }
+
+    public function following($username)
+    {
+        $user = User::where('username', $username)->firstOrFail();
+        $connections = $user->following()->paginate(20);
+        $type = 'following';
+        
+        return view('users.connections', compact('user', 'connections', 'type'));
+    }
 }

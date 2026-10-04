@@ -11,7 +11,7 @@ class ZipController extends Controller
 {
     public function downloadProject(Project $project)
     {
-        if ($project->visibility === 'private' && auth()->id() !== $project->user_id) {
+        if (!$project->hasAccess(auth()->user())) {
             abort(403);
         }
 

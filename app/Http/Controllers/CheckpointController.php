@@ -195,15 +195,15 @@ class CheckpointController extends Controller
 
     private function authorizeView(Project $project): void
     {
-        if ($project->visibility === 'private' && auth()->id() !== $project->user_id) {
-            abort(403, 'This project is private.');
+        if (!$project->hasAccess(auth()->user())) {
+            abort(403, 'This project is private or you do not have access.');
         }
     }
 
     private function authorizeOwner(Project $project): void
     {
-        if (auth()->id() !== $project->user_id) {
-            abort(403, 'Only the project owner can do this.');
+        if (!$project->canEdit(auth()->user())) {
+            abort(403, 'Only the project owner or editors can do this.');
         }
     }
 }

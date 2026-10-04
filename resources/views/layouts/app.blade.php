@@ -307,10 +307,16 @@
         <a href="{{ route('explore') }}" class="ss-sidebar-link {{ request()->routeIs('explore') ? 'active' : '' }}">
             <i class="bi bi-compass"></i> Explore
         </a>
+        <a href="{{ route('feed') }}" class="ss-sidebar-link {{ request()->routeIs('feed') ? 'active' : '' }}">
+            <i class="bi bi-activity"></i> Activity Feed
+        </a>
 
         <div class="ss-sidebar-section">Account</div>
-        <a href="{{ route('profile.edit') }}" class="ss-sidebar-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
-            <i class="bi bi-person"></i> Profile
+        <a href="{{ route('profile.public', auth()->user()->username ?? auth()->id()) }}" class="ss-sidebar-link {{ request()->routeIs('profile.public') ? 'active' : '' }}">
+            <i class="bi bi-person"></i> Public Profile
+        </a>
+        <a href="{{ route('profile.edit') }}" class="ss-sidebar-link {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+            <i class="bi bi-gear"></i> Settings
         </a>
 
         {{-- Storage meter --}}
@@ -351,9 +357,15 @@
             <a href="{{ route('explore') }}" class="ss-sidebar-link">
                 <i class="bi bi-compass"></i> Explore
             </a>
+            <a href="{{ route('feed') }}" class="ss-sidebar-link">
+                <i class="bi bi-activity"></i> Activity Feed
+            </a>
             <div class="ss-sidebar-section">Account</div>
+            <a href="{{ route('profile.public', auth()->user()->username ?? auth()->id()) }}" class="ss-sidebar-link">
+                <i class="bi bi-person"></i> Public Profile
+            </a>
             <a href="{{ route('profile.edit') }}" class="ss-sidebar-link">
-                <i class="bi bi-person"></i> Profile
+                <i class="bi bi-gear"></i> Settings
             </a>
             <form method="POST" action="{{ route('logout') }}" class="p-3">
                 @csrf

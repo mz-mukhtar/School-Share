@@ -12,18 +12,40 @@ class ExploreController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Project::with('owner')->public()->latest();
+        $search = $request->input('q');
+        $type = $request->input('type', 'projects');
 
-        if ($search = $request->input('q')) {
-            $query->where(function ($q) use ($search) {
+        $projectQuery = Project::with('owner')->public()->latest();
+        $userQuery = \App\Models\User::query()->latest();
+
+        if ($search) {
+            $projectQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('subject_tag', 'like', "%{$search}%");
+                  ->orWhere('subject_tag', 'like', "%{$search}%")
+                  ->orWhereHas('owner', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%");
+                  });
+            });
+
+            $userQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%");
             });
         }
 
-        $projects = $query->paginate(12);
+        $projectCount = $projectQuery->count();
+        $userCount = $userQuery->count();
 
-        return view('explore.index', compact('projects'));
+        if ($type === 'users') {
+            $users = $userQuery->paginate(12)->appends($request->query());
+            $projects = collect(); // empty for this tab
+        } else {
+            $projects = $projectQuery->paginate(12)->appends($request->query());
+            $users = collect(); // empty for this tab
+        }
+
+        return view('explore.index', compact('projects', 'users', 'type', 'projectCount', 'userCount'));
     }
 }

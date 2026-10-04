@@ -37,7 +37,7 @@ return [
     'free_plan' => [
         'max_projects'      => 15,
         'max_collaborators' => 5,
-        'storage_gb'        => 3,
+        'storage_gb'        => 1,
     ],
 
     /*

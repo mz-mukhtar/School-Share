@@ -37,7 +37,7 @@ class Activity extends Model
         return $this->morphTo();
     }
 
-    public static function log(string $type, User $user, $subject = null, array $meta = null)
+    public static function log(string $type, User $user, $subject = null, ?array $meta = null)
     {
         return self::create([
             'user_id' => $user->id,

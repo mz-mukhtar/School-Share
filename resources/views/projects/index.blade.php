@@ -83,6 +83,45 @@
     </div>
 @endif
 
+@if(isset($sharedProjects) && $sharedProjects->isNotEmpty())
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-5">
+        <h2 class="h4 mb-0 fw-bold">Shared with Me</h2>
+    </div>
+    <div class="row g-4 mb-5">
+        @foreach($sharedProjects as $project)
+            <div class="col-md-6 col-lg-4">
+                <div class="ss-card h-100 d-flex flex-column hover-lift">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none fw-bold fs-5 text-white d-flex align-items-center gap-2 text-truncate" style="max-width: 80%;">
+                            <i class="bi bi-people-fill text-ss-primary fs-6"></i>
+                            <span class="text-truncate">{{ $project->name }}</span>
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link text-muted p-0 border-0" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" style="background:var(--ss-dark-3);border-color:var(--ss-border);">
+                                <li><a class="dropdown-item text-white" href="{{ route('projects.show', $project->slug) }}"><i class="bi bi-folder2-open me-2 text-muted"></i>Open</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ $project->description ?: 'No description provided.' }}
+                    </p>
+                    
+                    <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top" style="border-color: var(--ss-border) !important;">
+                        <div class="d-flex gap-3 text-muted small">
+                            <span><i class="bi bi-person-badge me-1"></i>Owner: {{ $project->owner->username }}</span>
+                            <span title="Your Role"><i class="bi bi-shield-check me-1"></i>{{ ucfirst($project->pivot->role) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+@endif
+
 @push('styles')
 <style>
     .hover-lift {

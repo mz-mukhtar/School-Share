@@ -145,5 +145,41 @@ class Project extends Model
     {
         return $this->morphMany(\App\Models\Activity::class, 'subject');
     }
+
+    /**
+     * Collaborators on this project.
+     */
+    public function collaborators()
+    {
+        return $this->belongsToMany(User::class, 'project_collaborators', 'project_id', 'user_id')
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Check if a user has access to view this project.
+     */
+    public function hasAccess(?User $user): bool
+    {
+        if ($this->visibility === 'public') return true;
+        if (!$user) return false;
+        if ($this->user_id === $user->id) return true;
+
+        return $this->collaborators()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Check if a user can edit/upload to this project.
+     */
+    public function canEdit(?User $user): bool
+    {
+        if (!$user) return false;
+        if ($this->user_id === $user->id) return true;
+
+        return $this->collaborators()
+                    ->where('user_id', $user->id)
+                    ->wherePivot('role', 'editor')
+                    ->exists();
+    }
 }
 
