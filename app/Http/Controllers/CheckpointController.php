@@ -53,10 +53,11 @@ class CheckpointController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'title'   => ['required', 'string', 'max:255'],
-            'message' => ['nullable', 'string', 'max:2000'],
-            'files'   => ['required', 'array', 'min:1'],
-            'files.*' => ['file', 'max:102400'], // 100 MB per file (102400 KB)
+            'title'     => ['required', 'string', 'max:255'],
+            'message'   => ['nullable', 'string', 'max:2000'],
+            'folder_id' => ['nullable', 'exists:project_folders,id'],
+            'files'     => ['required', 'array', 'min:1'],
+            'files.*'   => ['file', 'max:102400'], // 100 MB per file (102400 KB)
         ], [
             'files.required'   => 'Please select at least one file to upload.',
             'files.*.max'      => 'Each file may not be larger than 100 MB.',
@@ -77,22 +78,52 @@ class CheckpointController extends Controller
                 'total_size_bytes' => $totalUploadBytes,
             ]);
 
+            $folderId = $request->input('folder_id');
+
             // Store each file
             foreach ($request->file('files') as $uploadedFile) {
                 $dir = "projects/{$user->id}/{$project->id}/{$checkpoint->id}";
                 $storedName = $uploadedFile->store($dir, 'local');
+                $originalName = $uploadedFile->getClientOriginalName();
+                $mimeType = $uploadedFile->getMimeType();
+                $size = $uploadedFile->getSize();
 
-                $checkpoint->files()->create([
-                    'project_id'    => $project->id,
-                    'original_name' => $uploadedFile->getClientOriginalName(),
-                    'storage_path'  => $storedName,
-                    'mime_type'     => $uploadedFile->getMimeType(),
-                    'size_bytes'    => $uploadedFile->getSize(),
+                // Find existing ProjectFile in this folder with same name
+                $projectFile = ProjectFile::firstOrCreate(
+                    [
+                        'project_id' => $project->id,
+                        'folder_id' => $folderId,
+                        'original_name' => $originalName,
+                    ],
+                    [
+                        'mime_type' => $mimeType,
+                        'version_count' => 0,
+                    ]
+                );
+
+                // Create FileVersion
+                $version = $projectFile->versions()->create([
+                    'checkpoint_id' => $checkpoint->id,
+                    'storage_path' => $storedName,
+                    'size_bytes' => $size,
+                    'mime_type' => $mimeType,
                 ]);
+
+                // Update ProjectFile
+                $projectFile->latest_version_id = $version->id;
+                $projectFile->version_count += 1;
+                $projectFile->mime_type = $mimeType; // Update mime in case it changed
+                $projectFile->save();
             }
 
             // Update user storage quota
             $user->increment('storage_used_bytes', $totalUploadBytes);
+            
+            // Create activity
+            \App\Models\Activity::log('checkpoint_created', $user, $checkpoint, [
+                'project_name' => $project->name,
+                'project_slug' => $project->slug,
+            ]);
         });
 
         return redirect()->route('projects.show', $project->slug)
@@ -127,12 +158,27 @@ class CheckpointController extends Controller
             $totalSize = $checkpoint->total_size_bytes;
 
             // Delete stored files from disk
-            foreach ($checkpoint->files as $file) {
-                Storage::disk('local')->delete($file->storage_path);
+            foreach ($checkpoint->fileVersions as $version) {
+                Storage::disk('local')->delete($version->storage_path);
+                
+                $file = $version->projectFile;
+                if ($file && $file->version_count <= 1) {
+                    $file->delete();
+                } elseif ($file) {
+                    $file->decrement('version_count');
+                    if ($file->latest_version_id === $version->id) {
+                        $file->latest_version_id = null;
+                        $previous = $file->versions()->where('id', '!=', $version->id)->latest()->first();
+                        if ($previous) {
+                            $file->latest_version_id = $previous->id;
+                        }
+                        $file->save();
+                    }
+                }
             }
 
             // Delete DB records
-            $checkpoint->files()->delete();
+            $checkpoint->fileVersions()->delete();
             $checkpoint->delete();
 
             // Reclaim storage

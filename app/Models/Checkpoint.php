@@ -40,11 +40,27 @@ class Checkpoint extends Model
     }
 
     /**
-     * The files included in this checkpoint.
+     * The file versions included in this checkpoint.
      */
-    public function files(): HasMany
+    public function fileVersions(): HasMany
     {
-        return $this->hasMany(ProjectFile::class);
+        return $this->hasMany(FileVersion::class);
+    }
+
+    /**
+     * Comments made on this checkpoint.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Activities related to this checkpoint.
+     */
+    public function activities()
+    {
+        return $this->morphMany(Activity::class, 'subject');
     }
 
     /**

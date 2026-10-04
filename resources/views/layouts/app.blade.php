@@ -265,7 +265,11 @@
         @auth
         <div class="dropdown">
             <button class="btn d-flex align-items-center gap-2 p-0 border-0" type="button" data-bs-toggle="dropdown" style="background:none;">
-                <span class="ss-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                @if(auth()->user()->avatar_path)
+                    <img src="{{ Storage::url(auth()->user()->avatar_path) }}" alt="{{ auth()->user()->name }}" class="rounded-circle object-fit-cover" width="32" height="32">
+                @else
+                    <span class="ss-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                @endif
                 <span class="d-none d-md-inline small" style="color:var(--ss-text-muted);">{{ auth()->user()->name }}</span>
                 <i class="bi bi-chevron-down small" style="color:var(--ss-text-muted);"></i>
             </button>

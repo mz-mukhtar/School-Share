@@ -21,11 +21,11 @@
                     <i class="bi {{ $project->visibility === 'public' ? 'bi-globe' : 'bi-lock-fill' }} me-1"></i>
                     {{ ucfirst($project->visibility) }}
                 </span>
-                @if($project->subject_tag)
+                @foreach($project->tags as $tag)
                     <span class="badge rounded-pill" style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);color:#67e8f9;">
-                        {{ $project->subject_tag }}
+                        {{ $tag->tag }}
                     </span>
-                @endif
+                @endforeach
             </div>
             @if($project->description)
                 <p class="text-muted mt-2 mb-0" style="max-width:700px;">{{ $project->description }}</p>
@@ -41,9 +41,28 @@
                     <i class="bi bi-gear"></i> Settings
                 </a>
             @endif
-            <button class="btn btn-ss-outline d-flex align-items-center gap-1" disabled>
-                <i class="bi bi-star"></i> <span>{{ $project->star_count }}</span>
-            </button>
+            @auth
+                @if(auth()->id() !== $project->user_id)
+                    <form action="{{ route('projects.fork', $project->slug) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-ss-outline d-flex align-items-center gap-1" title="Fork this project to your account" onclick="return confirm('Fork this project?')">
+                            <i class="bi bi-diagram-2"></i> Fork
+                        </button>
+                    </form>
+                @endif
+                @php
+                    $isStarred = auth()->user()->starredProjects()->where('project_id', $project->id)->exists();
+                @endphp
+                <button id="star-btn" class="btn btn-ss-outline d-flex align-items-center gap-1 {{ $isStarred ? 'text-warning' : '' }}" onclick="toggleStar()">
+                    <i id="star-icon" class="bi {{ $isStarred ? 'bi-star-fill' : 'bi-star' }}"></i> 
+                    <span id="star-count">{{ $project->star_count }}</span>
+                </button>
+            @endauth
+            @guest
+                <a href="{{ route('login') }}" class="btn btn-ss-outline d-flex align-items-center gap-1">
+                    <i class="bi bi-star"></i> <span>{{ $project->star_count }}</span>
+                </a>
+            @endguest
         </div>
     </div>
 </div>
@@ -63,27 +82,46 @@
 @endif
 
 {{-- ── Main content ─────────────────────────────────────────────────────── --}}
-@if($latestCheckpoint)
-    {{-- Files from the latest checkpoint --}}
+    {{-- File Browser --}}
     <div class="ss-card mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
                     <i class="bi bi-folder2-open text-primary"></i>
-                    Latest files
+                    Files
                 </h5>
-                <small class="text-muted">
-                    From checkpoint: <a href="{{ route('projects.checkpoints.show', [$project->slug, $latestCheckpoint->id]) }}" class="text-decoration-none" style="color:var(--ss-primary);">{{ $latestCheckpoint->title }}</a>
-                    &mdash; {{ $latestCheckpoint->created_at->diffForHumans() }}
-                </small>
+                <nav aria-label="breadcrumb" class="mt-2">
+                    <ol class="breadcrumb mb-0 small">
+                        <li class="breadcrumb-item"><a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none">Root</a></li>
+                        @foreach($breadcrumbs as $bc)
+                            <li class="breadcrumb-item"><a href="{{ route('projects.show', ['project' => $project->slug, 'folder' => $bc->id]) }}" class="text-decoration-none">{{ $bc->name }}</a></li>
+                        @endforeach
+                        @if($currentFolder)
+                            <li class="breadcrumb-item active text-white" aria-current="page">{{ $currentFolder->name }}</li>
+                        @endif
+                    </ol>
+                </nav>
             </div>
-            <a href="{{ route('projects.checkpoints.index', $project->slug) }}" class="btn btn-ss-outline btn-sm">
-                <i class="bi bi-clock-history me-1"></i> All Checkpoints
-            </a>
+            <div class="d-flex gap-2">
+                @if(auth()->id() === $project->user_id)
+                    <button class="btn btn-ss-outline btn-sm" data-bs-toggle="modal" data-bs-target="#newFolderModal">
+                        <i class="bi bi-folder-plus"></i> New Folder
+                    </button>
+                    <a href="{{ route('projects.checkpoints.create', ['project' => $project->slug, 'folder' => $currentFolderId]) }}" class="btn btn-ss-primary btn-sm">
+                        <i class="bi bi-upload"></i> Upload
+                    </a>
+                @endif
+                <a href="{{ route('download-zip', $project->slug) }}" class="btn btn-ss-outline btn-sm">
+                    <i class="bi bi-file-earmark-zip"></i> Download ZIP
+                </a>
+            </div>
         </div>
 
-        @if($latestCheckpoint->files->isEmpty())
-            <div class="text-center py-3 text-muted small">No files in this checkpoint.</div>
+        @if($folders->isEmpty() && $files->isEmpty())
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-folder2-open fs-1 opacity-50"></i>
+                <p class="mt-2">This folder is empty.</p>
+            </div>
         @else
             <div class="table-responsive">
                 <table class="table table-sm mb-0" style="color:var(--ss-text-primary);">
@@ -96,7 +134,41 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($latestCheckpoint->files as $file)
+                        @if($currentFolder)
+                            <tr style="border-color:var(--ss-border);">
+                                <td class="ps-0 align-middle text-center"><i class="bi bi-arrow-90deg-up"></i></td>
+                                <td class="align-middle" colspan="3">
+                                    <a href="{{ route('projects.show', ['project' => $project->slug, 'folder' => $currentFolder->parent_id]) }}" class="text-decoration-none text-white fw-medium">..</a>
+                                </td>
+                            </tr>
+                        @endif
+
+                        @foreach($folders as $folder)
+                            <tr style="border-color:var(--ss-border);">
+                                <td class="ps-0 align-middle text-center">
+                                    <i class="bi bi-folder-fill text-primary fs-5"></i>
+                                </td>
+                                <td class="align-middle">
+                                    <a href="{{ route('projects.show', ['project' => $project->slug, 'folder' => $folder->id]) }}"
+                                       class="text-decoration-none text-white fw-medium">
+                                        {{ $folder->name }}
+                                    </a>
+                                </td>
+                                <td class="align-middle text-end text-muted small">-</td>
+                                <td class="align-middle text-end pe-0">
+                                    @if(auth()->id() === $project->user_id)
+                                        <form method="POST" action="{{ route('folders.destroy', $folder->id) }}" class="d-inline" onsubmit="return confirm('Delete this folder and ALL its contents?');">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn btn-link btn-sm p-0 text-danger" title="Delete Folder">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+
+                        @foreach($files as $file)
                             <tr style="border-color:var(--ss-border);">
                                 <td class="ps-0 align-middle text-center">
                                     <i class="bi {{ $file->iconClass() }} fs-5"></i>
@@ -121,6 +193,17 @@
                                             <i class="bi bi-download"></i>
                                         </a>
                                         @if(auth()->id() === $project->user_id)
+                                            <button type="button" 
+                                                    class="btn btn-link btn-sm p-0 text-muted edit-file-btn" 
+                                                    title="Rename / Move"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editFileModal"
+                                                    data-file-id="{{ $file->id }}"
+                                                    data-file-name="{{ $file->original_name }}"
+                                                    data-folder-id="{{ $file->folder_id ?? '' }}"
+                                                    data-update-url="{{ route('projects.files.update', [$project->slug, $file->id]) }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
                                             <form method="POST" action="{{ route('projects.files.destroy', [$project->slug, $file->id]) }}"
                                                   onsubmit="return confirm('Delete this file?');">
                                                 @csrf @method('DELETE')
@@ -138,6 +221,19 @@
             </div>
         @endif
     </div>
+
+    @if(isset($readmeHtml))
+        {{-- README --}}
+        <div class="ss-card mb-4 p-0 overflow-hidden" style="border-color:var(--ss-border);">
+            <div class="p-3 border-bottom d-flex align-items-center gap-2" style="background:var(--ss-dark-2); border-color:var(--ss-border) !important;">
+                <i class="bi bi-book text-muted"></i>
+                <h6 class="mb-0 fw-bold text-muted">README.md</h6>
+            </div>
+            <div class="p-4" style="background:var(--ss-dark-1); color:#e2e8f0; font-size: 0.95rem;">
+                {!! $readmeHtml !!}
+            </div>
+        </div>
+    @endif
 
     {{-- Checkpoint history preview --}}
     <div class="ss-card">
@@ -191,22 +287,127 @@
         </div>
     </div>
 
-@else
-    {{-- Empty state --}}
-    <div class="ss-card text-center py-5">
-        <div class="mb-3">
-            <i class="bi bi-cloud-upload" style="font-size:3.5rem;color:var(--ss-primary);opacity:0.6;"></i>
+@if(auth()->id() === $project->user_id)
+    {{-- New Folder Modal --}}
+    <div class="modal fade" id="newFolderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background:var(--ss-dark-2); border-color:var(--ss-border);">
+                <form action="{{ route('folders.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="project_id" value="{{ $project->id }}">
+                    @if($currentFolderId)
+                        <input type="hidden" name="parent_id" value="{{ $currentFolderId }}">
+                    @endif
+                    <div class="modal-header border-bottom-0">
+                        <h5 class="modal-title">New Folder</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Folder Name</label>
+                            <input type="text" name="name" class="form-control ss-input" required pattern="[\w\-\.]+" title="Only letters, numbers, dashes, underscores, and dots">
+                            <div class="form-text text-muted">No spaces or special characters allowed.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0">
+                        <button type="button" class="btn btn-ss-outline" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-ss-primary">Create Folder</button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <h3 class="h4 fw-bold">No files yet</h3>
-        <p class="text-muted mb-4 mx-auto" style="max-width:450px;">
-            Create your first checkpoint by uploading files. Each checkpoint is a snapshot of your work at a specific point in time.
-        </p>
-        @if(auth()->id() === $project->user_id)
-            <a href="{{ route('projects.checkpoints.create', $project->slug) }}" class="btn btn-ss-primary">
-                <i class="bi bi-cloud-upload me-2"></i> Upload Files
-            </a>
-        @endif
     </div>
 @endif
 
+<!-- Edit File Modal -->
+@if(auth()->id() === $project->user_id)
+<div class="modal fade" id="editFileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background:var(--ss-dark-2); border-color:var(--ss-border);">
+            <form id="editFileForm" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title">Rename / Move File</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">File Name</label>
+                        <input type="text" id="editFileName" name="original_name" class="form-control ss-input" required pattern="[\w\-\.]+" title="Only letters, numbers, dashes, underscores, and dots">
+                        <div class="form-text text-muted">No spaces or special characters allowed.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location (Folder)</label>
+                        <select name="folder_id" id="editFileFolder" class="form-select ss-input">
+                            <option value="">/ (Root)</option>
+                            @foreach($allFolders ?? [] as $folder)
+                                <option value="{{ $folder->id }}">{{ $folder->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-ss-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-ss-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editFileBtns = document.querySelectorAll('.edit-file-btn');
+        const editFileForm = document.getElementById('editFileForm');
+        const editFileName = document.getElementById('editFileName');
+        const editFileFolder = document.getElementById('editFileFolder');
+
+        editFileBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                editFileForm.action = this.dataset.updateUrl;
+                editFileName.value = this.dataset.fileName;
+                editFileFolder.value = this.dataset.folderId || '';
+            });
+        });
+    });
+
+    function toggleStar() {
+        const btn = document.getElementById('star-btn');
+        const icon = document.getElementById('star-icon');
+        const countSpan = document.getElementById('star-count');
+        
+        btn.disabled = true;
+
+        fetch('{{ route('projects.star', $project->slug) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            countSpan.textContent = data.star_count;
+            if (data.status === 'starred') {
+                btn.classList.add('text-warning');
+                icon.classList.remove('bi-star');
+                icon.classList.add('bi-star-fill');
+            } else {
+                btn.classList.remove('text-warning');
+                icon.classList.remove('bi-star-fill');
+                icon.classList.add('bi-star');
+            }
+        })
+        .catch(error => console.error('Error:', error))
+        .finally(() => {
+            btn.disabled = false;
+        });
+    }
+</script>
+@endpush

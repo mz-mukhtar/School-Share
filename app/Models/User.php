@@ -17,6 +17,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'username',
+        'avatar_path',
+        'bio',
+        'github_url',
+        'linkedin_url',
         'plan',
         'storage_used_bytes',
         'last_active_at',
@@ -62,6 +67,38 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(\App\Models\Project::class, 'starred_projects')
                     ->withTimestamps();
+    }
+
+    /**
+     * Users that this user is following.
+     */
+    public function following()
+    {
+        return $this->hasMany(\App\Models\Follow::class, 'follower_id');
+    }
+
+    /**
+     * Users that follow this user.
+     */
+    public function followers()
+    {
+        return $this->hasMany(\App\Models\Follow::class, 'following_id');
+    }
+
+    /**
+     * Activities performed by this user.
+     */
+    public function activities()
+    {
+        return $this->hasMany(\App\Models\Activity::class);
+    }
+
+    /**
+     * Comments made by this user.
+     */
+    public function comments()
+    {
+        return $this->hasMany(\App\Models\Comment::class);
     }
 
     // -------------------------------------------------------------------------

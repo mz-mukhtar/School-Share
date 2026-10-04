@@ -45,10 +45,10 @@
 <div class="ss-card">
     <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
         <i class="bi bi-folder2-open text-primary"></i>
-        Files ({{ $checkpoint->files->count() }})
+        Files ({{ $checkpoint->fileVersions->count() }})
     </h5>
 
-    @if($checkpoint->files->isEmpty())
+    @if($checkpoint->fileVersions->isEmpty())
         <div class="text-center text-muted py-4">No files in this checkpoint.</div>
     @else
         <div class="table-responsive">
@@ -63,7 +63,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($checkpoint->files as $file)
+                    @foreach($checkpoint->fileVersions as $version)
+                        @php $file = $version->projectFile; @endphp
+                        @if($file)
                         <tr style="border-color:var(--ss-border);">
                             <td class="ps-0 align-middle text-center">
                                 <i class="bi {{ $file->iconClass() }} fs-5"></i>
@@ -75,7 +77,7 @@
                                 </a>
                             </td>
                             <td class="align-middle text-end text-muted small">{{ strtoupper($file->extension()) }}</td>
-                            <td class="align-middle text-end text-muted small">{{ $file->sizeHuman() }}</td>
+                            <td class="align-middle text-end text-muted small">{{ $version->sizeHuman() }}</td>
                             <td class="align-middle text-end pe-0">
                                 <div class="d-flex gap-2 justify-content-end">
                                     @if($file->isPreviewable())
@@ -100,10 +102,77 @@
                                 </div>
                             </td>
                         </tr>
+                        @endif
                     @endforeach
                 </tbody>
             </table>
         </div>
     @endif
+</div>
+
+{{-- Comments Section --}}
+<div class="ss-card mt-4">
+    <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+        <i class="bi bi-chat-left-text text-primary"></i>
+        Comments ({{ $checkpoint->comments->count() }})
+    </h5>
+
+    <div class="mb-4">
+        @foreach($checkpoint->comments()->with('user')->latest()->get() as $comment)
+            <div class="d-flex gap-3 mb-4">
+                <div class="flex-shrink-0">
+                    @if($comment->user->avatar)
+                        <img src="{{ Storage::url($comment->user->avatar) }}" alt="Avatar" class="rounded-circle" width="40" height="40" style="object-fit: cover; border:1px solid var(--ss-border);">
+                    @else
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:40px; height:40px; font-size: 1rem;">
+                            {{ substr($comment->user->name, 0, 1) }}
+                        </div>
+                    @endif
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <a href="{{ route('profile.public', $comment->user->username) }}" class="fw-bold text-decoration-none text-white">{{ $comment->user->name }}</a>
+                            <span class="text-muted small ms-2">{{ $comment->created_at->diffForHumans() }}</span>
+                        </div>
+                        @if(auth()->id() === $comment->user_id || auth()->id() === $project->user_id)
+                            <form method="POST" action="{{ route('comments.destroy', $comment->id) }}" onsubmit="return confirm('Delete this comment?');">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-link text-danger p-0" title="Delete Comment">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                    <div class="mt-1 text-white-50" style="white-space: pre-line;">
+                        {{ $comment->body }}
+                    </div>
+                </div>
+            </div>
+        @endforeach
+
+        @if($checkpoint->comments->isEmpty())
+            <p class="text-muted mb-0">No comments yet. Be the first to comment!</p>
+        @endif
+    </div>
+
+    @auth
+        <form method="POST" action="{{ route('projects.checkpoints.comments.store', [$project->slug, $checkpoint->id]) }}">
+            @csrf
+            <div class="mb-3">
+                <textarea name="body" class="form-control bg-transparent text-white" rows="3" placeholder="Leave a comment..." required></textarea>
+                @error('body')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Post Comment</button>
+            </div>
+        </form>
+    @else
+        <div class="alert alert-secondary mt-3 mb-0 text-center">
+            <a href="{{ route('login') }}" class="text-primary text-decoration-none fw-bold">Log in</a> to leave a comment.
+        </div>
+    @endauth
 </div>
 @endsection

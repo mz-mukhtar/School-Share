@@ -27,6 +27,8 @@
 <div class="ss-card" style="max-width: 760px;">
     <form action="{{ route('projects.checkpoints.store', $project->slug) }}" method="POST" enctype="multipart/form-data" id="checkpointForm">
         @csrf
+        
+        <input type="hidden" name="folder_id" value="{{ request('folder') }}">
 
         {{-- Checkpoint title --}}
         <div class="mb-4">

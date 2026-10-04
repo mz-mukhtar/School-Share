@@ -19,14 +19,47 @@
                 @csrf
             </form>
 
-            <form method="post" action="{{ route('profile.update') }}">
+            <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                 @csrf
                 @method('patch')
+
+                <div class="mb-4 text-center">
+                    @if($user->avatar_path)
+                        <img src="{{ Storage::url($user->avatar_path) }}" alt="{{ $user->name }}" class="rounded-circle mb-3 object-fit-cover" width="100" height="100">
+                    @else
+                        <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white fs-1 fw-bold mb-3" style="width: 100px; height: 100px;">
+                            {{ substr($user->name, 0, 1) }}
+                        </div>
+                    @endif
+                    <div>
+                        <label for="avatar" class="btn btn-sm btn-ss-outline">Change Avatar</label>
+                        <input type="file" class="d-none" id="avatar" name="avatar" accept="image/*" onchange="this.form.submit()">
+                        @error('avatar')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
 
                 <div class="mb-3">
                     <label for="name" class="form-label fw-bold">Name</label>
                     <input type="text" class="form-control bg-transparent text-white @error('name') is-invalid @enderror" style="border-color: var(--ss-border);" id="name" name="name" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name">
                     @error('name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-bold">Username</label>
+                    <input type="text" class="form-control bg-transparent text-white @error('username') is-invalid @enderror" style="border-color: var(--ss-border);" id="username" name="username" value="{{ old('username', $user->username) }}" autocomplete="username">
+                    @error('username')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="bio" class="form-label fw-bold">Bio</label>
+                    <textarea class="form-control bg-transparent text-white @error('bio') is-invalid @enderror" style="border-color: var(--ss-border);" id="bio" name="bio" rows="3">{{ old('bio', $user->bio) }}</textarea>
+                    @error('bio')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

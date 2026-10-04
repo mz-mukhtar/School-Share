@@ -9,17 +9,17 @@ class ProjectFile extends Model
 {
     protected $fillable = [
         'project_id',
-        'checkpoint_id',
+        'folder_id',
+        'latest_version_id',
+        'version_count',
         'original_name',
-        'storage_path',
         'mime_type',
-        'size_bytes',
     ];
 
     protected function casts(): array
     {
         return [
-            'size_bytes' => 'integer',
+            'version_count' => 'integer',
         ];
     }
 
@@ -32,23 +32,37 @@ class ProjectFile extends Model
     }
 
     /**
-     * The checkpoint this file belongs to.
+     * The folder this file belongs to.
      */
-    public function checkpoint(): BelongsTo
+    public function folder(): BelongsTo
     {
-        return $this->belongsTo(Checkpoint::class);
+        return $this->belongsTo(ProjectFolder::class);
     }
 
     /**
-     * Human-readable file size.
+     * All versions of this file.
+     */
+    public function versions()
+    {
+        return $this->hasMany(FileVersion::class);
+    }
+
+    /**
+     * The latest version of this file.
+     */
+    public function latestVersion(): BelongsTo
+    {
+        return $this->belongsTo(FileVersion::class, 'latest_version_id');
+    }
+
+    /**
+     * Human-readable file size of the latest version.
      */
     public function sizeHuman(): string
     {
-        $bytes = $this->size_bytes;
-        if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
-        if ($bytes >= 1048576)    return round($bytes / 1048576, 1) . ' MB';
-        if ($bytes >= 1024)       return round($bytes / 1024, 1) . ' KB';
-        return $bytes . ' B';
+        $version = $this->latestVersion;
+        if (!$version) return '0 B';
+        return $version->sizeHuman();
     }
 
     /**

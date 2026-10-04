@@ -56,13 +56,33 @@ class ProjectController extends Controller
                 \Illuminate\Validation\Rule::unique('projects')->where('user_id', $request->user()->id)
             ],
             'description' => ['nullable', 'string', 'max:1000'],
-            'subject_tag' => ['nullable', 'string', 'max:100'],
+            'tags' => ['nullable', 'string', 'max:255'],
             'visibility'  => ['required', 'in:public,private'],
         ], [
             'name.unique' => 'You already have a project with this name.',
         ]);
 
-        $project = $request->user()->projects()->create($validated);
+        $project = $request->user()->projects()->create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'visibility' => $validated['visibility'],
+        ]);
+
+        if (!empty($validated['tags'])) {
+            $tagNames = array_map('trim', explode(',', $validated['tags']));
+            $tagNames = array_filter($tagNames);
+            $tagNames = array_unique($tagNames);
+            
+            foreach ($tagNames as $tagName) {
+                if (strlen($tagName) > 0 && strlen($tagName) <= 100) {
+                    $project->tags()->create(['tag' => $tagName]);
+                }
+            }
+        }
+
+        \App\Models\Activity::log('project_created', $request->user(), $project, [
+            'visibility' => $project->visibility,
+        ]);
 
         return redirect()->route('projects.show', $project->slug)
             ->with('success', 'Project created successfully!');
@@ -71,17 +91,45 @@ class ProjectController extends Controller
     /**
      * Display the specified project (the Repository).
      */
-    public function show(Project $project)
+    public function show(Request $request, Project $project)
     {
         // Access control
         if ($project->visibility === 'private' && auth()->id() !== $project->user_id) {
             abort(403, 'This project is private.');
         }
 
-        $latestCheckpoint = $project->latestCheckpoint()->with('files')->first();
-        $checkpoints = $project->checkpoints()->withCount('files')->limit(5)->get();
+        $latestCheckpoint = $project->latestCheckpoint;
+        $checkpoints = $project->checkpoints()->limit(5)->get();
 
-        return view('projects.show', compact('project', 'latestCheckpoint', 'checkpoints'));
+        // Folder navigation
+        $currentFolderId = $request->query('folder');
+        $currentFolder = null;
+        $breadcrumbs = [];
+
+        if ($currentFolderId) {
+            $currentFolder = $project->folders()->findOrFail($currentFolderId);
+            $breadcrumbs = $currentFolder->breadcrumbs();
+        }
+
+        $folders = $project->folders()->where('parent_id', $currentFolderId)->get();
+        $files = $project->files()->where('folder_id', $currentFolderId)->with('latestVersion')->get();
+
+        $readmeHtml = null;
+        $readmeFile = $files->first(function ($f) {
+            return strtolower($f->original_name) === 'readme.md';
+        });
+
+        if ($readmeFile && $readmeFile->latestVersion) {
+            $path = \Illuminate\Support\Facades\Storage::disk('local')->path($readmeFile->latestVersion->storage_path);
+            if (file_exists($path)) {
+                $markdown = file_get_contents($path);
+                $readmeHtml = Str::markdown($markdown);
+            }
+        }
+
+        $allFolders = $project->folders()->get();
+
+        return view('projects.show', compact('project', 'latestCheckpoint', 'checkpoints', 'currentFolder', 'breadcrumbs', 'folders', 'files', 'readmeHtml', 'allFolders'));
     }
 
     /**
@@ -113,7 +161,7 @@ class ProjectController extends Controller
                 \Illuminate\Validation\Rule::unique('projects')->where('user_id', $request->user()->id)->ignore($project->id)
             ],
             'description' => ['nullable', 'string', 'max:1000'],
-            'subject_tag' => ['nullable', 'string', 'max:100'],
+            'tags' => ['nullable', 'string', 'max:255'],
             'visibility'  => ['required', 'in:public,private'],
         ], [
             'name.unique' => 'You already have a project with this name.',
@@ -122,7 +170,25 @@ class ProjectController extends Controller
         // If name changes, we could update the slug, but it breaks old URLs. 
         // For simplicity, we keep the original slug.
 
-        $project->update($validated);
+        $project->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'visibility' => $validated['visibility'],
+        ]);
+
+        // Process tags
+        $project->tags()->delete(); // Clear old tags
+        if (!empty($validated['tags'])) {
+            $tagNames = array_map('trim', explode(',', $validated['tags']));
+            $tagNames = array_filter($tagNames);
+            $tagNames = array_unique($tagNames);
+            
+            foreach ($tagNames as $tagName) {
+                if (strlen($tagName) > 0 && strlen($tagName) <= 100) {
+                    $project->tags()->create(['tag' => $tagName]);
+                }
+            }
+        }
 
         return redirect()->route('projects.edit', $project->slug)
             ->with('success', 'Project settings updated!');
@@ -141,5 +207,32 @@ class ProjectController extends Controller
 
         return redirect()->route('projects.index')
             ->with('success', 'Project deleted successfully.');
+    }
+
+    /**
+     * Toggle the star status for the authenticated user.
+     */
+    public function toggleStar(Project $project)
+    {
+        $user = auth()->user();
+        
+        $hasStarred = $user->starredProjects()->where('project_id', $project->id)->exists();
+
+        if ($hasStarred) {
+            $user->starredProjects()->detach($project->id);
+            $project->decrement('star_count');
+            $status = 'unstarred';
+        } else {
+            $user->starredProjects()->attach($project->id);
+            $project->increment('star_count');
+            $status = 'starred';
+            
+            \App\Models\Activity::log('project_starred', $user, $project);
+        }
+
+        return response()->json([
+            'status' => $status,
+            'star_count' => $project->star_count,
+        ]);
     }
 }

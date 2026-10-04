@@ -58,8 +58,8 @@
                     <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top" style="border-color: var(--ss-border) !important;">
                         <div class="d-flex gap-3 text-muted small">
                             <span title="Last updated"><i class="bi bi-clock me-1"></i>{{ $project->updated_at->diffForHumans() }}</span>
-                            @if($project->subject_tag)
-                                <span><i class="bi bi-tag me-1"></i>{{ $project->subject_tag }}</span>
+                            @if($project->tags->isNotEmpty())
+                                <span><i class="bi bi-tags me-1"></i>{{ $project->tags->pluck('tag')->implode(', ') }}</span>
                             @endif
                         </div>
                         <div class="text-muted small">

@@ -34,20 +34,12 @@
         </div>
 
         <div class="mb-4">
-            <label for="subject_tag" class="form-label fw-bold">Subject Tag <span class="text-muted fw-normal">(Optional)</span></label>
-            <input type="text" list="subject_tags" class="form-control bg-transparent text-white @error('subject_tag') is-invalid @enderror" style="border-color: var(--ss-border);" id="subject_tag" name="subject_tag" value="{{ old('subject_tag') }}" placeholder="e.g., Science">
-            <datalist id="subject_tags">
-                <option value="Mathematics">
-                <option value="Science">
-                <option value="History">
-                <option value="Language Arts">
-                <option value="Computer Science">
-                <option value="Art & Design">
-            </datalist>
-            @error('subject_tag')
+            <label for="tags" class="form-label fw-bold">Tags <span class="text-muted fw-normal">(Optional)</span></label>
+            <input type="text" class="form-control bg-transparent text-white @error('tags') is-invalid @enderror" style="border-color: var(--ss-border);" id="tags" name="tags" value="{{ old('tags') }}" placeholder="e.g., Science, Biology, Final">
+            @error('tags')
                 <div class="invalid-feedback">{{ $message }}</div>
             @else
-                <div class="form-text text-muted">Select from the list or type your own custom tag.</div>
+                <div class="form-text text-muted">Separate multiple tags with commas.</div>
             @enderror
         </div>
 
