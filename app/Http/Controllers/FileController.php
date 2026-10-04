@@ -68,7 +68,11 @@ class FileController extends Controller
 
         foreach ($file->versions as $version) {
             $size = $version->size_bytes;
-            Storage::disk('local')->delete($version->storage_path);
+            
+            $pathCount = \App\Models\FileVersion::where('storage_path', $version->storage_path)->count();
+            if ($pathCount <= 1) {
+                Storage::disk('local')->delete($version->storage_path);
+            }
             
             // Reclaim quota
             $user->decrement('storage_used_bytes', min($size, $user->storage_used_bytes));

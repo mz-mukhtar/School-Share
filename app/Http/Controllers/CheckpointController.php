@@ -159,7 +159,10 @@ class CheckpointController extends Controller
 
             // Delete stored files from disk
             foreach ($checkpoint->fileVersions as $version) {
-                Storage::disk('local')->delete($version->storage_path);
+                $pathCount = \App\Models\FileVersion::where('storage_path', $version->storage_path)->count();
+                if ($pathCount <= 1) {
+                    Storage::disk('local')->delete($version->storage_path);
+                }
                 
                 $file = $version->projectFile;
                 if ($file && $file->version_count <= 1) {
@@ -187,6 +190,59 @@ class CheckpointController extends Controller
 
         return redirect()->route('projects.show', $project->slug)
             ->with('success', 'Checkpoint deleted.');
+    }
+
+    /**
+     * Restore the project to a previous checkpoint.
+     */
+    public function restore(Project $project, Checkpoint $checkpoint)
+    {
+        $this->authorizeOwner($project);
+        abort_if($checkpoint->project_id !== $project->id, 404);
+
+        DB::transaction(function () use ($project, $checkpoint) {
+            $user = auth()->user();
+
+            $newCheckpoint = $project->checkpoints()->create([
+                'user_id' => $user->id,
+                'title' => 'Restored: ' . $checkpoint->title,
+                'message' => 'Restored to checkpoint from ' . $checkpoint->created_at->format('M d, Y H:i'),
+                'total_size_bytes' => 0, // No new data uploaded
+            ]);
+
+            $files = $project->files;
+            
+            foreach ($files as $file) {
+                $versionAtCheckpoint = $file->versions()
+                    ->where('checkpoint_id', '<=', $checkpoint->id)
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($versionAtCheckpoint) {
+                    $newVersion = $file->versions()->create([
+                        'checkpoint_id' => $newCheckpoint->id,
+                        'storage_path'  => $versionAtCheckpoint->storage_path,
+                        'size_bytes'    => $versionAtCheckpoint->size_bytes,
+                        'mime_type'     => $versionAtCheckpoint->mime_type,
+                    ]);
+
+                    $file->latest_version_id = $newVersion->id;
+                    $file->version_count += 1;
+                    $file->save();
+                } else {
+                    $file->latest_version_id = null;
+                    $file->save();
+                }
+            }
+            
+            \App\Models\Activity::log('checkpoint_restored', $user, $newCheckpoint, [
+                'project_name' => $project->name,
+                'project_slug' => $project->slug,
+            ]);
+        });
+
+        return redirect()->route('projects.show', $project->slug)
+            ->with('success', 'Project restored to checkpoint: ' . $checkpoint->title);
     }
 
     // -------------------------------------------------------------------------

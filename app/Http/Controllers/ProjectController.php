@@ -115,7 +115,7 @@ class ProjectController extends Controller
         }
 
         $folders = $project->folders()->where('parent_id', $currentFolderId)->get();
-        $files = $project->files()->where('folder_id', $currentFolderId)->with('latestVersion')->get();
+        $files = $project->files()->where('folder_id', $currentFolderId)->whereNotNull('latest_version_id')->with('latestVersion')->get();
 
         $readmeHtml = null;
         $readmeFile = $files->first(function ($f) {

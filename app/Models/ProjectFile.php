@@ -87,6 +87,16 @@ class ProjectFile extends Model
             'text/plain', 'text/html', 'text/css', 'text/javascript',
             'application/json', 'text/markdown', 'text/csv',
             'application/x-sh', 'text/x-python',
+            // Video / Audio
+            'video/mp4', 'video/webm', 'video/ogg',
+            'audio/mpeg', 'audio/wav', 'audio/ogg',
+            // Office
+            'application/msword', 
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         ];
 
         return in_array($this->mime_type, $previewable);
@@ -115,6 +125,29 @@ class ProjectFile extends Model
     {
         return str_starts_with($this->mime_type ?? '', 'text/')
             || in_array($this->mime_type, ['application/json', 'application/x-sh', 'text/x-python']);
+    }
+
+    public function isVideo(): bool
+    {
+        return str_starts_with($this->mime_type ?? '', 'video/');
+    }
+
+    public function isAudio(): bool
+    {
+        return str_starts_with($this->mime_type ?? '', 'audio/');
+    }
+
+    public function isOffice(): bool
+    {
+        $officeMimes = [
+            'application/msword', 
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        ];
+        return in_array($this->mime_type, $officeMimes);
     }
 
     /**

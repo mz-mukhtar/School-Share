@@ -30,13 +30,22 @@
         </div>
 
         @if(auth()->id() === $project->user_id)
-            <form method="POST" action="{{ route('projects.checkpoints.destroy', [$project->slug, $checkpoint->id]) }}"
-                  onsubmit="return confirm('Delete this checkpoint and all its files?');">
-                @csrf @method('DELETE')
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-trash me-1"></i> Delete Checkpoint
-                </button>
-            </form>
+            <div class="d-flex gap-2">
+                <form method="POST" action="{{ route('projects.checkpoints.restore', [$project->slug, $checkpoint->id]) }}"
+                      onsubmit="return confirm('Restore project to this checkpoint? All files will revert to their state at this time.');">
+                    @csrf
+                    <button type="submit" class="btn btn-ss-primary btn-sm">
+                        <i class="bi bi-clock-history me-1"></i> Restore Checkpoint
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('projects.checkpoints.destroy', [$project->slug, $checkpoint->id]) }}"
+                      onsubmit="return confirm('Delete this checkpoint and all its files?');">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash me-1"></i> Delete Checkpoint
+                    </button>
+                </form>
+            </div>
         @endif
     </div>
 </div>

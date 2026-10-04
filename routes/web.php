@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/checkpoints/create',            [App\Http\Controllers\CheckpointController::class, 'create'] )->name('checkpoints.create');
         Route::post('/checkpoints',                  [App\Http\Controllers\CheckpointController::class, 'store']  )->name('checkpoints.store');
         Route::get('/checkpoints/{checkpoint}',      [App\Http\Controllers\CheckpointController::class, 'show']   )->name('checkpoints.show');
+        Route::post('/checkpoints/{checkpoint}/restore', [App\Http\Controllers\CheckpointController::class, 'restore'])->name('checkpoints.restore');
         Route::delete('/checkpoints/{checkpoint}',   [App\Http\Controllers\CheckpointController::class, 'destroy'])->name('checkpoints.destroy');
         Route::post('/checkpoints/{checkpoint}/comments', [App\Http\Controllers\CommentController::class, 'store'])->name('checkpoints.comments.store');
         Route::delete('/comments/{comment}',         [App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy');

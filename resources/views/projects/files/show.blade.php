@@ -53,16 +53,141 @@
 <div class="ss-card">
     @if($file->isImage())
         {{-- Image preview --}}
-        <div class="text-center">
+        <div class="text-center" style="cursor: zoom-in;" data-bs-toggle="modal" data-bs-target="#imageModal">
             <img src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
                  alt="{{ $file->original_name }}"
                  class="img-fluid rounded"
                  style="max-height:80vh;">
         </div>
 
+        {{-- Image Modal --}}
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+                <div class="modal-content bg-transparent border-0">
+                    <div class="modal-header border-0 pb-0">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center d-flex align-items-center justify-content-center p-0" data-bs-dismiss="modal" style="cursor: zoom-out;">
+                        <img src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
+                             class="img-fluid" style="max-height:95vh;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
     @elseif($file->isPdf())
         {{-- PDF preview --}}
-        <iframe src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
+        <div id="pdf-viewer" class="bg-light p-3 rounded text-center overflow-auto" style="height: 750px;">
+            <div id="pdf-loading" class="text-dark py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2">Loading PDF...</div>
+            </div>
+            <canvas id="pdf-canvas" class="shadow-sm mx-auto d-none" style="max-width: 100%;"></canvas>
+            <div id="pdf-controls" class="mt-3 d-none gap-2 justify-content-center">
+                <button class="btn btn-outline-dark btn-sm" id="pdf-prev"><i class="bi bi-chevron-left"></i></button>
+                <span class="text-dark align-self-center mx-2">Page <span id="pdf-page-num">1</span> of <span id="pdf-page-count">1</span></span>
+                <button class="btn btn-outline-dark btn-sm" id="pdf-next"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        </div>
+
+        @push('scripts')
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <script>
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            
+            const url = "{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}";
+            let pdfDoc = null,
+                pageNum = 1,
+                pageRendering = false,
+                pageNumPending = null,
+                canvas = document.getElementById('pdf-canvas'),
+                ctx = canvas.getContext('2d');
+
+            function renderPage(num) {
+                pageRendering = true;
+                pdfDoc.getPage(num).then(function(page) {
+                    var viewport = page.getViewport({scale: 1.5});
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    var renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+                    var renderTask = page.render(renderContext);
+
+                    renderTask.promise.then(function() {
+                        pageRendering = false;
+                        if (pageNumPending !== null) {
+                            renderPage(pageNumPending);
+                            pageNumPending = null;
+                        }
+                    });
+                });
+
+                document.getElementById('pdf-page-num').textContent = num;
+            }
+
+            function queueRenderPage(num) {
+                if (pageRendering) {
+                    pageNumPending = num;
+                } else {
+                    renderPage(num);
+                }
+            }
+
+            function onPrevPage() {
+                if (pageNum <= 1) return;
+                pageNum--;
+                queueRenderPage(pageNum);
+            }
+
+            function onNextPage() {
+                if (pageNum >= pdfDoc.numPages) return;
+                pageNum++;
+                queueRenderPage(pageNum);
+            }
+
+            document.getElementById('pdf-prev').addEventListener('click', onPrevPage);
+            document.getElementById('pdf-next').addEventListener('click', onNextPage);
+
+            pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                document.getElementById('pdf-loading').classList.add('d-none');
+                canvas.classList.remove('d-none');
+                document.getElementById('pdf-controls').classList.remove('d-none');
+                document.getElementById('pdf-controls').classList.add('d-flex');
+                document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
+                
+                renderPage(pageNum);
+            }).catch(function(error) {
+                document.getElementById('pdf-loading').innerHTML = '<div class="text-danger"><i class="bi bi-exclamation-triangle fs-1"></i><p class="mt-2">Failed to load PDF</p></div>';
+            });
+        </script>
+        @endpush
+
+    @elseif($file->isVideo())
+        <div class="text-center bg-black rounded p-3">
+            <video controls class="w-100" style="max-height: 70vh;">
+                <source src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}" type="{{ $file->mime_type }}">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        
+    @elseif($file->isAudio())
+        <div class="text-center bg-dark rounded p-5">
+            <i class="bi bi-music-note-beamed text-light d-block mb-4" style="font-size: 4rem;"></i>
+            <audio controls class="w-100">
+                <source src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}" type="{{ $file->mime_type }}">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+
+    @elseif($file->isOffice())
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> This file is being rendered via Google Docs Viewer. Note that the project must be public for Google to access it.
+        </div>
+        <iframe src="https://docs.google.com/viewer?url={{ urlencode(route('projects.files.download', [$project->slug, $file->id])) }}%3Fversion_id%3D{{ $version->id }}&embedded=true"
                 width="100%" height="750"
                 style="border:none;border-radius:8px;background:#fff;">
         </iframe>
