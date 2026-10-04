@@ -89,10 +89,11 @@
 - [x] `app/Http/Middleware/AddBrandingHeaders.php` → X-Powered-By header
 - [x] Auth pages: login, register, forgot-password — styled with Bootstrap 5
 - [x] `resources/views/dashboard.blade.php` → empty dashboard placeholder
-- [ ] Enable PHP OPcache settings
-- [ ] `app/Providers/AppServiceProvider.php` → boot-time license check (Layer 3)
+- [x] Enable PHP OPcache settings
+- [x] `app/Providers/AppServiceProvider.php` → boot-time license check (Layer 3)
+- [x] Verify user email with OTP before account access
 
-**Status**: 🟡 Nearly Completed (License check pending)
+**Status**: ✅ Completed
 
 ---
 
@@ -196,10 +197,10 @@
 - [x] Invite form
 - [x] Activity feed (feed route and FeedController)
 - [x] Project access middleware logic
-- [ ] Laravel Mail → send invite notification email
+- [x] Laravel Mail → send invite notification email
 - [ ] In-app notifications
 
-**Status**: 🟡 Partial (Core functional, emails pending)
+**Status**: 🟡 Partial (Core functional, emails working)
 
 ---
 
@@ -210,7 +211,7 @@
 - [x] Private Profile with storage limits
 - [x] Enforced storage limits based on configuration
 - [ ] `app/Console/Commands/RecalculateStorage.php`
-- [ ] Pricing page (Free / Pro / White-label)
+- [x] Pricing page (Free / Pro / White-label)
 - [ ] License key validation
 - [ ] Admin panel
 - [ ] Stripe integration

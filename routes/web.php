@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public pages ─────────────────────────────────────────────────────────────
@@ -48,12 +49,17 @@ Route::get('/u/{username}/following', [App\Http\Controllers\PublicProfileControl
 
 // ── Authenticated pages ───────────────────────────────────────────────────────
 
-// Dashboard
+// Dashboard — requires login AND verified email
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'otp.verified'])
     ->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'otp.verified'])->group(function () {
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::get('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
     // Feed
     Route::get('/feed', [FeedController::class, 'index'])->name('feed');

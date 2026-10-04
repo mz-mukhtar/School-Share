@@ -126,6 +126,13 @@ class CheckpointController extends Controller
             ]);
         });
 
+        // Notify all collaborators (except the uploader)
+        $collaborators = $project->collaborators()->where('user_id', '!=', $user->id)->get();
+        \Illuminate\Support\Facades\Notification::send(
+            $collaborators,
+            new \App\Notifications\NewCheckpointNotification($project, $user, $request->input('title'))
+        );
+
         return redirect()->route('projects.show', $project->slug)
             ->with('success', 'Checkpoint created successfully!');
     }

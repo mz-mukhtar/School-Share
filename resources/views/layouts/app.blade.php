@@ -264,6 +264,21 @@
     </form>
 
     <div class="ms-auto d-flex align-items-center gap-2">
+        {{-- Notifications Bell --}}
+        @auth
+        <a href="{{ route('notifications.index') }}" class="btn btn-sm position-relative d-flex align-items-center justify-content-center" style="color:var(--ss-text-muted); width:36px; height:36px; background:var(--ss-dark-3); border-radius:8px; border:1px solid var(--ss-border);">
+            <i class="bi bi-bell"></i>
+            @php
+                $unreadCount = auth()->user()->unreadNotifications()->count();
+            @endphp
+            @if($unreadCount > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                    {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                </span>
+            @endif
+        </a>
+        @endauth
+
         {{-- New Project button --}}
         @auth
         <a href="{{ route('projects.create') }}" class="btn btn-ss-primary btn-sm d-none d-md-inline-flex align-items-center gap-1">

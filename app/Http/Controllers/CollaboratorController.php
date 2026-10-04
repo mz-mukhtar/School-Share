@@ -27,11 +27,19 @@ class CollaboratorController extends Controller
             return back()->with('error', 'You cannot add yourself as a collaborator.');
         }
 
-        $project->collaborators()->syncWithoutDetaching([
+        $sync = $project->collaborators()->syncWithoutDetaching([
             $user->id => ['role' => $request->input('role')]
         ]);
 
-        return back()->with('success', 'Collaborator added.');
+        // Send email and database notification if they were freshly added
+        if (!empty($sync['attached'])) {
+            \Illuminate\Support\Facades\Mail::to($user->email)
+                ->send(new \App\Mail\ProjectInvitationMail($project, auth()->user(), $user));
+
+            $user->notify(new \App\Notifications\ProjectInvitationNotification($project, auth()->user()));
+        }
+
+        return back()->with('success', 'Collaborator added & invitation sent.');
     }
 
     public function update(Request $request, Project $project, User $collaborator)
