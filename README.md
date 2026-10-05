@@ -4,9 +4,9 @@ SchoolShare is a server-rendered Laravel application for student projects. It
 organises files into projects, records checkpoint-based file versions, supports
 private collaboration, and provides browser previews for selected file types.
 
-The [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) preserves the
-pre-remediation baseline; consult this document and the changelog for current
-behavior.
+The [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) records the current
+assessment, remediation status, remaining release risks, and a short baseline
+comparison; consult it and the changelog for current behavior.
 
 ## Current capabilities
 
