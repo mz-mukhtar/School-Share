@@ -4,6 +4,11 @@ Date: 5 October 2026
 Baseline commit: `c6bf19b`  
 Scope: application code, routes, models, migrations, views, configuration, dependencies, tests, documentation, and an isolated browser workflow.
 
+> Historical baseline: this review records evidence from commit `c6bf19b`.
+> Its individual findings are intentionally preserved and are not a statement
+> of the current implementation. Follow-up remediation is recorded in
+> `CHANGELOG.md` and the current operational documents.
+
 ## Assessment
 
 SchoolShare has a coherent product idea, an appropriate Laravel foundation, and a usable interface. Registration, OTP verification, uploads, text editing, invitations, and basic access checks work in the tested scenarios. However, this version is not ready to be considered finished or production-ready. There are reproduced security defects, a failing deployment migration, and failures in the features that define the product: checkpoint viewing, diffing, historical recovery, and collaboration management.

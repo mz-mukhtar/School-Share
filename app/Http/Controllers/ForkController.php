@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CheckpointSnapshotService;
 use App\Models\Activity;
 use App\Models\Project;
 use App\Models\ProjectFork;
@@ -17,7 +18,7 @@ class ForkController extends Controller
     /**
      * Fork a project to the current user's account.
      */
-    public function store(Request $request, Project $project, StorageLifecycle $storage): RedirectResponse
+    public function store(Request $request, Project $project, StorageLifecycle $storage, CheckpointSnapshotService $snapshots): RedirectResponse
     {
         if ($project->visibility === 'private' && auth()->id() !== $project->user_id) {
             abort(403, 'This project is private.');
@@ -44,7 +45,7 @@ class ForkController extends Controller
                 ->with('info', 'You already forked this project.');
         }
 
-        $forkedProject = $storage->run(function (StorageLifecycle $storage) use ($project, $user) {
+        $forkedProject = $storage->run(function (StorageLifecycle $storage) use ($project, $user, $snapshots) {
             abort_unless($user->fresh()->canCreateProject(), 422, 'Your project limit has been reached.');
             $existingFork = ProjectFork::where('original_project_id', $project->id)->whereHas('fork', fn ($query) => $query->where('user_id', $user->id))->first();
             if ($existingFork) {
@@ -71,7 +72,7 @@ class ForkController extends Controller
                 }
             }
 
-            return DB::transaction(function () use ($project, $user, $allFiles, $copied, $totalBytes, $deadline) {
+            return DB::transaction(function () use ($project, $user, $allFiles, $copied, $totalBytes, $deadline, $snapshots) {
 
                 // 1. Create the new Project
                 // Ensure unique slug
@@ -160,6 +161,7 @@ class ForkController extends Controller
                 }
 
                 $checkpoint->update(['total_size_bytes' => $totalBytes]);
+                $snapshots->capture($checkpoint);
 
                 // 6. Log Activity
                 Activity::log('project_created', $user, $forkedProject, [

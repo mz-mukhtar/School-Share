@@ -37,9 +37,9 @@ these current access rules:
 | Viewer collaborator | Yes | Yes | No |
 | Editor collaborator | Yes | Yes | Yes |
 
-Only the owner manages collaborators. Folder creation is owner-only in the
-current controller, even though editors can upload/edit files. That mismatch is
-an explicit product-policy limitation, not an implied role contract.
+Only the owner manages collaborators and project settings. Owners and editor
+collaborators can create folders, upload, edit, restore, and delete files or
+checkpoints; viewers cannot make project-content changes.
 
 Nested checkpoint, file, folder, comment, and collaborator routes use scoped
 binding beneath the project. Folder IDs supplied to upload/move operations are
@@ -54,8 +54,9 @@ validated against that project.
 | `project_collaborators` | Project-user membership with `editor` or `viewer` role |
 | `project_folders` | Project-scoped parent/child folders |
 | `project_files` | Logical current file identity, current version pointer, folder |
-| `file_versions` | A version's storage path, size, project-file, and checkpoint reference |
-| `checkpoints` | Project event with title/message and reported upload size |
+| `file_versions` | Immutable storage path, size, MIME type, sequence, file, and checkpoint reference |
+| `checkpoints` | Project event with title/message, reported upload size, and snapshot manifest |
+| `checkpoint_*_snapshots` | Immutable file names/types/folder paths captured for a checkpoint |
 | `stored_blobs` | One private-disk object, its billing owner, and byte charge |
 | `activities` | Polymorphic activity records filtered by current project access |
 | `comments`, `follows`, `starred_projects`, `project_forks` | Social/project features |
@@ -85,15 +86,12 @@ It is not a distributed lock or object-storage coordination scheme.
 
 ### Restore and deletion
 
-Restore creates new `file_versions` referencing retained blobs; it does not
-copy bytes or add a new storage charge. A blob is charged once to its billing
-owner and released only after its last live file-version reference is gone and
-private-disk deletion succeeds.
-
-This is retention/billing behavior, not a complete immutable snapshot model.
-Current restore operates on surviving logical files and cannot reconstruct a
-historical tree after destructive rename/move/delete operations. Treat
-checkpoints as version events with the limitations documented in the review.
+Restore rebuilds the recorded folder tree and logical files from immutable
+checkpoint manifests. It creates new `file_versions` referencing retained
+blobs; it does not copy bytes or add a storage charge. Deleted logical files
+are soft-deleted while history references remain. A blob is released only when
+no file-version or snapshot reference remains and private-disk deletion
+succeeds. Checkpoints created before manifest support fail safely on restore.
 
 ### Reconciliation and cleanup
 
@@ -137,11 +135,9 @@ promise is therefore not implemented.
 
 ## Known architectural limits
 
-- The existing versioning migration has not passed a clean/populated
-  MySQL/MariaDB release test.
-- Project slugs are unique only per owner while routes bind them globally.
-- Plan keys and storage-limit configuration are inconsistent.
-- History is not an immutable snapshot manifest.
-- Group 4 OTP and Group 5 dependency maintenance remain open.
+- A clean and populated MySQL/MariaDB deployment test is still required for the
+  chosen production engine.
+- Group 4 OTP hardening and Group 5 frontend dependency maintenance remain
+  open.
 
 See the review for evidence, remediation status, and deployment restrictions.

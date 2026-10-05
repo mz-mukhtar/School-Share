@@ -57,8 +57,8 @@ to 100 MiB per file and 200 MiB per upload batch; proxy and PHP limits must not
 be smaller than the intended request size.
 
 `SCHOOLSHARE_MAX_STORAGE_GB` in `.env.example` is not the authoritative
-per-account plan quota today. Plan-key and quota-policy reconciliation remain
-open work; do not advertise a plan limit solely from that environment value.
+per-account quota. Canonical per-plan limits are in `schoolshare.plans`; change
+those values deliberately and keep product pricing copy aligned.
 
 ## Installation sequence after the database release gate closes
 

@@ -37,6 +37,13 @@ class StorageLifecycleSecurityTest extends TestCase
 
         $this->delete(route('projects.files.destroy', [$project, $file]))->assertRedirect();
 
+        $this->assertSoftDeleted('project_files', ['id' => $file->id]);
+        $this->assertSame(5, $user->refresh()->storage_used_bytes);
+        Storage::disk('local')->assertExists($path);
+
+        $restored = $project->checkpoints()->where('id', '!=', $checkpoint->id)->firstOrFail();
+        $this->delete(route('projects.checkpoints.destroy', [$project, $restored]))->assertRedirect();
+
         $this->assertSame(0, $user->refresh()->storage_used_bytes);
         Storage::disk('local')->assertMissing($path);
         $this->assertDatabaseCount('stored_blobs', 0);
@@ -52,8 +59,13 @@ class StorageLifecycleSecurityTest extends TestCase
 
         $this->actingAs($editor)->delete(route('projects.files.destroy', [$project, $file]))->assertRedirect();
 
-        $this->assertSame(0, $owner->refresh()->storage_used_bytes);
+        $this->assertSoftDeleted('project_files', ['id' => $file->id]);
+        $this->assertSame(5, $owner->refresh()->storage_used_bytes);
         $this->assertSame(20, $editor->refresh()->storage_used_bytes);
+
+        $this->actingAs($owner)->delete(route('projects.checkpoints.destroy', [$project, $file->latestVersion->checkpoint]))->assertRedirect();
+
+        $this->assertSame(0, $owner->refresh()->storage_used_bytes);
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
@@ -77,10 +89,17 @@ class StorageLifecycleSecurityTest extends TestCase
         };
         $this->actingAs($owner)->delete($url, ['password' => 'password'])->assertRedirect();
 
-        $this->assertModelMissing($file);
-        $this->assertSame(0, $editor->refresh()->storage_used_bytes);
-        $this->assertDatabaseCount('stored_blobs', 0);
-        $this->assertSame([], Storage::disk('local')->allFiles());
+        if ($target === 'folder') {
+            $this->assertSoftDeleted('project_files', ['id' => $file->id]);
+            $this->assertGreaterThan(0, $editor->refresh()->storage_used_bytes);
+            $this->assertGreaterThan(0, StoredBlob::count());
+            $this->assertNotSame([], Storage::disk('local')->allFiles());
+        } else {
+            $this->assertModelMissing($file);
+            $this->assertSame(0, $editor->refresh()->storage_used_bytes);
+            $this->assertDatabaseCount('stored_blobs', 0);
+            $this->assertSame([], Storage::disk('local')->allFiles());
+        }
         if ($target === 'account') {
             $this->assertModelMissing($owner);
             $this->assertGuest();
@@ -142,11 +161,13 @@ class StorageLifecycleSecurityTest extends TestCase
 
         $this->delete(route('projects.files.destroy', [$project, $file]))->assertRedirect();
 
-        $this->assertModelMissing($file);
+        $this->assertSoftDeleted('project_files', ['id' => $file->id]);
         $this->assertSame(5, $user->refresh()->storage_used_bytes);
         $this->assertDatabaseCount('stored_blobs', 1);
         $disk->assertExists($path);
         $failDelete = false;
+
+        $this->delete(route('projects.checkpoints.destroy', [$project, $file->latestVersion->checkpoint]))->assertRedirect();
 
         $this->artisan('schoolshare:recalculate-storage --cleanup')->assertSuccessful();
 

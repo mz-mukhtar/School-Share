@@ -175,6 +175,7 @@ class ResourceBoundsSecurityTest extends TestCase
             config(['schoolshare.operations.max_diff_lines' => 2]);
         } else {
             $file->update(['mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+            $version->update(['mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
         }
 
         $this->actingAs($user)->getJson(route('projects.files.diff', [$project, $file, 'from' => $version->id, 'to' => $version->id]))->assertUnprocessable();
@@ -289,7 +290,7 @@ class ResourceBoundsSecurityTest extends TestCase
         $file = $project->files()->create(['original_name' => $name, 'mime_type' => 'text/plain', 'version_count' => 1]);
         $path = 'fixtures/'.$file->id;
         Storage::disk('local')->put($path, $content);
-        $version = $file->versions()->create(['checkpoint_id' => $checkpoint->id, 'storage_path' => $path, 'size_bytes' => strlen($content), 'version_number' => 1]);
+        $version = $file->versions()->create(['checkpoint_id' => $checkpoint->id, 'storage_path' => $path, 'size_bytes' => strlen($content), 'mime_type' => 'text/plain', 'version_number' => 1]);
         $file->update(['latest_version_id' => $version->id]);
 
         return $file->refresh();

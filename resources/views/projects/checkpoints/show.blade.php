@@ -15,7 +15,7 @@
                 <h1 class="h3 fw-bold mb-0">{{ $checkpoint->title }}</h1>
             </div>
             <div class="text-muted small">
-                <i class="bi bi-person me-1"></i>{{ $checkpoint->author->name }}
+                <i class="bi bi-person me-1"></i>{{ $checkpoint->author?->name ?? 'Deleted account' }}
                 &middot;
                 <i class="bi bi-calendar me-1"></i>{{ $checkpoint->created_at->format('M d, Y H:i') }}
                 ({{ $checkpoint->created_at->diffForHumans() }})
@@ -54,10 +54,11 @@
 <div class="ss-card">
     <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
         <i class="bi bi-folder2-open text-primary"></i>
-        Files ({{ $checkpoint->fileVersions->count() }})
+        Files ({{ $checkpoint->fileSnapshots->isNotEmpty() ? $checkpoint->fileSnapshots->count() : $checkpoint->fileVersions->count() }})
     </h5>
 
-    @if($checkpoint->fileVersions->isEmpty())
+    @php($entries = $checkpoint->fileSnapshots->isNotEmpty() ? $checkpoint->fileSnapshots : $checkpoint->fileVersions)
+    @if($entries->isEmpty())
         <div class="text-center text-muted py-4">No files in this checkpoint.</div>
     @else
         <div class="table-responsive">
@@ -72,24 +73,28 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($checkpoint->fileVersions as $version)
-                        @php $file = $version->projectFile; @endphp
+                    @foreach($entries as $entry)
+                        @php($snapshot = $entry instanceof \App\Models\CheckpointFileSnapshot ? $entry : null)
+                        @php($version = $snapshot?->fileVersion ?? $entry)
+                        @php($file = $snapshot?->projectFile ?? $version?->projectFile)
+                        @php($fileName = $snapshot?->original_name ?? $file?->original_name)
+                        @php($mimeType = $snapshot?->mime_type ?? $version?->mime_type ?? $file?->mime_type)
                         @if($file)
                         <tr style="border-color:var(--ss-border);">
                             <td class="ps-0 align-middle text-center">
-                                <i class="bi {{ $file->iconClass($version->mime_type) }} fs-5"></i>
+                                <i class="bi {{ $file->iconClass($mimeType) }} fs-5"></i>
                             </td>
                             <td class="align-middle">
                                 <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
                                    class="text-decoration-none text-white fw-medium">
-                                    {{ $file->original_name }}
+                                    {{ $fileName }}
                                 </a>
                             </td>
-                            <td class="align-middle text-end text-muted small">{{ strtoupper($file->extension()) }}</td>
+                            <td class="align-middle text-end text-muted small">{{ strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) }}</td>
                             <td class="align-middle text-end text-muted small">{{ $version->sizeHuman() }}</td>
                             <td class="align-middle text-end pe-0">
                                 <div class="d-flex gap-2 justify-content-end">
-                                    @if($file->isPreviewable($version->mime_type))
+                                    @if($file->isPreviewable($mimeType))
                                         <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
                                            class="btn btn-ss-outline btn-sm" title="Preview">
                                             <i class="bi bi-eye me-1"></i>Preview
@@ -101,7 +106,7 @@
                                     </a>
                                     @if($project->canEdit(auth()->user()))
                                         <form method="POST" action="{{ route('projects.files.destroy', [$project->slug, $file->id]) }}"
-                                              onsubmit="return confirm('Delete {{ addslashes($file->original_name) }}?');">
+                                              onsubmit="return confirm('Delete {{ addslashes($fileName) }}?');">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
                                                 <i class="bi bi-trash"></i>

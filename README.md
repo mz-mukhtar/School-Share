@@ -4,7 +4,9 @@ SchoolShare is a server-rendered Laravel application for student projects. It
 organises files into projects, records checkpoint-based file versions, supports
 private collaboration, and provides browser previews for selected file types.
 
-This repository is actively being remediated. Read the [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) before treating a feature as production-ready.
+The [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) preserves the
+pre-remediation baseline; consult this document and the changelog for current
+behavior.
 
 ## Current capabilities
 
@@ -17,8 +19,9 @@ This repository is actively being remediated. Read the [repository review](docs/
 - Edit bounded text/code files in the browser; an edit creates another version.
 - Compare bounded text/code versions. Office-document diffing is intentionally
   unavailable in the request process.
-- Restore current logical files to a previous checkpoint and collaborate as an
-  owner, editor, or viewer.
+- Restore the complete recorded file/folder tree of a checkpoint, including
+  files later renamed, moved, or deleted; collaborate as an owner, editor, or
+  viewer.
 - Follow users, browse public projects after OTP verification, and use the
   authenticated activity feed.
 
@@ -26,9 +29,9 @@ This repository is actively being remediated. Read the [repository review](docs/
 
 - A project ZIP contains current file versions only. There is no historical
   checkpoint ZIP endpoint.
-- Checkpoint restore does not yet reconstruct a complete historical folder/file
-  snapshot after a file has been renamed, moved, or deleted. Do not use it as
-  your sole recovery mechanism.
+- Snapshot manifests are created for new checkpoints. A legacy checkpoint made
+  before the manifest migration cannot be restored safely and returns a clear
+  error rather than partially changing the project.
 - Office preview depends on Google Docs Viewer fetching the application's file
   URL. Authenticated/private files cannot be fetched by Google; download those
   files instead.
@@ -49,7 +52,7 @@ or PHP 8.1 instructions from older releases.
 | PHP | 8.4.1+ for the current lock file |
 | Composer | 2.x |
 | Database for local development/testing | SQLite is covered by the test suite |
-| Production MySQL/MariaDB | Not yet supported for a clean deployment: the versioning migration requires repair and an upgrade test on the chosen engine |
+| Production MySQL/MariaDB | Migration code is portable by design, but a clean and populated deployment test on the chosen engine is still required before release |
 | Private uploads | `storage/app/private` on the `local` disk |
 | Public assets | `storage/app/public` for public assets such as avatars; `storage:link` exposes that disk only |
 | Required PHP extensions | At least `mbstring`, `fileinfo`, and `zip`; enable the extensions required by your chosen database/PHP build |
@@ -92,9 +95,9 @@ php artisan test --compact tests/Feature/ProjectPreviewSecurityTest.php \
 node tests/JavaScript/PdfPreview.test.mjs
 ```
 
-The wider suite has two pre-existing failures documented in the review: a
-registration redirect expectation and a factory fixture with an unset storage
-counter. They must be fixed rather than accepted as a production pass.
+The full PHP suite currently passes. The historical baseline failures documented
+in the review were fixed: registration now enters OTP verification and user
+defaults include the storage counter.
 
 ## Storage and recovery
 

@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\CheckpointFileSnapshot;
+use App\Models\CheckpointFolderSnapshot;
 use App\Models\Project;
+use App\Models\ProjectFile;
+use App\Models\User;
 use App\StorageLifecycle;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -75,7 +79,7 @@ class ProjectController extends Controller
         ]);
 
         $project = DB::transaction(function () use ($request, $validated): Project {
-            $owner = \App\Models\User::query()->lockForUpdate()->findOrFail($request->user()->id);
+            $owner = User::query()->lockForUpdate()->findOrFail($request->user()->id);
             if (! $owner->canCreateProject()) {
                 abort(409, 'You have reached the maximum number of projects for your plan.');
             }
@@ -118,7 +122,10 @@ class ProjectController extends Controller
         }
 
         $latestCheckpoint = $project->latestCheckpoint;
-        $checkpoints = $project->checkpoints()->withCount('fileVersions as files_count')->limit(5)->get();
+        $checkpoints = $project->checkpoints()->withCount([
+            'fileSnapshots as snapshot_files_count',
+            'fileVersions as legacy_files_count',
+        ])->limit(5)->get();
 
         // Folder navigation
         $currentFolderId = $request->query('folder');
@@ -231,7 +238,17 @@ class ProjectController extends Controller
 
         $storage->run(function (StorageLifecycle $storage) use ($project) {
             abort_if($project->hasForeignFolderReferences(), 409, 'Repair invalid folder references first.');
-            $storage->deleteFiles($project->files()->with('versions')->get(), fn () => $project->delete());
+            $files = ProjectFile::withTrashed()->where('project_id', $project->id)->with('versions')->get();
+            $storage->deleteFiles($files, function () use ($project): void {
+                CheckpointFileSnapshot::query()
+                    ->whereHas('checkpoint', fn ($query) => $query->where('project_id', $project->id))
+                    ->delete();
+                CheckpointFolderSnapshot::query()
+                    ->whereHas('checkpoint', fn ($query) => $query->where('project_id', $project->id))
+                    ->delete();
+
+                $project->delete();
+            });
         });
 
         return redirect()->route('projects.index')

@@ -23,6 +23,15 @@ only when a release is actually cut.
 - Hardened ZIP paths and rejected unsafe legacy archive entries.
 - Restricted synchronous diffs to bounded text/code input; Office diffing is
   unavailable pending an isolated processing design.
+- Repaired the versioning migration conversion path and added canonical global
+  project slugs, plan limits, collaborator limits, immutable version MIME data,
+  and root-level uniqueness constraints.
+- Added checkpoint snapshot manifests and recoverable logical-file deletion so
+  restore reproduces a prior folder tree after rename, move, or deletion.
+- Preserved foreign-project checkpoint history when a contributor account is
+  deleted, with anonymized attribution.
+- Wired upgrade routes/state transitions and retryable delivery status; a
+  collaborator invitation can be resent after a delivery failure.
 
 ### Documentation
 
@@ -33,10 +42,9 @@ only when a release is actually cut.
 
 ### Known release blockers
 
-- The MySQL/MariaDB versioning migration chain still needs a clean and populated
-  production-engine repair/test.
+- A clean and populated MySQL/MariaDB deployment test is still required on the
+  chosen production engine.
 - OTP hardening and frontend dependency maintenance remain open security work.
-- Full historical checkpoint-tree restore is not implemented.
 
 ## 0.1.0 — 2026-10-04
 

@@ -212,7 +212,7 @@ class ProjectBoundaryTest extends TestCase
 
         $this->assertModelMissing($folder);
         $this->assertModelMissing($child);
-        $this->assertModelMissing($file);
+        $this->assertSoftDeleted('project_files', ['id' => $file->id]);
         $this->assertModelExists($foreign);
     }
 

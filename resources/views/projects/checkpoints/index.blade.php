@@ -50,11 +50,12 @@
                                 <span class="badge ms-1" style="background:rgba(6,182,212,0.15);color:#67e8f9;font-size:0.65rem;">Latest</span>
                             @endif
                             <div class="text-muted small mt-1">
-                                <i class="bi bi-person me-1"></i>{{ $cp->author->name }}
+                                <i class="bi bi-person me-1"></i>{{ $cp->author?->name ?? 'Deleted account' }}
                                 &middot;
                                 <i class="bi bi-clock me-1"></i>{{ $cp->created_at->diffForHumans() }}
                                 &middot;
-                                <i class="bi bi-file-earmark me-1"></i>{{ $cp->files_count }} {{ Str::plural('file', $cp->files_count) }}
+                                @php($filesCount = $cp->snapshot_files_count ?: $cp->legacy_files_count)
+                                <i class="bi bi-file-earmark me-1"></i>{{ $filesCount }} {{ Str::plural('file', $filesCount) }}
                                 &middot;
                                 {{ $cp->totalSizeHuman() }}
                             </div>

@@ -65,9 +65,8 @@ are scoped to that project.
 | POST | `/projects/{project}/star` | Toggle star; current access required |
 | POST | `/projects/{project}/fork` | Fork public project; `throttle:forks` |
 
-The current route identity is globally resolved by slug. Slugs are only created
-as owner-scoped unique values, so duplicate-owner slug behavior remains a known
-product defect; do not build an external integration on that identity.
+Project slugs are globally unique, which matches route binding. Colliding names
+receive a numeric slug suffix during creation.
 
 ## Nested project routes
 
@@ -76,16 +75,16 @@ product defect; do not build an external integration on that identity.
 | GET | `/projects/{project}/checkpoints` | Checkpoint list |
 | GET/POST | `/projects/{project}/checkpoints/create`, `/projects/{project}/checkpoints` | Upload form/create; `throttle:uploads` |
 | GET | `/projects/{project}/checkpoints/{checkpoint}` | Checkpoint detail |
-| POST | `/projects/{project}/checkpoints/{checkpoint}/restore` | Restore surviving logical files; `throttle:uploads` |
-| DELETE | `/projects/{project}/checkpoints/{checkpoint}` | Delete checkpoint/version references |
+| POST | `/projects/{project}/checkpoints/{checkpoint}/restore` | Restore that checkpoint's recorded file/folder snapshot; `throttle:uploads` |
+| DELETE | `/projects/{project}/checkpoints/{checkpoint}` | Delete checkpoint/version and snapshot references |
 | POST | `/projects/{project}/checkpoints/{checkpoint}/comments` | Create comment |
 | DELETE | `/projects/{project}/comments/{comment}` | Delete permitted comment |
 | GET | `/projects/{project}/files/{file}` | File viewer; `throttle:file-views` |
 | GET | `/projects/{project}/files/{file}/download` | Download selected/current version; `throttle:downloads` |
 | GET | `/projects/{project}/files/{file}/diff?from={version}&to={version}` | Bounded text/code diff; `throttle:diffs` |
 | PUT | `/projects/{project}/files/{file}` | Rename/move or save bounded text content; `throttle:editor` |
-| DELETE | `/projects/{project}/files/{file}` | Delete logical file/version references |
-| POST | `/projects/{project}/folders` | Create folder (owner-only) |
+| DELETE | `/projects/{project}/files/{file}` | Soft-delete a logical file while retained history still references it |
+| POST | `/projects/{project}/folders` | Create folder (owner or editor) |
 | DELETE | `/projects/{project}/folders/{folder}` | Delete folder subtree |
 | GET | `/projects/{project}/download-zip` | Download current project ZIP; `throttle:downloads` |
 | POST | `/projects/{project}/collaborators` | Add collaborator by username and role |

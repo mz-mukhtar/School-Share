@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CheckpointFileSnapshot extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'checkpoint_id',
         'project_file_id',

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\ArchivePath;
+use App\CheckpointSnapshotService;
 use App\Models\Project;
 use App\Models\ProjectFile;
 use App\StorageLifecycle;
@@ -73,7 +74,7 @@ class FileController extends Controller
         }
         abort_if($file->project_id !== $project->id, 404);
 
-        $storage->run(fn (StorageLifecycle $storage) => $storage->deleteFiles([$file], fn () => $file->delete()));
+        $storage->run(fn () => $file->delete());
 
         return back()->with('success', 'File deleted.');
     }
@@ -123,7 +124,7 @@ class FileController extends Controller
         return view('projects.files.diff', compact('project', 'file', 'from', 'to', 'htmlDiff'));
     }
 
-    public function update(Request $request, Project $project, ProjectFile $file, StorageLifecycle $storage): JsonResponse|RedirectResponse
+    public function update(Request $request, Project $project, ProjectFile $file, StorageLifecycle $storage, CheckpointSnapshotService $snapshots): JsonResponse|RedirectResponse
     {
         if (! $project->canEdit(auth()->user())) {
             abort(403);
@@ -149,11 +150,11 @@ class FileController extends Controller
             $size = strlen($content);
 
             abort_if($size > config('schoolshare.operations.max_editor_bytes'), 413, 'The editor content is too large.');
-            $storage->run(function (StorageLifecycle $storage) use ($project, $file, $user, $size, $content) {
+            $storage->run(function (StorageLifecycle $storage) use ($project, $file, $user, $size, $content, $snapshots) {
                 $storage->checkQuota($user, $size);
                 $storage->checkProjectCapacity($project, 1);
                 $blob = $storage->create($user, $project, $size, fn (string $path) => Storage::disk('local')->put($path, $content));
-                DB::transaction(function () use ($project, $file, $user, $size, $blob) {
+                DB::transaction(function () use ($project, $file, $user, $size, $blob, $snapshots) {
                     $file->refresh();
                     $checkpoint = $project->checkpoints()->create([
                         'user_id' => $user->id,
@@ -173,6 +174,7 @@ class FileController extends Controller
                     $file->latest_version_id = $version->id;
                     $file->version_count += 1;
                     $file->save();
+                    $snapshots->capture($checkpoint);
 
                 });
             });
@@ -180,10 +182,10 @@ class FileController extends Controller
             return response()->json(['success' => true]);
         }
 
-        $folderId = $request->input('folder_id');
-        $newName = $request->input('original_name');
+        if ($request->has('original_name') || $request->has('folder_id')) {
+            $folderId = $request->has('folder_id') ? $request->input('folder_id') : $file->folder_id;
+            $newName = $request->input('original_name', $file->original_name);
 
-        if ($newName) {
             // Check for duplicate name in the target folder
             $existing = ProjectFile::where('project_id', $project->id)
                 ->where('folder_id', $folderId)

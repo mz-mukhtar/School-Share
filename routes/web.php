@@ -14,8 +14,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PublicProfileController;
-use App\Http\Controllers\ZipController;
 use App\Http\Controllers\UpgradeController;
+use App\Http\Controllers\ZipController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public pages ─────────────────────────────────────────────────────────────
@@ -107,9 +107,9 @@ Route::middleware(['auth', 'otp.verified'])->group(function () {
         Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 
         // Files (nested under projects, not checkpoints — for easy access by file ID)
-        Route::get('/files/{file}', [FileController::class, 'show'])->middleware('throttle:file-views')->name('files.show');
-        Route::get('/files/{file}/download', [FileController::class, 'download'])->middleware('throttle:downloads')->name('files.download');
-        Route::get('/files/{file}/diff', [FileController::class, 'diff'])->middleware('throttle:diffs')->name('files.diff');
+        Route::get('/files/{file}', [FileController::class, 'show'])->withTrashed()->middleware('throttle:file-views')->name('files.show');
+        Route::get('/files/{file}/download', [FileController::class, 'download'])->withTrashed()->middleware('throttle:downloads')->name('files.download');
+        Route::get('/files/{file}/diff', [FileController::class, 'diff'])->withTrashed()->middleware('throttle:diffs')->name('files.diff');
         Route::put('/files/{file}', [FileController::class, 'update'])->middleware('throttle:editor')->name('files.update');
         Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
         // Folders

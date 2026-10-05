@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Checkpoint;
+use App\Models\CheckpointFileSnapshot;
+use App\Models\CheckpointFolderSnapshot;
 use App\Models\FileVersion;
 use App\Models\Project;
 use App\Models\ProjectFile;
@@ -82,8 +85,25 @@ class ProfileController extends Controller
                 $blob = $storage->adopt($path);
                 abort_if($blob->billing_user_id === $user->id, 409, 'You still own stored files in other projects. Have their owners remove those files before deleting your account.');
             }
-            $files = ProjectFile::whereHas('project', fn ($query) => $query->where('user_id', $user->id))->with('versions')->get();
-            $storage->deleteFiles($files, fn () => $user->delete());
+
+            Checkpoint::query()
+                ->where('user_id', $user->id)
+                ->whereHas('project', fn ($query) => $query->where('user_id', '!=', $user->id))
+                ->update(['user_id' => null]);
+
+            $files = ProjectFile::withTrashed()->whereHas('project', fn ($query) => $query->where('user_id', $user->id))->with('versions')->get();
+            $storage->deleteFiles($files, function () use ($user): void {
+                $ownedProjectIds = $user->projects()->select('id');
+
+                CheckpointFileSnapshot::query()
+                    ->whereHas('checkpoint', fn ($query) => $query->whereIn('project_id', $ownedProjectIds))
+                    ->delete();
+                CheckpointFolderSnapshot::query()
+                    ->whereHas('checkpoint', fn ($query) => $query->whereIn('project_id', $ownedProjectIds))
+                    ->delete();
+
+                $user->delete();
+            });
         });
         if ($user->avatar_path && ! Storage::disk('public')->delete($user->avatar_path)) {
             report(new \RuntimeException('Deleted account avatar cleanup failed.'));

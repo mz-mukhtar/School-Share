@@ -45,11 +45,12 @@ affected version and reachability details.
 
 ## Known limitations and release status
 
-SchoolShare is not currently approved for a fresh production MySQL/MariaDB
-deployment: the versioning migration chain still requires repair and production
-engine tests. Group 4 OTP hardening and Group 5 frontend dependency maintenance
-are open. The current local-disk lifecycle lock is single-host only. Checkpoint
-restore is not yet a complete historical snapshot/recovery system.
+The migration chain has been repaired and is covered on SQLite; a clean and
+populated test on the selected production MySQL/MariaDB engine remains a
+release gate. Group 4 OTP hardening and Group 5 frontend dependency maintenance
+are open. The local-disk lifecycle lock is single-host only. New checkpoints
+have complete snapshot manifests; legacy checkpoints without a manifest are not
+restored.
 
 See [docs/REPOSITORY_REVIEW_2026-10-05.md](docs/REPOSITORY_REVIEW_2026-10-05.md)
 for verified findings, fixed groups, outstanding work, and deployment limits.

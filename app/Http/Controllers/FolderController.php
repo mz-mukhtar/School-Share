@@ -8,6 +8,7 @@ use App\Models\ProjectFolder;
 use App\StorageLifecycle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class FolderController extends Controller
@@ -60,8 +61,8 @@ class FolderController extends Controller
                 $ids = array_merge($ids, $frontier);
                 abort_if(count($ids) > config('schoolshare.operations.max_project_entries'), 413, 'Too many folders to delete synchronously.');
             }
-            $files = $project->files()->whereIn('folder_id', $ids)->with('versions')->get();
-            $storage->deleteFiles($files, function () use ($project, $ids, $files) {
+            $files = $project->files()->whereIn('folder_id', $ids)->get();
+            DB::transaction(function () use ($project, $ids, $files) {
                 foreach ($files as $file) {
                     $file->delete();
                 }

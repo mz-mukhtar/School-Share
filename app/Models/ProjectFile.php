@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectFile extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
+
     protected $fillable = [
         'project_id',
         'folder_id',
@@ -71,7 +73,10 @@ class ProjectFile extends Model
     public function sizeHuman(): string
     {
         $version = $this->latestVersion;
-        if (!$version) return '0 B';
+        if (! $version) {
+            return '0 B';
+        }
+
         return $version->sizeHuman();
     }
 
@@ -101,7 +106,7 @@ class ProjectFile extends Model
             'video/mp4', 'video/webm', 'video/ogg',
             'audio/mpeg', 'audio/wav', 'audio/ogg',
             // Office
-            'application/msword', 
+            'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -152,13 +157,14 @@ class ProjectFile extends Model
     public function isOffice(?string $mimeType = null): bool
     {
         $officeMimes = [
-            'application/msword', 
+            'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-powerpoint',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         ];
+
         return in_array($mimeType ?? $this->mime_type, $officeMimes, true);
     }
 
@@ -167,11 +173,18 @@ class ProjectFile extends Model
      */
     public function iconClass(?string $mimeType = null): string
     {
-        if ($this->isImage($mimeType)) return 'bi-file-image text-success';
-        if ($this->isPdf($mimeType)) return 'bi-file-pdf text-danger';
-        if ($this->isText($mimeType)) return 'bi-file-text text-info';
+        if ($this->isImage($mimeType)) {
+            return 'bi-file-image text-success';
+        }
+        if ($this->isPdf($mimeType)) {
+            return 'bi-file-pdf text-danger';
+        }
+        if ($this->isText($mimeType)) {
+            return 'bi-file-text text-info';
+        }
         $ext = $this->extension();
-        return match($ext) {
+
+        return match ($ext) {
             'doc', 'docx' => 'bi-file-word text-primary',
             'xls', 'xlsx' => 'bi-file-excel text-success',
             'ppt', 'pptx' => 'bi-file-ppt text-warning',

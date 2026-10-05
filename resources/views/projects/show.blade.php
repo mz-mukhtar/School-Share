@@ -33,10 +33,12 @@
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
-            @if(auth()->id() === $project->user_id)
+            @if($project->canEdit(auth()->user()))
                 <a href="{{ route('projects.checkpoints.create', $project->slug) }}" class="btn btn-ss-primary d-flex align-items-center gap-2">
                     <i class="bi bi-cloud-upload"></i> New Checkpoint
                 </a>
+            @endif
+            @if(auth()->id() === $project->user_id)
                 <a href="{{ route('projects.edit', $project->slug) }}" class="btn btn-ss-outline d-flex align-items-center gap-1">
                     <i class="bi bi-gear"></i> Settings
                 </a>
@@ -103,7 +105,7 @@
                 </nav>
             </div>
             <div class="d-flex gap-2">
-                @if(auth()->id() === $project->user_id)
+                @if($project->canEdit(auth()->user()))
                     <button class="btn btn-ss-outline btn-sm" data-bs-toggle="modal" data-bs-target="#newFolderModal">
                         <i class="bi bi-folder-plus"></i> New Folder
                     </button>
@@ -156,7 +158,7 @@
                                 </td>
                                 <td class="align-middle text-end text-muted small">-</td>
                                 <td class="align-middle text-end pe-0">
-                                    @if(auth()->id() === $project->user_id)
+                                    @if($project->canEdit(auth()->user()))
                                         <form method="POST" action="{{ route('projects.folders.destroy', [$project->slug, $folder->id]) }}" class="d-inline" onsubmit="return confirm('Delete this folder and ALL its contents?');">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-link btn-sm p-0 text-danger" title="Delete Folder">
@@ -192,7 +194,7 @@
                                            class="btn btn-link btn-sm p-0 text-muted" title="Download">
                                             <i class="bi bi-download"></i>
                                         </a>
-                                        @if(auth()->id() === $project->user_id)
+                                        @if($project->canEdit(auth()->user()))
                                             <button type="button" 
                                                     class="btn btn-link btn-sm p-0 text-muted edit-file-btn" 
                                                     title="Rename / Move"
@@ -263,12 +265,13 @@
                                     <span class="badge ms-1" style="background:rgba(6,182,212,0.15);color:#67e8f9;font-size:0.65rem;">Latest</span>
                                 @endif
                                 <div class="text-muted small mt-1">
-                                    {{ $cp->files_count }} {{ Str::plural('file', $cp->files_count) }}
+                                    @php($filesCount = $cp->snapshot_files_count ?: $cp->legacy_files_count)
+                                    {{ $filesCount }} {{ Str::plural('file', $filesCount) }}
                                     &middot; {{ $cp->totalSizeHuman() }}
                                     &middot; {{ $cp->created_at->diffForHumans() }}
                                 </div>
                             </div>
-                            @if(auth()->id() === $project->user_id)
+                            @if($project->canEdit(auth()->user()))
                                 <form method="POST" action="{{ route('projects.checkpoints.destroy', [$project->slug, $cp->id]) }}"
                                       onsubmit="return confirm('Delete this checkpoint and all its files?');">
                                     @csrf @method('DELETE')
@@ -287,7 +290,7 @@
         </div>
     </div>
 
-@if(auth()->id() === $project->user_id)
+@if($project->canEdit(auth()->user()))
     {{-- New Folder Modal --}}
     <div class="modal fade" id="newFolderModal" tabindex="-1">
         <div class="modal-dialog">
@@ -320,7 +323,7 @@
 @endif
 
 <!-- Edit File Modal -->
-@if(auth()->id() === $project->user_id)
+@if($project->canEdit(auth()->user()))
 <div class="modal fade" id="editFileModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content" style="background:var(--ss-dark-2); border-color:var(--ss-border);">
