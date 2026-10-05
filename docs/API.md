@@ -1,220 +1,120 @@
-# API Reference — SchoolShare Internal Routes
+# SchoolShare web-route reference
 
-> This document describes all HTTP routes in SchoolShare.
-> These are server-rendered web routes (not a public REST API).
-> All routes require authentication unless marked **[public]**.
+SchoolShare has server-rendered web routes, not a public REST API. State-changing
+browser requests use Laravel's session/CSRF model and normally redirect with
+session messages. JSON is returned only when a request explicitly expects it or
+an endpoint is designed that way (for example, browser text editing).
 
----
+All project-management routes require an authenticated, OTP-verified account
+unless noted otherwise. `{project}` resolves by project slug; nested resources
+are scoped to that project.
 
-## Authentication Routes
+## Public routes
 
-| Method | URL | Description |
-|---|---|---|
-| GET | `/` | Landing page **[public]** |
-| GET | `/about` | About page **[public]** |
-| GET | `/pricing` | Pricing page **[public]** |
-| GET | `/sitemap.xml` | XML sitemap **[public]** |
-| GET | `/register` | Registration form **[public]** |
-| POST | `/register` | Submit registration **[public]** |
-| GET | `/login` | Login form **[public]** |
-| POST | `/login` | Submit login **[public]** |
-| POST | `/logout` | Logout |
-| GET | `/forgot-password` | Password reset form **[public]** |
-| POST | `/forgot-password` | Send reset email **[public]** |
-| GET | `/reset-password/{token}` | Reset password form **[public]** |
-| POST | `/reset-password` | Submit new password **[public]** |
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/` | Landing page; authenticated users are redirected to dashboard |
+| GET | `/about`, `/pricing`, `/guide`, `/terms` | Static pages |
+| GET | `/sitemap.xml` | Sitemap |
+| GET | `/u/{username}` | Public profile |
+| GET | `/u/{username}/followers` | Public follower list |
+| GET | `/u/{username}/following` | Public following list |
+| GET/POST | `/register`, `/login` | Guest registration/login |
+| GET/POST | `/forgot-password` | Guest password-reset request |
+| GET | `/reset-password/{token}` | Password-reset form |
+| POST | `/reset-password` | Set reset password |
 
----
+## Authenticated verification/account routes
 
-## Dashboard
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET/POST | `/otp/verify` | Display/submit the custom OTP verification form |
+| POST | `/otp/resend` | Resend OTP; `throttle:6,1` |
+| GET | `/verify-email` | Framework email-verification notice |
+| GET | `/verify-email/{id}/{hash}` | Signed framework verification link |
+| POST | `/email/verification-notification` | Framework verification resend |
+| GET/POST | `/confirm-password` | Password confirmation |
+| PUT | `/password` | Update password |
+| POST | `/logout` | Log out |
 
-| Method | URL | Description |
-|---|---|---|
-| GET | `/dashboard` | User dashboard (my projects) |
+## OTP-verified user routes
 
----
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/dashboard` | Dashboard |
+| GET | `/feed` | Authenticated activity feed |
+| GET | `/explore` | Browse/search public projects; not a guest route |
+| POST | `/users/{user}/follow` | Toggle follow |
+| GET | `/notifications` | List notifications |
+| POST | `/notifications/mark-all-read` | Mark notifications read |
+| GET | `/notifications/{id}/read` | Mark one notification read |
+| GET | `/profile` | Profile form |
+| PATCH | `/profile` | Update profile |
+| DELETE | `/profile` | Delete account after password confirmation |
 
-## Projects
+## Project routes
 
-| Method | URL | Description |
-|---|---|---|
-| GET | `/projects` | List my projects |
-| GET | `/projects/create` | New project form |
-| POST | `/projects` | Create a project |
-| GET | `/projects/{slug}` | Project page (files, checkpoints) |
-| GET | `/projects/{slug}/edit` | Edit project settings |
-| PUT | `/projects/{slug}` | Update project settings |
-| DELETE | `/projects/{slug}` | Delete project |
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/projects` | List owned projects |
+| GET/POST | `/projects/create`, `/projects` | Project form/create |
+| GET | `/projects/{project}` | Project tree, checkpoint list, README rendering |
+| GET | `/projects/{project}/edit` | Owner settings form |
+| PUT/PATCH | `/projects/{project}` | Update owner settings |
+| DELETE | `/projects/{project}` | Delete project and its ledger-backed file data |
+| POST | `/projects/{project}/star` | Toggle star; current access required |
+| POST | `/projects/{project}/fork` | Fork public project; `throttle:forks` |
 
-**URL pattern:** `/projects/{owner-slug}/{project-slug}` (future)
-**Current:** `/projects/{project-slug}` (single-user owner)
+The current route identity is globally resolved by slug. Slugs are only created
+as owner-scoped unique values, so duplicate-owner slug behavior remains a known
+product defect; do not build an external integration on that identity.
 
----
+## Nested project routes
 
-## Explore (Public Projects)
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/projects/{project}/checkpoints` | Checkpoint list |
+| GET/POST | `/projects/{project}/checkpoints/create`, `/projects/{project}/checkpoints` | Upload form/create; `throttle:uploads` |
+| GET | `/projects/{project}/checkpoints/{checkpoint}` | Checkpoint detail |
+| POST | `/projects/{project}/checkpoints/{checkpoint}/restore` | Restore surviving logical files; `throttle:uploads` |
+| DELETE | `/projects/{project}/checkpoints/{checkpoint}` | Delete checkpoint/version references |
+| POST | `/projects/{project}/checkpoints/{checkpoint}/comments` | Create comment |
+| DELETE | `/projects/{project}/comments/{comment}` | Delete permitted comment |
+| GET | `/projects/{project}/files/{file}` | File viewer; `throttle:file-views` |
+| GET | `/projects/{project}/files/{file}/download` | Download selected/current version; `throttle:downloads` |
+| GET | `/projects/{project}/files/{file}/diff?from={version}&to={version}` | Bounded text/code diff; `throttle:diffs` |
+| PUT | `/projects/{project}/files/{file}` | Rename/move or save bounded text content; `throttle:editor` |
+| DELETE | `/projects/{project}/files/{file}` | Delete logical file/version references |
+| POST | `/projects/{project}/folders` | Create folder (owner-only) |
+| DELETE | `/projects/{project}/folders/{folder}` | Delete folder subtree |
+| GET | `/projects/{project}/download-zip` | Download current project ZIP; `throttle:downloads` |
+| POST | `/projects/{project}/collaborators` | Add collaborator by username and role |
+| PUT | `/projects/{project}/collaborators/{collaborator}` | Change role |
+| DELETE | `/projects/{project}/collaborators/{collaborator}` | Remove collaborator |
 
-| Method | URL | Description |
-|---|---|---|
-| GET | `/explore` | Browse public projects **[public]** |
-| GET | `/explore?q=math` | Search public projects **[public]** |
+There is no historical checkpoint ZIP route, raw-file endpoint, standalone
+file-editor endpoint, project activity endpoint, license-activation route, or
+public API endpoint in this repository.
 
----
+## Administration
 
-## Checkpoints (Version Control)
+All routes below require `auth`, `otp.verified`, and `is_admin`:
 
-| Method | URL | Description |
-|---|---|---|
-| GET | `/projects/{slug}/history` | Checkpoint history/timeline |
-| GET | `/projects/{slug}/checkpoints/{id}` | View a single checkpoint |
-| POST | `/projects/{slug}/checkpoints` | Create a new checkpoint (file upload) |
-| POST | `/projects/{slug}/checkpoints/{id}/restore` | Restore a checkpoint |
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/admin` | Dashboard |
+| GET | `/admin/users` | User list |
+| GET | `/admin/users/{user}` | User detail |
+| PATCH | `/admin/users/{user}/plan` | Change plan field |
+| GET | `/admin/upgrades` | Upgrade requests |
+| PATCH | `/admin/upgrades/{upgradeRequest}/approve` | Approve request |
+| PATCH | `/admin/upgrades/{upgradeRequest}/reject` | Reject request |
 
----
+## Error and response behavior
 
-## Files — Viewer & Editor
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/files/{id}/view` | View file in browser |
-| GET | `/files/{id}/edit` | Open file in in-browser editor |
-| POST | `/files/save-edit` | Save in-browser edit as new checkpoint |
-| GET | `/files/{id}/raw` | Serve raw file content (for iframes/viewers) |
-
----
-
-## Downloads
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/projects/{slug}/download` | Download latest checkpoint as ZIP |
-| GET | `/checkpoints/{id}/download` | Download specific checkpoint as ZIP |
-| GET | `/files/{id}/download` | Download a single file |
-
----
-
-## Diff View
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/projects/{slug}/diff` | Diff view (compare two checkpoints) |
-| GET | `/projects/{slug}/diff?from={id}&to={id}` | Specific checkpoint comparison |
-
----
-
-## Collaborators
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/projects/{slug}/collaborators` | List collaborators |
-| POST | `/projects/{slug}/collaborators` | Invite collaborator by email |
-| DELETE | `/projects/{slug}/collaborators/{userId}` | Remove collaborator |
-
----
-
-## Activity
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/projects/{slug}/activity` | Project activity feed |
-
----
-
-## Stars
-
-| Method | URL | Description |
-|---|---|---|
-| POST | `/projects/{slug}/star` | Star a project |
-| DELETE | `/projects/{slug}/star` | Unstar a project |
-
----
-
-## Profile
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/profile` | View profile |
-| GET | `/profile/edit` | Edit profile form |
-| PUT | `/profile` | Update profile |
-| DELETE | `/profile` | Delete account |
-| POST | `/profile/avatar` | Upload avatar |
-
----
-
-## License System
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/license` | License activation page |
-| POST | `/license/activate` | Activate a license key |
-| GET | `/branding-required` | Shown for unlicensed self-hosts **[public]** |
-
----
-
-## Admin (Owner Only)
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/admin` | Admin dashboard |
-| GET | `/admin/users` | List all users |
-| GET | `/admin/storage` | Storage usage overview |
-| DELETE | `/admin/users/{id}` | Delete a user |
-
----
-
-## Search
-
-| Method | URL | Description |
-|---|---|---|
-| GET | `/search?q=essay` | Search projects (name, description, tag) |
-
----
-
-## Key HTTP Response Codes
-
-| Code | Meaning in SchoolShare |
-|---|---|
-| 200 | Success |
-| 302 | Redirect (after login, after checkpoint creation, etc.) |
-| 401 | Not logged in → redirect to /login |
-| 403 | No permission to access this project |
-| 404 | Project or file not found |
-| 413 | File too large (100 MB limit) |
-| 422 | Validation error (form submitted with invalid data) |
-| 429 | Too many requests (rate limit hit) |
-| 500 | Server error (check `storage/logs/laravel.log`) |
-
----
-
-## Key Response Headers (All Responses)
-
-```
-X-Powered-By: EthioNext-SchoolShare
-Content-Type: text/html; charset=UTF-8
-```
-
----
-
-## File Download Headers
-
-```
-Content-Type: application/zip
-Content-Disposition: attachment; filename="project-name-checkpoint-2026-10-04.zip"
-Content-Length: {bytes}
-```
-
----
-
-## Future: Public REST API (v2.0)
-
-A public REST API is planned for future versions to support:
-- Mobile app (iOS/Android)
-- Third-party integrations
-- Command-line client (`schoolshare` CLI tool)
-
-The API will use bearer token authentication and return JSON.
-Documentation will be published at `/api/docs` when available.
-
----
-
-*SchoolShare by EthioNext — ethionext.com.et*
-*Developer: Mahi Zeki Mukhtar — mahizeki037@gmail.com*
+Browser routes generally redirect unauthenticated users to login and return
+403/404 for authorization or scoped-binding failures. Validation normally
+returns 302 plus session errors for HTML requests and 422 JSON for JSON
+requests. Bounded storage/export operations can return 409, 413, or 503;
+throttled routes return 429. These are web behavior conventions, not a stable
+machine-consumable API contract.

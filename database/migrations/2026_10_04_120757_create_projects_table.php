@@ -23,8 +23,7 @@ return new class extends Migration
             $table->unsignedInteger('star_count')->default(0);
             $table->timestamps();
 
-            // A user cannot have two projects with the exact same slug
-            $table->unique(['user_id', 'slug']);
+            $table->unique('slug');
             // Index for filtering/searching
             $table->index(['visibility', 'created_at']);
         });

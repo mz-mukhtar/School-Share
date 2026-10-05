@@ -1,247 +1,140 @@
-# SchoolShare — Git for Everyone
+# SchoolShare
 
-<p align="center">
-  <img src="public/images/logo.png" alt="SchoolShare by EthioNext" width="200"/>
-</p>
+SchoolShare is a server-rendered Laravel application for student projects. It
+organises files into projects, records checkpoint-based file versions, supports
+private collaboration, and provides browser previews for selected file types.
 
-<p align="center">
-  <strong>Version control for students, teachers, and creators — no terminal required.</strong><br/>
-  Upload your work. Save checkpoints. Download anywhere. Collaborate with teammates.
-</p>
+This repository is actively being remediated. Read the [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) before treating a feature as production-ready.
 
-<p align="center">
-  <a href="https://schoolshare.ethionext.com.et">🌐 Live App</a> ·
-  <a href="https://github.com/mz-mukhtar/School-Share">📦 GitHub</a> ·
-  <a href="#self-hosting">🖥️ Self-Host</a> ·
-  <a href="LICENSE.md">📄 License</a>
-</p>
+## Current capabilities
 
----
+- Create public or private projects; private projects are visible to their owner
+  and current collaborators.
+- Upload checkpoint files, organise them in folders, view the current project
+  file tree, and download the current project as one ZIP archive.
+- View images, media, PDFs, and bounded text/code files. PDF preview uses
+  PDF.js 6.4.299 with evaluation disabled.
+- Edit bounded text/code files in the browser; an edit creates another version.
+- Compare bounded text/code versions. Office-document diffing is intentionally
+  unavailable in the request process.
+- Restore current logical files to a previous checkpoint and collaborate as an
+  owner, editor, or viewer.
+- Follow users, browse public projects after OTP verification, and use the
+  authenticated activity feed.
 
-## ✨ What is SchoolShare?
+## Important current limits
 
-SchoolShare is a **simplified version control system** inspired by Git, designed for high school students and anyone who needs to track their work — essays, presentations, PDFs, images, code, and more.
+- A project ZIP contains current file versions only. There is no historical
+  checkpoint ZIP endpoint.
+- Checkpoint restore does not yet reconstruct a complete historical folder/file
+  snapshot after a file has been renamed, moved, or deleted. Do not use it as
+  your sole recovery mechanism.
+- Office preview depends on Google Docs Viewer fetching the application's file
+  URL. Authenticated/private files cannot be fetched by Google; download those
+  files instead.
+- Storage accounting, project ZIPs, uploads, restores, forks, and edits are
+  bounded for the current single-host private-local-disk design. See the
+  architecture and deployment guides for operational limits.
+- OTP attempt/resend hardening and JavaScript dependency maintenance remain
+  open security work (Groups 4 and 5 in the review).
 
-No command line. No technical knowledge needed. Just:
+## Runtime requirements
 
-1. **Upload** your files and write a short checkpoint message ("Added chapter 2")
-2. **Access** your work from any device — school computer, home laptop, phone
-3. **Track history** — see every version you've ever saved, and restore any of them
-4. **Collaborate** — invite teammates to your project
+The checked-in lock file currently resolves Laravel 13.34.0 and requires PHP
+8.4.1 or later. Use the locked dependency graph, not the historical Laravel 11
+or PHP 8.1 instructions from older releases.
 
-> SchoolShare is developed and maintained by **EthioNext** (ethionext.com.et)
+| Component | Current requirement/status |
+| --- | --- |
+| PHP | 8.4.1+ for the current lock file |
+| Composer | 2.x |
+| Database for local development/testing | SQLite is covered by the test suite |
+| Production MySQL/MariaDB | Not yet supported for a clean deployment: the versioning migration requires repair and an upgrade test on the chosen engine |
+| Private uploads | `storage/app/private` on the `local` disk |
+| Public assets | `storage/app/public` for public assets such as avatars; `storage:link` exposes that disk only |
+| Required PHP extensions | At least `mbstring`, `fileinfo`, and `zip`; enable the extensions required by your chosen database/PHP build |
 
----
+## Local development
 
-## 🚀 Features
+Use SQLite for the currently verified local path:
 
-| Feature | Description |
-|---|---|
-| 📁 **Projects** | Create a project (like a repository) for any subject |
-| 📤 **Checkpoints** | Upload files + write a message = a saved snapshot |
-| 📥 **Download Anywhere** | Download your current or any past version as a ZIP |
-| 🕒 **Version History** | Visual timeline of all checkpoints |
-| 🔀 **Restore** | Go back to any previous checkpoint instantly |
-| 👁️ **In-Browser Viewer** | View files without downloading (PDFs, images, docs, code) |
-| ✏️ **In-Browser Editor** | Edit text files directly in the browser |
-| 🔍 **Diff View** | See exactly what changed between versions |
-| 👥 **Collaboration** | Invite classmates/teammates to your project |
-| 🔒 **Private Projects** | Keep personal work private |
-| 📊 **Storage Tracker** | See how much of your 3 GB quota you've used |
-| 📂 **Works With Any File** | .docx, .pptx, .pdf, .png, .mp4, .py, .html — everything |
-
----
-
-## 🗂️ Supported File Types
-
-| Type | Extensions | View in Browser |
-|---|---|---|
-| Documents | .docx, .odt, .rtf | ✅ Google Docs Viewer |
-| Presentations | .pptx, .odp | ✅ Google Docs Viewer |
-| Spreadsheets | .xlsx, .ods | ✅ Google Docs Viewer |
-| PDF | .pdf | ✅ PDF.js viewer |
-| Images | .jpg, .png, .gif, .svg, .webp | ✅ Native |
-| Video | .mp4, .webm | ✅ HTML5 player |
-| Audio | .mp3, .wav | ✅ HTML5 player |
-| Code/Text | .txt, .md, .py, .js, .html, .php … | ✅ CodeMirror (editable) |
-| Other | .zip, .exe, etc. | ⬇️ Download to view |
-
----
-
-## 🛠️ Tech Stack
-
-- **Backend**: PHP 8.1+ / Laravel 11
-- **Database**: MySQL 8
-- **File Storage**: Local filesystem
-- **Frontend**: Laravel Blade + Bootstrap 5 + Alpine.js
-- **Code Editor**: CodeMirror 6
-- **PDF Viewer**: PDF.js (Mozilla)
-- **Office Viewer**: Google Docs Viewer
-- **Auth**: Laravel Breeze
-
----
-
-## ⚙️ Requirements
-
-- PHP 8.1 or higher (8.2+ recommended)
-- Composer 2.x
-- MySQL 5.7+ or MariaDB 10.3+
-- PHP extensions: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `fileinfo`, `zip`
-- Web server: Apache (recommended for cPanel) or Nginx
-
----
-
-## 🖥️ Quick Start (Local Development)
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/mz-mukhtar/School-Share.git
-cd School-Share
-
-# 2. Install PHP dependencies
+```sh
 composer install
-
-# 3. Copy environment file
 cp .env.example .env
-
-# 4. Generate application key
 php artisan key:generate
+touch database/database.sqlite
+```
 
-# 5. Configure your database in .env
-# DB_DATABASE=schoolshare
-# DB_USERNAME=your_username
-# DB_PASSWORD=your_password
+Set the following values in `.env`:
 
-# 6. Run database migrations
+```ini
+DB_CONNECTION=sqlite
+DB_DATABASE=/absolute/path/to/School Share/database/database.sqlite
+```
+
+Then run:
+
+```sh
 php artisan migrate
-
-# 7. Create storage symlink
 php artisan storage:link
-
-# 8. Start development server
 php artisan serve
 ```
 
-Visit `http://localhost:8000` — done! ✅
+Run the relevant test file for a change. The Group 1–3 regression suite is:
 
----
-
-## 🖥️ cPanel Deployment (Production)
-
-See the full guide in [SELF_HOSTING.md](SELF_HOSTING.md).
-
-**Quick summary:**
-1. Upload files to your cPanel hosting
-2. Set document root → `public/` folder
-3. Create MySQL database via cPanel MySQL Wizard
-4. Configure `.env` with production values
-5. Run `composer install --no-dev` via SSH/Terminal
-6. Run `php artisan migrate --force`
-7. Set folder permissions: `storage/` and `bootstrap/cache/` → 755
-
----
-
-## 📁 Project Structure
-
-```
-schoolshare/
-├── app/
-│   ├── Http/Controllers/    # Request handling
-│   ├── Http/Middleware/     # Auth, branding, quota checks
-│   ├── Models/              # Eloquent models
-│   └── Services/            # Business logic
-├── database/migrations/     # Database schema
-├── resources/views/         # Blade templates (HTML)
-├── routes/web.php           # All URL routes
-├── storage/app/uploads/     # Student files (auto-created)
-├── config/schoolshare.php   # App configuration
-├── docs/                    # Technical documentation
-└── public/                  # Web root (point server here)
+```sh
+php artisan test --compact tests/Feature/ProjectPreviewSecurityTest.php \
+  tests/Feature/ProjectPrivacyTest.php \
+  tests/Feature/ActivityVisibilityTest.php \
+  tests/Feature/ProjectBoundaryTest.php \
+  tests/Feature/StorageLifecycleSecurityTest.php \
+  tests/Feature/ResourceBoundsSecurityTest.php
+node tests/JavaScript/PdfPreview.test.mjs
 ```
 
----
+The wider suite has two pre-existing failures documented in the review: a
+registration redirect expectation and a factory fixture with an unset storage
+counter. They must be fixed rather than accepted as a production pass.
 
-## 🔐 Limits (Free Plan)
+## Storage and recovery
 
-| Resource | Limit |
-|---|---|
-| Projects | 3 |
-| Storage per user | 3 GB total |
-| Max file size | 100 MB per file |
-| Collaborators per project | 5 |
+New private objects are recorded in a `stored_blobs` ledger with a billing
+owner and byte count. The migration and reconciliation command have not been
+run against a production database or existing uploads.
 
-See [pricing](https://ethionext.com.et/pricing) to upgrade.
+After a coordinated backup and only after the database migration chain is
+proven on the selected production engine, the intended migration sequence is:
 
----
+```sh
+php artisan down
+php artisan migrate --force
+php artisan schoolshare:recalculate-storage
+php artisan up
+```
 
-## 🤝 Contributing
+Do not run `--cleanup` casually: it deletes unreferenced ledger-backed objects
+and expired generated exports. The complete recovery guidance is in
+[SELF_HOSTING.md](SELF_HOSTING.md).
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+## Documentation
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'feat: add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+- [Self-hosting and operations](SELF_HOSTING.md)
+- [Architecture and data model](docs/ARCHITECTURE.md)
+- [Web route reference](docs/API.md)
+- [Security policy](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
+- [Repository review and remediation status](docs/REPOSITORY_REVIEW_2026-10-05.md)
+- [Changelog](CHANGELOG.md)
 
----
+## License
 
-## 🛡️ Security
+The intended source-license terms are in [LICENSE.md](LICENSE.md). The Composer
+package metadata currently says MIT while that license is a restrictive,
+custom SchoolShare Community License. That is a legal/metadata conflict that
+the copyright holder must resolve before distribution; this README does not
+assert either as the controlling license.
 
-Found a security issue? Please **do not** open a public GitHub issue.
-Instead, email: **mahizeki037@gmail.com**
+## Security reports
 
-See [SECURITY.md](SECURITY.md) for our full vulnerability reporting policy.
-
----
-
-## 📄 License
-
-SchoolShare uses a **dual license**:
-
-- **Community Edition**: Free to use, modify, and self-host — EthioNext branding must remain
-- **Commercial / White-Label**: Paid license removes branding requirement
-
-See [LICENSE.md](LICENSE.md) for the full license text.
-
----
-
-## 👤 Developer & Contact
-
-<table>
-  <tr>
-    <td><strong>Developer</strong></td>
-    <td>Mahi Zeki Mukhtar</td>
-  </tr>
-  <tr>
-    <td><strong>Email</strong></td>
-    <td><a href="mailto:mahizeki037@gmail.com">mahizeki037@gmail.com</a></td>
-  </tr>
-  <tr>
-    <td><strong>Phone</strong></td>
-    <td>+251 992 194 042</td>
-  </tr>
-  <tr>
-    <td><strong>Website</strong></td>
-    <td><a href="https://ethionext.com.et">ethionext.com.et</a></td>
-  </tr>
-  <tr>
-    <td><strong>GitHub</strong></td>
-    <td><a href="https://github.com/mz-mukhtar/School-Share">mz-mukhtar/School-Share</a></td>
-  </tr>
-</table>
-
----
-
-## 🌍 About EthioNext
-
-EthioNext is a technology initiative dedicated to building practical software tools for Ethiopian students, schools, and communities.
-
-Visit [ethionext.com.et](https://ethionext.com.et) to learn more.
-
----
-
-<p align="center">
-  Made with ❤️ in Ethiopia by <strong>EthioNext</strong><br/>
-  <a href="https://ethionext.com.et">ethionext.com.et</a>
-</p>
+Do not open a public issue for a vulnerability. See [SECURITY.md](SECURITY.md)
+for the private reporting channel and scope.

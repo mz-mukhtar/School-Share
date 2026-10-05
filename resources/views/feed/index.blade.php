@@ -37,9 +37,9 @@
                         @if($activity->type === 'checkpoint_created')
                             <span class="text-muted">created a checkpoint</span>
                             @if($activity->subject)
-                                <a href="{{ route('projects.checkpoints.show', [$activity->meta['project_slug'] ?? 'unknown', $activity->subject_id]) }}" class="fw-bold text-decoration-none text-info">{{ $activity->subject->title }}</a>
+                                <a href="{{ route('projects.checkpoints.show', [$activity->subject->project->slug, $activity->subject_id]) }}" class="fw-bold text-decoration-none text-info">{{ $activity->subject->title }}</a>
                                 <span class="text-muted">in</span>
-                                <a href="{{ route('projects.show', $activity->meta['project_slug'] ?? 'unknown') }}" class="fw-bold text-decoration-none text-primary">{{ $activity->meta['project_name'] ?? 'project' }}</a>
+                                <a href="{{ route('projects.show', $activity->subject->project->slug) }}" class="fw-bold text-decoration-none text-primary">{{ $activity->subject->project->name }}</a>
                             @else
                                 <span class="text-muted">in a deleted project</span>
                             @endif

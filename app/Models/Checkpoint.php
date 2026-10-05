@@ -47,6 +47,16 @@ class Checkpoint extends Model
         return $this->hasMany(FileVersion::class);
     }
 
+    public function fileSnapshots(): HasMany
+    {
+        return $this->hasMany(CheckpointFileSnapshot::class);
+    }
+
+    public function folderSnapshots(): HasMany
+    {
+        return $this->hasMany(CheckpointFolderSnapshot::class);
+    }
+
     /**
      * Comments made on this checkpoint.
      */

@@ -3,6 +3,7 @@
 @section('title', $file->original_name . ' — ' . $project->name)
 
 @section('content')
+@php($mimeType = $version->mime_type ?? $file->mime_type)
 {{-- Breadcrumb --}}
 <div class="mb-3">
     <nav aria-label="breadcrumb">
@@ -19,14 +20,14 @@
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div class="d-flex align-items-center gap-3">
             <div style="width:48px;height:48px;background:var(--ss-dark-3);border:1px solid var(--ss-border);border-radius:10px;display:flex;align-items:center;justify-content:center;">
-                <i class="bi {{ $file->iconClass() }} fs-3"></i>
+                <i class="bi {{ $file->iconClass($mimeType) }} fs-3"></i>
             </div>
             <div>
                 <h1 class="h4 fw-bold mb-0">{{ $file->original_name }}</h1>
                 <div class="text-muted small mt-1">
                     {{ strtoupper($file->extension()) }} &middot; {{ $file->sizeHuman() }}
-                    @if($file->mime_type)
-                        &middot; {{ $file->mime_type }}
+                    @if($mimeType)
+                        &middot; {{ $mimeType }}
                     @endif
                 </div>
             </div>
@@ -36,7 +37,7 @@
                class="btn btn-ss-primary d-flex align-items-center gap-2">
                 <i class="bi bi-download"></i> Download
             </a>
-            @if(auth()->id() === $project->user_id)
+            @if($project->canEdit(auth()->user()))
                 <form method="POST" action="{{ route('projects.files.destroy', [$project->slug, $file->id]) }}"
                       onsubmit="return confirm('Delete this file?');">
                     @csrf @method('DELETE')
@@ -51,7 +52,7 @@
 
 {{-- Preview area --}}
 <div class="ss-card">
-    @if($file->isImage())
+    @if($file->isImage($mimeType))
         {{-- Image preview --}}
         <div class="text-center" style="cursor: zoom-in;" data-bs-toggle="modal" data-bs-target="#imageModal">
             <img src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
@@ -75,7 +76,7 @@
             </div>
         </div>
 
-    @elseif($file->isPdf())
+    @elseif($file->isPdf($mimeType))
         {{-- PDF preview --}}
         <div id="pdf-viewer" class="bg-light p-3 rounded text-center overflow-auto" style="height: 750px;">
             <div id="pdf-loading" class="text-dark py-5">
@@ -91,11 +92,8 @@
         </div>
 
         @push('scripts')
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-        <script>
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            
-            const url = "{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}";
+        <script type="module">
+            const url = {{ Illuminate\Support\Js::from(route('projects.files.download', [$project->slug, $file->id]) . '?version_id=' . $version->id) }};
             let pdfDoc = null,
                 pageNum = 1,
                 pageRendering = false,
@@ -103,29 +101,42 @@
                 canvas = document.getElementById('pdf-canvas'),
                 ctx = canvas.getContext('2d');
 
-            function renderPage(num) {
+            function showPdfError() {
+                pageRendering = false;
+                pageNumPending = null;
+                canvas.classList.add('d-none');
+                document.getElementById('pdf-controls').classList.add('d-none');
+                document.getElementById('pdf-controls').classList.remove('d-flex');
+                const loading = document.getElementById('pdf-loading');
+                loading.classList.remove('d-none');
+                loading.classList.add('text-danger');
+                loading.textContent = 'Failed to load PDF. Please download the file to view it.';
+            }
+
+            async function renderPage(num) {
                 pageRendering = true;
-                pdfDoc.getPage(num).then(function(page) {
-                    var viewport = page.getViewport({scale: 1.5});
+                try {
+                    const page = await pdfDoc.getPage(num);
+                    const viewport = page.getViewport({scale: 1.5});
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
 
-                    var renderContext = {
+                    const renderContext = {
                         canvasContext: ctx,
                         viewport: viewport
                     };
-                    var renderTask = page.render(renderContext);
+                    await page.render(renderContext).promise;
 
-                    renderTask.promise.then(function() {
-                        pageRendering = false;
-                        if (pageNumPending !== null) {
-                            renderPage(pageNumPending);
-                            pageNumPending = null;
-                        }
-                    });
-                });
-
-                document.getElementById('pdf-page-num').textContent = num;
+                    document.getElementById('pdf-page-num').textContent = num;
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        const pendingPage = pageNumPending;
+                        pageNumPending = null;
+                        renderPage(pendingPage);
+                    }
+                } catch {
+                    showPdfError();
+                }
             }
 
             function queueRenderPage(num) {
@@ -151,8 +162,13 @@
             document.getElementById('pdf-prev').addEventListener('click', onPrevPage);
             document.getElementById('pdf-next').addEventListener('click', onNextPage);
 
-            pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
-                pdfDoc = pdfDoc_;
+            try {
+                const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.min.mjs');
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.worker.min.mjs';
+                pdfDoc = await pdfjsLib.getDocument({
+                    url,
+                    isEvalSupported: false
+                }).promise;
                 document.getElementById('pdf-loading').classList.add('d-none');
                 canvas.classList.remove('d-none');
                 document.getElementById('pdf-controls').classList.remove('d-none');
@@ -160,30 +176,30 @@
                 document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
                 
                 renderPage(pageNum);
-            }).catch(function(error) {
-                document.getElementById('pdf-loading').innerHTML = '<div class="text-danger"><i class="bi bi-exclamation-triangle fs-1"></i><p class="mt-2">Failed to load PDF</p></div>';
-            });
+            } catch {
+                showPdfError();
+            }
         </script>
         @endpush
 
-    @elseif($file->isVideo())
+    @elseif($file->isVideo($mimeType))
         <div class="text-center bg-black rounded p-3">
             <video controls class="w-100" style="max-height: 70vh;">
-                <source src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}" type="{{ $file->mime_type }}">
+                <source src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}" type="{{ $mimeType }}">
                 Your browser does not support the video tag.
             </video>
         </div>
         
-    @elseif($file->isAudio())
+    @elseif($file->isAudio($mimeType))
         <div class="text-center bg-dark rounded p-5">
             <i class="bi bi-music-note-beamed text-light d-block mb-4" style="font-size: 4rem;"></i>
             <audio controls class="w-100">
-                <source src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}" type="{{ $file->mime_type }}">
+                <source src="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}" type="{{ $mimeType }}">
                 Your browser does not support the audio element.
             </audio>
         </div>
 
-    @elseif($file->isOffice())
+    @elseif($file->isOffice($mimeType))
         <div class="alert alert-info">
             <i class="bi bi-info-circle me-2"></i> This file is being rendered via Google Docs Viewer. Note that the project must be public for Google to access it.
         </div>
@@ -192,7 +208,7 @@
                 style="border:none;border-radius:8px;background:#fff;">
         </iframe>
 
-    @elseif($file->isText() && $content !== null)
+    @elseif($file->isText($mimeType) && $content !== null)
         {{-- Text / Code preview & editor --}}
         <div class="d-flex justify-content-between align-items-center mb-3">
             <span class="text-muted small">{{ $file->original_name }}</span>
@@ -288,7 +304,7 @@
         </style>
         @endpush
 
-    @elseif($file->isText() && $content === null)
+    @elseif($file->isText($mimeType) && $content === null)
         {{-- Text file too large to preview --}}
         <div class="text-center py-5">
             <i class="bi bi-file-text" style="font-size:3rem;color:var(--ss-text-muted);"></i>
@@ -300,7 +316,7 @@
 
         {{-- Non-previewable fallback --}}
         <div class="text-center py-5">
-            <i class="bi {{ $file->iconClass() }}" style="font-size:3rem;"></i>
+            <i class="bi {{ $file->iconClass($mimeType) }}" style="font-size:3rem;"></i>
             <p class="text-muted mt-3 mb-4">Preview is not available for this file type.</p>
             <a href="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}" class="btn btn-ss-primary">
                 <i class="bi bi-download me-2"></i> Download

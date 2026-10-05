@@ -7,6 +7,7 @@ use App\Models\UpgradeRequest;
 use App\Notifications\UpgradeRequestApproved;
 use App\Notifications\UpgradeRequestRejected;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UpgradeRequestController extends Controller
 {
@@ -24,17 +25,16 @@ class UpgradeRequestController extends Controller
 
     public function approve(Request $request, UpgradeRequest $upgradeRequest)
     {
-        // Approve the request
-        $upgradeRequest->update([
-            'status'       => 'approved',
-            'processed_at' => now(),
-            'processed_by' => auth()->id(),
-        ]);
-
-        // Update the user's plan
-        $upgradeRequest->user->update([
-            'plan' => $upgradeRequest->requested_plan
-        ]);
+        DB::transaction(function () use ($upgradeRequest): void {
+            $request = UpgradeRequest::query()->lockForUpdate()->findOrFail($upgradeRequest->id);
+            abort_unless($request->isPending(), 409, 'This upgrade request has already been processed.');
+            $request->update([
+                'status' => 'approved',
+                'processed_at' => now(),
+                'processed_by' => auth()->id(),
+            ]);
+            $request->user()->update(['plan' => $request->requested_plan]);
+        });
 
         // Optionally send an in-app notification if we had a Notification class set up,
         // or just simple Database Notification:
@@ -51,12 +51,16 @@ class UpgradeRequestController extends Controller
             'admin_notes' => 'required|string|max:1000'
         ]);
 
-        $upgradeRequest->update([
-            'status'       => 'rejected',
-            'admin_notes'  => $validated['admin_notes'],
-            'processed_at' => now(),
-            'processed_by' => auth()->id(),
-        ]);
+        DB::transaction(function () use ($upgradeRequest, $validated): void {
+            $request = UpgradeRequest::query()->lockForUpdate()->findOrFail($upgradeRequest->id);
+            abort_unless($request->isPending(), 409, 'This upgrade request has already been processed.');
+            $request->update([
+                'status' => 'rejected',
+                'admin_notes' => $validated['admin_notes'],
+                'processed_at' => now(),
+                'processed_by' => auth()->id(),
+            ]);
+        });
 
         // Notify user about rejection (if implemented)
         /*

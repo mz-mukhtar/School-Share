@@ -10,7 +10,7 @@
         </a>
         <h1 class="h3 fw-bold mb-0">Checkpoints</h1>
     </div>
-    @if(auth()->id() === $project->user_id)
+    @if($project->canEdit(auth()->user()))
         <a href="{{ route('projects.checkpoints.create', $project->slug) }}" class="btn btn-ss-primary d-flex align-items-center gap-2">
             <i class="bi bi-plus-lg"></i> New Checkpoint
         </a>
@@ -22,7 +22,7 @@
         <i class="bi bi-clock-history" style="font-size:3rem;color:var(--ss-text-muted);"></i>
         <h3 class="h5 fw-bold mt-3">No checkpoints yet</h3>
         <p class="text-muted mb-4">Each time you upload files, a checkpoint is saved here.</p>
-        @if(auth()->id() === $project->user_id)
+        @if($project->canEdit(auth()->user()))
             <a href="{{ route('projects.checkpoints.create', $project->slug) }}" class="btn btn-ss-primary">
                 <i class="bi bi-cloud-upload me-2"></i> Upload Files
             </a>
@@ -68,7 +68,7 @@
                                class="btn btn-ss-outline btn-sm">
                                 <i class="bi bi-folder2-open me-1"></i> Browse
                             </a>
-                            @if(auth()->id() === $project->user_id)
+                            @if($project->canEdit(auth()->user()))
                                 <form method="POST" action="{{ route('projects.checkpoints.destroy', [$project->slug, $cp->id]) }}"
                                       onsubmit="return confirm('Delete checkpoint \'{{ addslashes($cp->title) }}\' and all its files? This cannot be undone.');">
                                     @csrf @method('DELETE')

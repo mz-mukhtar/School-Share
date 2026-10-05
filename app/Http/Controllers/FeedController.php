@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\Checkpoint;
+use App\Models\Comment;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\Request;
 
 class FeedController extends Controller
@@ -14,17 +17,17 @@ class FeedController extends Controller
     {
         $user = auth()->user();
 
-        // Get IDs of users the current user is following
         $followingIds = $user->following()->pluck('users.id')->toArray();
-        
-        // Also include the user's own activities? Or just following. Let's just do following.
-        // Actually, maybe show all public activities if following is empty?
-        // Let's just stick to standard feed: following + self.
         $followingIds[] = $user->id;
 
         $activities = Activity::whereIn('user_id', $followingIds)
-            ->with(['user', 'subject'])
+            ->visibleTo($user)
+            ->with(['user', 'subject' => fn (MorphTo $subjects) => $subjects->morphWith([
+                Checkpoint::class => ['project'],
+                Comment::class => ['checkpoint.project'],
+            ])])
             ->latest('created_at')
+            ->latest('id')
             ->paginate(20);
 
         return view('feed.index', compact('activities'));

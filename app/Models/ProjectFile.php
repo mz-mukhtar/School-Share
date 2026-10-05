@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProjectFile extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'project_id',
         'folder_id',
+        'folder_scope',
         'latest_version_id',
         'version_count',
         'original_name',
@@ -21,6 +24,13 @@ class ProjectFile extends Model
         return [
             'version_count' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (ProjectFile $file): void {
+            $file->folder_scope = $file->folder_id ?? 0;
+        });
     }
 
     /**
@@ -76,7 +86,7 @@ class ProjectFile extends Model
     /**
      * Whether this file is previewable in the browser.
      */
-    public function isPreviewable(): bool
+    public function isPreviewable(?string $mimeType = null): bool
     {
         $previewable = [
             // Images
@@ -99,45 +109,47 @@ class ProjectFile extends Model
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         ];
 
-        return in_array($this->mime_type, $previewable);
+        return in_array($mimeType ?? $this->mime_type, $previewable, true);
     }
 
     /**
      * Whether this file is an image.
      */
-    public function isImage(): bool
+    public function isImage(?string $mimeType = null): bool
     {
-        return str_starts_with($this->mime_type ?? '', 'image/');
+        return str_starts_with($mimeType ?? $this->mime_type ?? '', 'image/');
     }
 
     /**
      * Whether this file is a PDF.
      */
-    public function isPdf(): bool
+    public function isPdf(?string $mimeType = null): bool
     {
-        return $this->mime_type === 'application/pdf';
+        return ($mimeType ?? $this->mime_type) === 'application/pdf';
     }
 
     /**
      * Whether this file is plain text / code.
      */
-    public function isText(): bool
+    public function isText(?string $mimeType = null): bool
     {
-        return str_starts_with($this->mime_type ?? '', 'text/')
-            || in_array($this->mime_type, ['application/json', 'application/x-sh', 'text/x-python']);
+        $mimeType ??= $this->mime_type;
+
+        return str_starts_with($mimeType ?? '', 'text/')
+            || in_array($mimeType, ['application/json', 'application/x-sh', 'text/x-python'], true);
     }
 
-    public function isVideo(): bool
+    public function isVideo(?string $mimeType = null): bool
     {
-        return str_starts_with($this->mime_type ?? '', 'video/');
+        return str_starts_with($mimeType ?? $this->mime_type ?? '', 'video/');
     }
 
-    public function isAudio(): bool
+    public function isAudio(?string $mimeType = null): bool
     {
-        return str_starts_with($this->mime_type ?? '', 'audio/');
+        return str_starts_with($mimeType ?? $this->mime_type ?? '', 'audio/');
     }
 
-    public function isOffice(): bool
+    public function isOffice(?string $mimeType = null): bool
     {
         $officeMimes = [
             'application/msword', 
@@ -147,17 +159,17 @@ class ProjectFile extends Model
             'application/vnd.ms-powerpoint',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         ];
-        return in_array($this->mime_type, $officeMimes);
+        return in_array($mimeType ?? $this->mime_type, $officeMimes, true);
     }
 
     /**
      * Icon class for file type.
      */
-    public function iconClass(): string
+    public function iconClass(?string $mimeType = null): string
     {
-        if ($this->isImage())   return 'bi-file-image text-success';
-        if ($this->isPdf())     return 'bi-file-pdf text-danger';
-        if ($this->isText())    return 'bi-file-text text-info';
+        if ($this->isImage($mimeType)) return 'bi-file-image text-success';
+        if ($this->isPdf($mimeType)) return 'bi-file-pdf text-danger';
+        if ($this->isText($mimeType)) return 'bi-file-text text-info';
         $ext = $this->extension();
         return match($ext) {
             'doc', 'docx' => 'bi-file-word text-primary',

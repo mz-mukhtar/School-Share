@@ -22,7 +22,9 @@ class ExploreController extends Controller
             $projectQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('subject_tag', 'like', "%{$search}%")
+                  ->orWhereHas('tags', function ($q) use ($search) {
+                      $q->where('tag', 'like', "%{$search}%");
+                  })
                   ->orWhereHas('owner', function($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%")
                         ->orWhere('username', 'like', "%{$search}%");

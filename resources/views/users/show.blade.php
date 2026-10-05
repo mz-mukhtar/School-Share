@@ -76,7 +76,7 @@
         <div class="mb-4">
             <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
                 <i class="bi bi-calendar-week text-primary"></i>
-                Contributions
+                Public contributions
             </h5>
             <div class="ss-card py-4">
                 <x-activity-calendar :contributions="$contributions" />

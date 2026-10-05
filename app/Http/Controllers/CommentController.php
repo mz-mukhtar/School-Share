@@ -2,28 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\Checkpoint;
 use App\Models\Comment;
+use App\Models\Project;
 use Illuminate\Http\Request;
-use App\Models\Activity;
 
 class CommentController extends Controller
 {
     /**
      * Store a newly created comment in storage.
      */
-    public function store(Request $request, Checkpoint $checkpoint)
+    public function store(Request $request, Project $project, Checkpoint $checkpoint)
     {
+        abort_if($checkpoint->project_id !== $project->id, 404);
+        abort_unless($project->hasAccess($request->user()), 403);
+
         $request->validate([
             'body' => ['required', 'string', 'max:2000'],
         ]);
-
-        $project = $checkpoint->project;
-
-        // Authorize: Must be able to view the project
-        if ($project->visibility === 'private' && auth()->id() !== $project->user_id) {
-            abort(403, 'This project is private.');
-        }
 
         $comment = $checkpoint->comments()->create([
             'user_id' => auth()->id(),
@@ -44,11 +41,11 @@ class CommentController extends Controller
     /**
      * Remove the specified comment from storage.
      */
-    public function destroy(Comment $comment)
+    public function destroy(Project $project, Comment $comment)
     {
-        // Authorize: Can only delete if user is comment owner or project owner
-        $project = $comment->checkpoint->project;
-        
+        abort_if($comment->checkpoint->project_id !== $project->id, 404);
+        abort_unless($project->hasAccess(auth()->user()), 403);
+
         if (auth()->id() !== $comment->user_id && auth()->id() !== $project->user_id) {
             abort(403, 'Unauthorized action.');
         }

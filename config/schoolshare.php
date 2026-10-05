@@ -2,6 +2,21 @@
 
 return [
 
+    'operations' => [
+        'max_upload_files' => 20,
+        'max_upload_bytes' => 200 * 1024 * 1024,
+        'max_editor_bytes' => 512 * 1024,
+        'max_readme_bytes' => 512 * 1024,
+        'max_diff_bytes' => 64 * 1024,
+        'max_diff_lines' => 1000,
+        'max_project_entries' => 1000,
+        'max_project_versions' => 10000,
+        'max_archive_bytes' => 200 * 1024 * 1024,
+        'max_folder_depth' => 32,
+        'max_operation_seconds' => 30,
+        'export_retention_seconds' => 3600,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | SchoolShare — Application Configuration
@@ -18,7 +33,7 @@ return [
     | max_storage_gb: Total storage quota per user (in gigabytes)
     |
     */
-    'max_file_mb'    => (int) env('SCHOOLSHARE_MAX_FILE_MB', 100),
+    'max_file_mb' => (int) env('SCHOOLSHARE_MAX_FILE_MB', 100),
     'max_storage_gb' => (float) env('SCHOOLSHARE_MAX_STORAGE_GB', 3),
 
     /*
@@ -26,7 +41,7 @@ return [
     | Computed Byte Limits
     |--------------------------------------------------------------------------
     */
-    'max_file_bytes'    => (int) env('SCHOOLSHARE_MAX_FILE_MB', 100) * 1024 * 1024,
+    'max_file_bytes' => (int) env('SCHOOLSHARE_MAX_FILE_MB', 100) * 1024 * 1024,
     'max_storage_bytes' => (float) env('SCHOOLSHARE_MAX_STORAGE_GB', 3) * 1024 * 1024 * 1024,
 
     /*
@@ -34,21 +49,22 @@ return [
     | Free Plan Limits
     |--------------------------------------------------------------------------
     */
-    'free_plan' => [
-        'max_projects'      => 15,
-        'max_collaborators' => 5,
-        'storage_gb'        => 1,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Pro Plan Limits
-    |--------------------------------------------------------------------------
-    */
-    'pro_plan' => [
-        'max_projects'      => 20,
-        'max_collaborators' => 20,
-        'storage_gb'        => 10,
+    'plans' => [
+        'free' => [
+            'max_projects' => 15,
+            'max_collaborators' => 5,
+            'storage_gb' => 1,
+        ],
+        'pro' => [
+            'max_projects' => 20,
+            'max_collaborators' => 20,
+            'storage_gb' => 10,
+        ],
+        'custom' => [
+            'max_projects' => 20,
+            'max_collaborators' => 20,
+            'storage_gb' => 10,
+        ],
     ],
 
     /*
@@ -65,18 +81,18 @@ return [
     |--------------------------------------------------------------------------
     */
     'branding' => [
-        'mode'         => env('SCHOOLSHARE_BRANDING_MODE', 'community'),
-        'license_key'  => env('SCHOOLSHARE_LICENSE_KEY', null),
-        'app_name'     => 'SchoolShare',
+        'mode' => env('SCHOOLSHARE_BRANDING_MODE', 'community'),
+        'license_key' => env('SCHOOLSHARE_LICENSE_KEY', null),
+        'app_name' => 'SchoolShare',
         'company_name' => 'EthioNext',
-        'company_url'  => 'https://ethionext.com.et',
-        'developer'    => 'Mahi Zeki Mukhtar',
-        'contact_email'=> 'mahizeki037@gmail.com',
-        'contact_phone'=> '+251 992 194 042',
-        'github_url'   => 'https://github.com/mz-mukhtar/School-Share',
-        'footer_text'  => 'SchoolShare by EthioNext · schoolshare.ethionext.com.et',
+        'company_url' => 'https://ethionext.com.et',
+        'developer' => 'Mahi Zeki Mukhtar',
+        'contact_email' => 'mahizeki037@gmail.com',
+        'contact_phone' => '+251 992 194 042',
+        'github_url' => 'https://github.com/mz-mukhtar/School-Share',
+        'footer_text' => 'SchoolShare by EthioNext · schoolshare.ethionext.com.et',
         'header_value' => 'EthioNext-SchoolShare', // X-Powered-By header value
-        'zip_notice'   => 'SCHOOLSHARE_BY_ETHIONEXT.txt', // filename in ZIP downloads
+        'zip_notice' => 'SCHOOLSHARE_BY_ETHIONEXT.txt', // filename in ZIP downloads
     ],
 
     /*
@@ -160,9 +176,9 @@ return [
     */
     'cache' => [
         'checkpoint_list' => 300,   // 5 minutes
-        'project_stats'   => 300,   // 5 minutes
-        'explore_page'    => 600,   // 10 minutes
-        'user_storage'    => 60,    // 1 minute
+        'project_stats' => 300,   // 5 minutes
+        'explore_page' => 600,   // 10 minutes
+        'user_storage' => 60,    // 1 minute
     ],
 
     /*
@@ -171,10 +187,13 @@ return [
     |--------------------------------------------------------------------------
     */
     'rate_limits' => [
-        'upload_per_minute'    => 10,
-        'download_per_minute'  => 30,
+        'editor_per_minute' => 10,
+        'diff_per_minute' => 6,
+        'fork_per_minute' => 2,
+        'upload_per_minute' => 10,
+        'download_per_minute' => 30,
         'file_view_per_minute' => 60,
-        'login_per_minute'     => 5,
+        'login_per_minute' => 5,
     ],
 
 ];

@@ -110,13 +110,13 @@
                                         <div class="text-muted" style="font-size: 0.75rem;">{{ '@'.$collab->username }}</div>
                                     </div>
                                 </div>
-                                <form action="{{ route('projects.collaborators.destroy', [$project->slug, $collab->username]) }}" method="POST" onsubmit="return confirm('Remove this collaborator?');">
+                                <form action="{{ route('projects.collaborators.destroy', [$project->slug, $collab->id]) }}" method="POST" onsubmit="return confirm('Remove this collaborator?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-x-circle"></i></button>
                                 </form>
                             </div>
-                            <form action="{{ route('projects.collaborators.update', [$project->slug, $collab->username]) }}" method="POST">
+                            <form action="{{ route('projects.collaborators.update', [$project->slug, $collab->id]) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <select name="role" class="form-select form-select-sm bg-transparent text-white" style="border-color: var(--ss-border);" onchange="this.form.submit()">

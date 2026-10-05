@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\User;
-use App\Models\Project;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PublicProfileController extends Controller
 {
@@ -18,10 +18,10 @@ class PublicProfileController extends Controller
             ->withCount('checkpoints')
             ->latest()
             ->paginate(6);
-            
+
         // Contribution graph data (last 365 days)
-        $contributions = \Illuminate\Support\Facades\DB::table('activities')
-            ->select(\Illuminate\Support\Facades\DB::raw('date(created_at) as date'), \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+        $contributions = Activity::visibleTo(null)
+            ->select(DB::raw('date(created_at) as date'), DB::raw('count(*) as count'))
             ->where('user_id', $user->id)
             ->where('created_at', '>=', now()->subDays(365))
             ->groupBy('date')
@@ -29,7 +29,7 @@ class PublicProfileController extends Controller
             ->toArray();
 
         // Recent activity for the sidebar
-        $recentActivities = \App\Models\Activity::where('user_id', $user->id)
+        $recentActivities = Activity::visibleTo(null)->where('user_id', $user->id)
             ->latest('created_at')
             ->limit(10)
             ->get();
@@ -42,7 +42,7 @@ class PublicProfileController extends Controller
         $user = User::where('username', $username)->firstOrFail();
         $connections = $user->followers()->paginate(20);
         $type = 'followers';
-        
+
         return view('users.connections', compact('user', 'connections', 'type'));
     }
 
@@ -51,7 +51,7 @@ class PublicProfileController extends Controller
         $user = User::where('username', $username)->firstOrFail();
         $connections = $user->following()->paginate(20);
         $type = 'following';
-        
+
         return view('users.connections', compact('user', 'connections', 'type'));
     }
 }

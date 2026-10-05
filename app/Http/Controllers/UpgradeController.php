@@ -7,7 +7,10 @@ use App\Mail\UpgradeInstructionsMail;
 use App\Models\UpgradeRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Throwable;
 
 class UpgradeController extends Controller
 {
@@ -46,32 +49,48 @@ class UpgradeController extends Controller
 
         $user = auth()->user();
 
-        // Prevent duplicate pending requests
         $existing = UpgradeRequest::where('user_id', $user->id)
             ->where('requested_plan', $validated['plan'])
             ->where('status', 'pending')
             ->first();
 
-        if ($existing) {
-            return redirect()->route('pricing')
-                ->with('warning', 'You already have a pending upgrade request. Please check your email for payment instructions.');
+        $upgradeRequest = $existing ?? DB::transaction(function () use ($user, $validated): UpgradeRequest {
+            return UpgradeRequest::create([
+                'user_id' => $user->id,
+                'requested_plan' => $validated['plan'],
+                'billing_cycle' => $validated['billing_cycle'],
+                'status' => 'pending',
+            ]);
+        });
+
+        if (! $this->sendInstructions($user, $upgradeRequest)) {
+            return redirect()->route('pricing')->with('warning', 'Your upgrade request is saved, but email delivery failed. Submit the same request again to retry delivery.');
         }
 
-        // Create the request record
-        $upgradeRequest = UpgradeRequest::create([
-            'user_id'        => $user->id,
-            'requested_plan' => $validated['plan'],
-            'billing_cycle'  => $validated['billing_cycle'],
-            'status'         => 'pending',
-        ]);
-
-        // 1. Send payment instructions to the user
-        Mail::to($user->email)->send(new UpgradeInstructionsMail($user, $upgradeRequest));
-
-        // 2. Send reminder to the admin
-        Mail::to('mahizeki037@gmail.com')->send(new AdminUpgradeReminderMail($upgradeRequest));
-
         return redirect()->route('pricing')
-            ->with('success', '🎉 Great! We\'ve sent you an email with complete payment instructions. Once you pay, send your screenshot to payment@ethionext.com.et and we\'ll upgrade your account within 24–48 hours!');
+            ->with('success', 'Your upgrade request is saved and payment instructions were sent.');
+    }
+
+    private function sendInstructions($user, UpgradeRequest $upgradeRequest): bool
+    {
+        try {
+            Mail::to($user->email)->send(new UpgradeInstructionsMail($user, $upgradeRequest));
+            Mail::to('mahizeki037@gmail.com')->send(new AdminUpgradeReminderMail($upgradeRequest));
+            $upgradeRequest->update([
+                'mail_delivery_status' => 'sent',
+                'mail_delivery_error' => null,
+                'mail_sent_at' => now(),
+            ]);
+
+            return true;
+        } catch (Throwable $exception) {
+            report($exception);
+            $upgradeRequest->update([
+                'mail_delivery_status' => 'failed',
+                'mail_delivery_error' => Str::limit($exception->getMessage(), 1000, ''),
+            ]);
+
+            return false;
+        }
     }
 }

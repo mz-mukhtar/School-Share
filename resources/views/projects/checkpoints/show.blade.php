@@ -29,7 +29,7 @@
             @endif
         </div>
 
-        @if(auth()->id() === $project->user_id)
+        @if($project->canEdit(auth()->user()))
             <div class="d-flex gap-2">
                 <form method="POST" action="{{ route('projects.checkpoints.restore', [$project->slug, $checkpoint->id]) }}"
                       onsubmit="return confirm('Restore project to this checkpoint? All files will revert to their state at this time.');">
@@ -77,10 +77,10 @@
                         @if($file)
                         <tr style="border-color:var(--ss-border);">
                             <td class="ps-0 align-middle text-center">
-                                <i class="bi {{ $file->iconClass() }} fs-5"></i>
+                                <i class="bi {{ $file->iconClass($version->mime_type) }} fs-5"></i>
                             </td>
                             <td class="align-middle">
-                                <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}"
+                                <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
                                    class="text-decoration-none text-white fw-medium">
                                     {{ $file->original_name }}
                                 </a>
@@ -89,17 +89,17 @@
                             <td class="align-middle text-end text-muted small">{{ $version->sizeHuman() }}</td>
                             <td class="align-middle text-end pe-0">
                                 <div class="d-flex gap-2 justify-content-end">
-                                    @if($file->isPreviewable())
-                                        <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}"
+                                    @if($file->isPreviewable($version->mime_type))
+                                        <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
                                            class="btn btn-ss-outline btn-sm" title="Preview">
                                             <i class="bi bi-eye me-1"></i>Preview
                                         </a>
                                     @endif
-                                    <a href="{{ route('projects.files.download', [$project->slug, $file->id]) }}"
+                                    <a href="{{ route('projects.files.download', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
                                        class="btn btn-ss-outline btn-sm" title="Download">
                                         <i class="bi bi-download me-1"></i>Download
                                     </a>
-                                    @if(auth()->id() === $project->user_id)
+                                    @if($project->canEdit(auth()->user()))
                                         <form method="POST" action="{{ route('projects.files.destroy', [$project->slug, $file->id]) }}"
                                               onsubmit="return confirm('Delete {{ addslashes($file->original_name) }}?');">
                                             @csrf @method('DELETE')
@@ -145,7 +145,7 @@
                             <span class="text-muted small ms-2">{{ $comment->created_at->diffForHumans() }}</span>
                         </div>
                         @if(auth()->id() === $comment->user_id || auth()->id() === $project->user_id)
-                            <form method="POST" action="{{ route('comments.destroy', $comment->id) }}" onsubmit="return confirm('Delete this comment?');">
+                            <form method="POST" action="{{ route('projects.comments.destroy', [$project->slug, $comment->id]) }}" onsubmit="return confirm('Delete this comment?');">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-link text-danger p-0" title="Delete Comment">
                                     <i class="bi bi-trash"></i>

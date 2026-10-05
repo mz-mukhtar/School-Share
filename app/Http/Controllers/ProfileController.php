@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\FileVersion;
+use App\Models\Project;
+use App\Models\ProjectFile;
+use App\Models\StoredBlob;
+use App\StorageLifecycle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -30,8 +36,8 @@ class ProfileController extends Controller
         $validated = $request->validated();
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar_path)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar_path);
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
             }
             $path = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar_path'] = $path;
@@ -51,7 +57,7 @@ class ProfileController extends Controller
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, StorageLifecycle $storage): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
@@ -59,9 +65,30 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        abort_if(
+            $user->projects()->get()->contains(fn (Project $project): bool => $project->hasForeignFolderReferences()),
+            409,
+            'Your projects have invalid folder references. Repair them before deleting your account.'
+        );
 
-        $user->delete();
+        $storage->run(function (StorageLifecycle $storage) use ($user) {
+            $foreignVersions = FileVersion::whereHas('projectFile.project', fn ($query) => $query->where('user_id', '!=', $user->id))
+                ->where(function ($query) use ($user) {
+                    $query->where('storage_path', 'like', "projects/{$user->id}/%")
+                        ->orWhereIn('storage_path', StoredBlob::where('billing_user_id', $user->id)->select('storage_path'))
+                        ->orWhereHas('checkpoint', fn ($query) => $query->where('user_id', $user->id));
+                });
+            foreach ($foreignVersions->distinct()->pluck('storage_path') as $path) {
+                $blob = $storage->adopt($path);
+                abort_if($blob->billing_user_id === $user->id, 409, 'You still own stored files in other projects. Have their owners remove those files before deleting your account.');
+            }
+            $files = ProjectFile::whereHas('project', fn ($query) => $query->where('user_id', $user->id))->with('versions')->get();
+            $storage->deleteFiles($files, fn () => $user->delete());
+        });
+        if ($user->avatar_path && ! Storage::disk('public')->delete($user->avatar_path)) {
+            report(new \RuntimeException('Deleted account avatar cleanup failed.'));
+        }
+        Auth::logoutCurrentDevice();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

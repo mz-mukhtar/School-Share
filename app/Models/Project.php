@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 
 class Project extends Model
@@ -30,17 +33,29 @@ class Project extends Model
         static::creating(function ($project) {
             // Generate slug if not provided
             if (empty($project->slug)) {
-                $baseSlug = Str::slug($project->name);
-                $slug = $baseSlug;
-                $count = 1;
-                // Ensure slug is unique per user
-                while (static::where('user_id', $project->user_id)->where('slug', $slug)->exists()) {
-                    $slug = $baseSlug . '-' . $count;
-                    $count++;
-                }
-                $project->slug = $slug;
+                $project->slug = static::nextAvailableSlug($project->name);
             }
         });
+    }
+
+    /** @param array{name: string, description?: ?string, visibility: string} $attributes */
+    public static function createForOwner(User $owner, array $attributes): self
+    {
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            try {
+                return static::create([
+                    ...$attributes,
+                    'user_id' => $owner->id,
+                    'slug' => static::nextAvailableSlug($attributes['name']),
+                ]);
+            } catch (QueryException $exception) {
+                if (! static::isSlugConflict($exception) || $attempt === 4) {
+                    throw $exception;
+                }
+            }
+        }
+
+        throw new \LogicException('Project creation retry loop completed unexpectedly.');
     }
 
     /**
@@ -68,12 +83,38 @@ class Project extends Model
         return $query->where('visibility', 'public');
     }
 
+    public function scopeAccessibleTo(Builder $query, ?User $user): Builder
+    {
+        return $query->where(function (Builder $query) use ($user): void {
+            $query->where($query->qualifyColumn('visibility'), 'public');
+
+            if ($user) {
+                $query->orWhere($query->qualifyColumn('user_id'), $user->id)
+                    ->orWhereHas('collaborators', fn (Builder $collaborators): Builder => $collaborators->whereKey($user->id));
+            }
+        });
+    }
+
+    public function hasForeignFolderReferences(): bool
+    {
+        $folderIds = $this->folders()->select('id');
+
+        // Foreign child folders can be deleted by a database cascade even when PHP skips them.
+        return ProjectFolder::whereIn('parent_id', $folderIds)->where('project_id', '!=', $this->id)->exists()
+            || ProjectFile::whereIn('folder_id', $folderIds)->where('project_id', '!=', $this->id)->exists();
+    }
+
     /**
      * All checkpoints for this project.
      */
     public function checkpoints()
     {
-        return $this->hasMany(\App\Models\Checkpoint::class)->latest();
+        return $this->hasMany(Checkpoint::class)->latest();
+    }
+
+    public function comments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Comment::class, Checkpoint::class);
     }
 
     /**
@@ -81,7 +122,7 @@ class Project extends Model
      */
     public function files()
     {
-        return $this->hasMany(\App\Models\ProjectFile::class);
+        return $this->hasMany(ProjectFile::class);
     }
 
     /**
@@ -89,7 +130,7 @@ class Project extends Model
      */
     public function latestCheckpoint()
     {
-        return $this->hasOne(\App\Models\Checkpoint::class)->latestOfMany();
+        return $this->hasOne(Checkpoint::class)->latestOfMany();
     }
 
     /**
@@ -97,7 +138,7 @@ class Project extends Model
      */
     public function tags()
     {
-        return $this->hasMany(\App\Models\ProjectTag::class);
+        return $this->hasMany(ProjectTag::class);
     }
 
     /**
@@ -105,7 +146,7 @@ class Project extends Model
      */
     public function folders()
     {
-        return $this->hasMany(\App\Models\ProjectFolder::class);
+        return $this->hasMany(ProjectFolder::class);
     }
 
     /**
@@ -114,8 +155,8 @@ class Project extends Model
     public function originalProject()
     {
         return $this->hasOneThrough(
-            \App\Models\Project::class,
-            \App\Models\ProjectFork::class,
+            Project::class,
+            ProjectFork::class,
             'forked_project_id', // Foreign key on project_forks table
             'id', // Foreign key on projects table
             'id', // Local key on projects table
@@ -129,8 +170,8 @@ class Project extends Model
     public function forks()
     {
         return $this->hasManyThrough(
-            \App\Models\Project::class,
-            \App\Models\ProjectFork::class,
+            Project::class,
+            ProjectFork::class,
             'original_project_id', // Foreign key on project_forks table
             'id', // Foreign key on projects table
             'id', // Local key on projects table
@@ -143,7 +184,7 @@ class Project extends Model
      */
     public function activities()
     {
-        return $this->morphMany(\App\Models\Activity::class, 'subject');
+        return $this->morphMany(Activity::class, 'subject');
     }
 
     /**
@@ -152,8 +193,8 @@ class Project extends Model
     public function collaborators()
     {
         return $this->belongsToMany(User::class, 'project_collaborators', 'project_id', 'user_id')
-                    ->withPivot('role')
-                    ->withTimestamps();
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     /**
@@ -161,9 +202,15 @@ class Project extends Model
      */
     public function hasAccess(?User $user): bool
     {
-        if ($this->visibility === 'public') return true;
-        if (!$user) return false;
-        if ($this->user_id === $user->id) return true;
+        if ($this->visibility === 'public') {
+            return true;
+        }
+        if (! $user) {
+            return false;
+        }
+        if ($this->user_id === $user->id) {
+            return true;
+        }
 
         return $this->collaborators()->where('user_id', $user->id)->exists();
     }
@@ -173,13 +220,37 @@ class Project extends Model
      */
     public function canEdit(?User $user): bool
     {
-        if (!$user) return false;
-        if ($this->user_id === $user->id) return true;
+        if (! $user) {
+            return false;
+        }
+        if ($this->user_id === $user->id) {
+            return true;
+        }
 
         return $this->collaborators()
-                    ->where('user_id', $user->id)
-                    ->wherePivot('role', 'editor')
-                    ->exists();
+            ->where('user_id', $user->id)
+            ->wherePivot('role', 'editor')
+            ->exists();
+    }
+
+    private static function nextAvailableSlug(string $name): string
+    {
+        $base = Str::slug($name);
+        $base = $base !== '' ? Str::limit($base, 240, '') : 'project';
+        $candidate = $base;
+        $suffix = 1;
+
+        while (static::where('slug', $candidate)->exists()) {
+            $candidate = Str::limit($base, 240 - strlen((string) $suffix), '').'-'.$suffix;
+            $suffix++;
+        }
+
+        return $candidate;
+    }
+
+    private static function isSlugConflict(QueryException $exception): bool
+    {
+        return in_array($exception->getCode(), ['23000', '23505'], true)
+            || in_array($exception->errorInfo[1] ?? null, [19, 1062], true);
     }
 }
-

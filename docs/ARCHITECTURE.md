@@ -1,355 +1,147 @@
-# Architecture — SchoolShare Technical Deep Dive
+# SchoolShare architecture
 
-> **Maintained by:** Mahi Zeki Mukhtar / EthioNext
-> **For:** Developers contributing to or maintaining SchoolShare
+This document describes the code currently in the repository. It is not a
+future design specification. Known functional limitations are linked to the
+[repository review](REPOSITORY_REVIEW_2026-10-05.md).
 
----
+## Runtime shape
 
-## Overview
-
-SchoolShare is a **server-rendered PHP web application** built on the Laravel 11
-framework. It provides Git-inspired version control concepts (checkpoints,
-history, restore, diff) in a student-friendly GUI — no command-line required.
-
----
-
-## High-Level Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     Browser (Client)                    │
-│         Bootstrap 5 + Alpine.js + CodeMirror            │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTP(S)
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                  Cloudflare CDN (free)                  │
-│      Caches static assets, DDoS protection, SSL         │
-└──────────────────────┬──────────────────────────────────┘
-                       │ Dynamic requests
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│               cPanel Web Server (Apache)                │
-│         mod_rewrite → routes all traffic to             │
-│              schoolshare/public/index.php               │
-└──────────┬───────────────────────────┬──────────────────┘
-           │                           │
-           ▼                           ▼
-┌─────────────────────┐   ┌────────────────────────────┐
-│   PHP 8.1+ / Laravel│   │  Local Filesystem Storage  │
-│   (App Logic Layer) │   │  storage/app/uploads/      │
-│                     │   │  {user}/{project}/{checkpoint}/ │
-│   Routes → Controllers   └────────────────────────────┘
-│   → Services → Models│
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│     MySQL Database  │
-│  users, projects,   │
-│  checkpoints, files │
-│  activity_log, etc. │
-└─────────────────────┘
+```text
+Browser
+  │  server-rendered HTML, Bootstrap CDN assets, selected module CDNs
+  ▼
+Laravel 13 application
+  ├─ web routes + OTP/auth middleware
+  ├─ controllers and Eloquent models
+  ├─ private local disk: storage/app/private
+  ├─ public local disk:  storage/app/public (avatars/public assets)
+  └─ relational database
 ```
 
----
+The browser uses server-rendered Blade. Bootstrap is delivered from jsDelivr;
+PDF.js 6.4.299 is loaded as a module from jsDelivr; CodeMirror modules are
+loaded from esm.sh. These external assets are not installed through the PHP
+dependency graph and should be reviewed as part of frontend dependency work.
 
-## Core Concept: The Checkpoint System
+## Access model
 
-The checkpoint system is the heart of SchoolShare. It replaces Git commits
-with a simple, understandable "snapshot" model.
+All project/file/checkpoint/folder/collaborator web routes require `auth` and
+`otp.verified`. Public profile pages and marketing pages do not. Projects use
+these current access rules:
 
-### How a Checkpoint Works
+| Actor | Public project | Private project | Can edit files/checkpoints |
+| --- | --- | --- | --- |
+| Guest | No project routes; public profile only | No | No |
+| Authenticated unrelated user | Can access public project | No | No |
+| Project owner | Yes | Yes | Yes |
+| Viewer collaborator | Yes | Yes | No |
+| Editor collaborator | Yes | Yes | Yes |
 
-```
-User uploads files + writes a message
-         │
-         ▼
-CheckpointService::create()
-    1. Validate file sizes (100 MB per file)
-    2. Validate user storage quota (3 GB total)
-    3. For each file:
-       a. Compute MD5 hash of file content
-       b. Check if same hash exists in checkpoint_files for this project
-       c. If YES → record reference (no copy = deduplication)
-       d. If NO  → save file to storage/app/uploads/{user}/{project}/{checkpoint}/
-    4. Insert row into `checkpoints` table
-    5. Insert rows into `checkpoint_files` table
-    6. Update `users.storage_used_bytes`
-    7. Log to `activity_log`
-         │
-         ▼
-Checkpoint created ✓
-```
+Only the owner manages collaborators. Folder creation is owner-only in the
+current controller, even though editors can upload/edit files. That mismatch is
+an explicit product-policy limitation, not an implied role contract.
 
-### Storage Layout
+Nested checkpoint, file, folder, comment, and collaborator routes use scoped
+binding beneath the project. Folder IDs supplied to upload/move operations are
+validated against that project.
 
-```
-storage/app/uploads/
-└── 1/                          ← user_id = 1
-    └── 5/                      ← project_id = 5
-        ├── 12/                 ← checkpoint_id = 12 (first checkpoint)
-        │   ├── essay_draft.docx
-        │   └── notes.txt
-        └── 19/                 ← checkpoint_id = 19 (second checkpoint)
-            ├── essay_final.docx   ← changed file (new copy stored)
-            └── notes.txt          ← if same hash → only a DB reference,
-                                      physically same file as checkpoint 12
-```
+## Data model
 
-### Download (ZIP creation)
+| Record | Responsibility |
+| --- | --- |
+| `users` | Authentication, profile, plan field, storage counter, admin flag |
+| `projects` | Owner, name/slug, visibility, star count |
+| `project_collaborators` | Project-user membership with `editor` or `viewer` role |
+| `project_folders` | Project-scoped parent/child folders |
+| `project_files` | Logical current file identity, current version pointer, folder |
+| `file_versions` | A version's storage path, size, project-file, and checkpoint reference |
+| `checkpoints` | Project event with title/message and reported upload size |
+| `stored_blobs` | One private-disk object, its billing owner, and byte charge |
+| `activities` | Polymorphic activity records filtered by current project access |
+| `comments`, `follows`, `starred_projects`, `project_forks` | Social/project features |
 
-```
-DownloadController::downloadCheckpoint()
-    1. Look up all checkpoint_files for this checkpoint_id
-    2. Open a PHP ZipArchive in memory
-    3. Add each file from storage path → ZIP entry
-    4. Add SCHOOLSHARE_BY_ETHIONEXT.txt → ZIP root (branding Layer 4)
-    5. Stream ZIP to browser with correct headers
-```
+`stored_blobs` is introduced by the Group 3 migration. It is only authoritative
+after that migration and reconciliation have been run on the deployed database
+and private disk.
 
-### Restore
+## Project-file lifecycle
 
-```
-RestoreController::restore()
-    Restore is NOT a revert — it creates a NEW checkpoint
-    that copies files from the old checkpoint:
+### Upload and browser edit
 
-    1. Load all checkpoint_files from the target checkpoint
-    2. Call CheckpointService::create() with those files
-    3. Checkpoint message: "Restored from [original message] — [date]"
-    4. New checkpoint appears at top of history timeline
-```
+1. The controller validates membership, filename safety, request limits, and
+   project capacity.
+2. `StorageLifecycle` serializes private-local-disk operations with a local
+   file lock.
+3. It checks the ledger for unreconciled legacy versions and performs a
+   conditional quota reservation.
+4. A UUID-backed object is registered in `stored_blobs`, then written and
+   verified on the private disk.
+5. A transaction creates the checkpoint/version and updates the logical file.
+6. If metadata creation fails, an unreferenced newly-created blob is cleaned up;
+   if cleanup itself fails, the charge/ledger remains for a later retry.
 
----
+The current implementation assumes one host and the local `storage` directory.
+It is not a distributed lock or object-storage coordination scheme.
 
-## Database Schema (Detailed)
+### Restore and deletion
 
-### `users`
-```sql
-id               BIGINT UNSIGNED PK
-name             VARCHAR(255)
-email            VARCHAR(255) UNIQUE
-password         VARCHAR(255)
-avatar           VARCHAR(500) NULL
-storage_used_bytes BIGINT DEFAULT 0
-plan             ENUM('free','pro') DEFAULT 'free'
-last_active_at   TIMESTAMP NULL
-email_verified_at TIMESTAMP NULL
-remember_token   VARCHAR(100) NULL
-created_at       TIMESTAMP
-updated_at       TIMESTAMP
-```
+Restore creates new `file_versions` referencing retained blobs; it does not
+copy bytes or add a new storage charge. A blob is charged once to its billing
+owner and released only after its last live file-version reference is gone and
+private-disk deletion succeeds.
 
-### `projects`
-```sql
-id               BIGINT UNSIGNED PK
-user_id          BIGINT FK → users.id (CASCADE DELETE)
-name             VARCHAR(255)
-slug             VARCHAR(255)         -- URL-friendly: "my-history-essay"
-description      TEXT NULL
-subject_tag      VARCHAR(100) NULL    -- "Math", "English", etc.
-visibility       ENUM('public','private') DEFAULT 'private'
-star_count       INT UNSIGNED DEFAULT 0
-created_at       TIMESTAMP
-updated_at       TIMESTAMP
+This is retention/billing behavior, not a complete immutable snapshot model.
+Current restore operates on surviving logical files and cannot reconstruct a
+historical tree after destructive rename/move/delete operations. Treat
+checkpoints as version events with the limitations documented in the review.
 
-INDEX(user_id), INDEX(slug), INDEX(visibility, created_at)
-```
+### Reconciliation and cleanup
 
-### `project_collaborators`
-```sql
-id               BIGINT UNSIGNED PK
-project_id       BIGINT FK → projects.id (CASCADE DELETE)
-user_id          BIGINT FK → users.id (CASCADE DELETE)
-role             ENUM('editor','viewer') DEFAULT 'viewer'
-invited_at       TIMESTAMP
-UNIQUE(project_id, user_id)
-```
+`php artisan schoolshare:recalculate-storage` imports/reconciles version paths
+and identifiable legacy private files into the blob ledger. It does not delete
+objects by default. `--cleanup` is destructive: it removes unreferenced
+ledger-backed objects and expired generated exports. See
+[SELF_HOSTING.md](../SELF_HOSTING.md).
 
-### `checkpoints`
-```sql
-id               BIGINT UNSIGNED PK
-project_id       BIGINT FK → projects.id (CASCADE DELETE)
-user_id          BIGINT FK → users.id
-message          VARCHAR(500)
-file_count       INT UNSIGNED DEFAULT 0
-total_size_bytes BIGINT DEFAULT 0
-created_at       TIMESTAMP
-updated_at       TIMESTAMP
+## Bounded operations
 
-INDEX(project_id, created_at DESC)
-```
+Current defaults in `config/schoolshare.php` are:
 
-### `checkpoint_files`
-```sql
-id               BIGINT UNSIGNED PK
-checkpoint_id    BIGINT FK → checkpoints.id (CASCADE DELETE)
-original_filename VARCHAR(500)       -- "My Essay Final.docx"
-stored_path      VARCHAR(1000)       -- "uploads/1/5/12/essay_final.docx"
-file_size_bytes  BIGINT
-mime_type        VARCHAR(255)
-content_hash     CHAR(32)            -- MD5 for deduplication
-is_deleted       TINYINT(1) DEFAULT 0
+| Operation | Bound |
+| --- | --- |
+| Upload | 20 files, 200 MiB batch, 100 MiB per file |
+| Browser editor / README | 512 KiB |
+| Text diff | 64 KiB and 1,000 lines per input |
+| Project entries | 1,000 files/folders |
+| File-version history | 10,000 versions per project |
+| ZIP/fork bytes | 200 MiB |
+| Folder depth | 32 |
+| Cooperative operation budget | 30 seconds |
 
-INDEX(checkpoint_id), INDEX(content_hash)
-```
+Uploads/restores, editing, previews, diffs, downloads/ZIP exports, and forks
+also have named route rate limits. PHP and reverse-proxy body/timeout limits
+still need deployment configuration.
 
-### `activity_log`
-```sql
-id               BIGINT UNSIGNED PK
-project_id       BIGINT FK → projects.id (CASCADE DELETE)
-user_id          BIGINT FK → users.id
-action           VARCHAR(100)        -- "checkpoint.created", "file.downloaded"
-meta             JSON NULL           -- { "checkpoint_id": 12, "filename": "..." }
-created_at       TIMESTAMP
+## File views and ZIP export
 
-INDEX(project_id, created_at DESC)
-```
+Text/code content is read through bounded streams. PDFs use pinned PDF.js with
+`isEvalSupported: false`. Office documents are currently pointed at Google Docs
+Viewer, which cannot fetch an authenticated private download URL; users should
+download those files instead. Synchronous Office diffing is disabled.
 
-### `starred_projects`
-```sql
-id               BIGINT UNSIGNED PK
-user_id          BIGINT FK → users.id (CASCADE DELETE)
-project_id       BIGINT FK → projects.id (CASCADE DELETE)
-created_at       TIMESTAMP
-UNIQUE(user_id, project_id)
-```
+Current project ZIP export validates every folder/file segment, rejects
+traversal, cycles, invalid parent references, name collisions, missing objects,
+and oversized projects. It exports current file versions only. It currently
+does **not** insert `SCHOOLSHARE_BY_ETHIONEXT.txt`; the source-license branding
+promise is therefore not implemented.
 
-### `license_keys`
-```sql
-id               BIGINT UNSIGNED PK
-key_hash         VARCHAR(255) UNIQUE -- bcrypt hash of the actual key
-owner_email      VARCHAR(255)
-plan             ENUM('single_site','whitelabel','saas')
-issued_at        TIMESTAMP
-revoked_at       TIMESTAMP NULL      -- NULL = active
-```
+## Known architectural limits
 
----
+- The existing versioning migration has not passed a clean/populated
+  MySQL/MariaDB release test.
+- Project slugs are unique only per owner while routes bind them globally.
+- Plan keys and storage-limit configuration are inconsistent.
+- History is not an immutable snapshot manifest.
+- Group 4 OTP and Group 5 dependency maintenance remain open.
 
-## Service Layer
-
-Business logic lives in `app/Services/`, not in controllers.
-
-| Service | Responsibility |
-|---|---|
-| `CheckpointService` | Create checkpoints, validate quotas, store files, deduplication |
-| `DiffService` | Generate text diffs between checkpoint file versions |
-| `ActivityService` | Log actions to `activity_log` |
-| `LicenseService` | Validate license keys, determine branding mode |
-
----
-
-## Middleware
-
-| Middleware | Purpose |
-|---|---|
-| `AddBrandingHeaders` | Adds `X-Powered-By: EthioNext-SchoolShare` to all responses |
-| `CheckStorageQuota` | Blocks upload requests if user is at/over 3 GB limit |
-| `ProjectAccess` | Checks if authenticated user has access to a project |
-
----
-
-## Branding Protection System
-
-```
-Layer 1 — UI Layer
-  app.blade.php → logo in navbar, footer credit
-  Hardcoded in template, not driven by config
-  (so removing it requires modifying template files)
-
-Layer 2 — HTTP Headers
-  AddBrandingHeaders middleware
-  → X-Powered-By: EthioNext-SchoolShare
-
-Layer 3 — License Check (server-side)
-  AppServiceProvider::boot()
-  → Checks license_keys table for a valid, non-revoked key
-  → If self-hosted (APP_ENV=production) AND no valid key:
-     → Sets app()->instance('branding_required', true)
-     → Routes middleware redirects to /branding-required
-
-Layer 4 — File Attribution
-  DownloadController::downloadCheckpoint()
-  → Adds SCHOOLSHARE_BY_ETHIONEXT.txt to every ZIP download
-
-Layer 5 — Legal
-  LICENSE.md clearly prohibits branding removal without a
-  Commercial License, making unauthorized removal a
-  license violation.
-```
-
----
-
-## File Viewer Architecture
-
-The in-browser viewer (`FileViewController`) determines how to render a file
-based on its MIME type:
-
-```
-FileViewController::view($fileId)
-    │
-    ├── Text types (text/plain, text/html, application/json, etc.)
-    │   → resources/views/files/viewer-codemirror.blade.php
-    │   → CodeMirror 6, read-only (edit mode available for text/*)
-    │
-    ├── application/pdf
-    │   → resources/views/files/viewer-pdf.blade.php
-    │   → PDF.js embedded viewer
-    │
-    ├── image/* (image/jpeg, image/png, etc.)
-    │   → resources/views/files/viewer-image.blade.php
-    │   → <img> with lightbox
-    │
-    ├── video/* or audio/*
-    │   → resources/views/files/viewer-media.blade.php
-    │   → HTML5 <video> / <audio>
-    │
-    ├── application/vnd.openxmlformats-officedocument.*
-    │   (Word, Excel, PowerPoint)
-    │   → resources/views/files/viewer-google-docs.blade.php
-    │   → Google Docs Viewer iframe embed
-    │   (requires file to be temporarily publicly accessible)
-    │
-    └── Everything else
-        → resources/views/files/viewer-download.blade.php
-        → File info card + download button
-```
-
----
-
-## Performance Considerations
-
-| Technique | Where Applied |
-|---|---|
-| PHP OPcache | Server-level (cPanel config) |
-| Route/config/view caching | Deploy-time (`php artisan *:cache`) |
-| Eager loading | All Eloquent queries use `->with(...)` |
-| Pagination | File lists, history, activity feed (20/page) |
-| DB indexes | All foreign keys + frequently queried columns |
-| Deduplication | MD5 hash prevents storing identical files twice |
-| Cloudflare CDN | Static assets cached at edge |
-| Chunked uploads | Files >10MB uploaded in chunks (no timeouts) |
-| File cache | Project stats cached for 5 min (Laravel file driver) |
-
----
-
-## Security Architecture
-
-| Threat | Mitigation |
-|---|---|
-| Unauthorized file access | `ProjectAccess` middleware on all file routes |
-| Path traversal | Filenames sanitized (`preg_replace` before storage) |
-| Malicious file upload | MIME type checked server-side with `finfo_file()` |
-| SQL injection | Eloquent ORM with parameterized queries |
-| XSS | Blade auto-escapes all `{{ }}` output |
-| CSRF | Laravel `VerifyCsrfToken` on all POST/PUT/DELETE |
-| Brute force login | Laravel rate limiting on login route |
-| Storage abuse | Quota enforced in `CheckpointService` before storing |
-| Oversized uploads | PHP `upload_max_filesize` + server-side check |
-
----
-
-*SchoolShare by EthioNext — ethionext.com.et*
-*Developer: Mahi Zeki Mukhtar — mahizeki037@gmail.com*
+See the review for evidence, remediation status, and deployment restrictions.

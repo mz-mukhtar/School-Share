@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FollowController extends Controller
 {
@@ -18,18 +19,21 @@ class FollowController extends Controller
             return response()->json(['error' => 'You cannot follow yourself.'], 400);
         }
 
-        $isFollowing = $follower->following()->where('following_id', $user->id)->exists();
+        $status = DB::transaction(function () use ($follower, $user): string {
+            User::query()->whereKey([$follower->id, $user->id])->lockForUpdate()->get();
+            $isFollowing = $follower->following()->where('following_id', $user->id)->exists();
 
-        if ($isFollowing) {
-            $follower->following()->detach($user->id);
-            $status = 'unfollowed';
-        } else {
-            $follower->following()->attach($user->id);
-            $status = 'followed';
-            
-            // Record activity
+            if ($isFollowing) {
+                $follower->following()->detach($user->id);
+
+                return 'unfollowed';
+            }
+
+            $follower->following()->syncWithoutDetaching([$user->id]);
             \App\Models\Activity::log('follow', $follower, $user);
-        }
+
+            return 'followed';
+        });
 
         return response()->json([
             'status' => $status,

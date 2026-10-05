@@ -89,7 +89,7 @@
       </div>
       <form action="{{ route('admin.users.update-plan', $user) }}" method="POST">
           @csrf
-          @method('PUT')
+          @method('PATCH')
           <div class="modal-body">
               <label class="form-label" style="color:var(--ss-text-muted);font-size:0.875rem;">Select New Plan</label>
               <select name="plan" class="form-select bg-dark text-light border-secondary">

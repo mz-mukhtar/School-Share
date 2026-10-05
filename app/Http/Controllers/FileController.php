@@ -2,95 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Checkpoint;
+use App\ArchivePath;
 use App\Models\Project;
 use App\Models\ProjectFile;
-use App\Models\FileVersion;
+use App\StorageLifecycle;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+use Jfcherng\Diff\Differ;
+use Jfcherng\Diff\Factory\RendererFactory;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FileController extends Controller
 {
     /**
      * Preview a file in the browser (or prompt download if not previewable).
      */
-    public function show(Project $project, ProjectFile $file)
+    public function show(Project $project, ProjectFile $file, StorageLifecycle $storage): View|StreamedResponse
     {
         $this->authorizeView($project, $file);
 
         $versionId = request('version_id');
-        $version = $versionId 
-            ? $file->versions()->find($versionId) 
+        $version = $versionId
+            ? $file->versions()->find($versionId)
             : $file->latestVersion;
 
-        if (!$version) abort(404, 'No file version found.');
+        if (! $version) {
+            abort(404, 'No file version found.');
+        }
 
         // For non-previewable files or large text files, just download
-        if (!$file->isPreviewable()) {
+        if (! $file->isPreviewable($version->mime_type)) {
             return $this->download($project, $file);
         }
 
         $content = null;
-        if ($file->isText()) {
-            if ($version->size_bytes <= 524288) {
-                $content = Storage::disk('local')->get($version->storage_path);
-            }
+        if ($file->isText($version->mime_type)) {
+            $content = $storage->readText($version, config('schoolshare.operations.max_editor_bytes'));
         }
 
         $file->load('versions.checkpoint');
+
         return view('projects.files.show', compact('project', 'file', 'content', 'version'));
     }
 
-    public function download(Project $project, ProjectFile $file)
+    public function download(Project $project, ProjectFile $file): StreamedResponse
     {
         $this->authorizeView($project, $file);
 
         $versionId = request('version_id');
-        $version = $versionId 
-            ? $file->versions()->find($versionId) 
+        $version = $versionId
+            ? $file->versions()->find($versionId)
             : $file->latestVersion;
 
-        if (!$version || !Storage::disk('local')->exists($version->storage_path)) {
+        if (! $version || ! Storage::disk('local')->exists($version->storage_path)) {
             abort(404, 'File not found on disk.');
         }
 
         return Storage::disk('local')->download($version->storage_path, $file->original_name);
     }
 
-    public function destroy(Project $project, ProjectFile $file)
+    public function destroy(Project $project, ProjectFile $file, StorageLifecycle $storage): RedirectResponse
     {
-        if (!$project->canEdit(auth()->user())) {
+        if (! $project->canEdit(auth()->user())) {
             abort(403);
         }
         abort_if($file->project_id !== $project->id, 404);
 
-        $user = auth()->user();
-
-        foreach ($file->versions as $version) {
-            $size = $version->size_bytes;
-            
-            $pathCount = \App\Models\FileVersion::where('storage_path', $version->storage_path)->count();
-            if ($pathCount <= 1) {
-                Storage::disk('local')->delete($version->storage_path);
-            }
-            
-            // Reclaim quota
-            $user->decrement('storage_used_bytes', min($size, $user->storage_used_bytes));
-
-            // Update checkpoint size
-            $checkpoint = Checkpoint::find($version->checkpoint_id);
-            if ($checkpoint) {
-                $checkpoint->decrement('total_size_bytes', min($size, $checkpoint->total_size_bytes));
-            }
-        }
-        
-        $file->versions()->delete();
-        $file->delete();
+        $storage->run(fn (StorageLifecycle $storage) => $storage->deleteFiles([$file], fn () => $file->delete()));
 
         return back()->with('success', 'File deleted.');
     }
 
-    public function diff(Project $project, ProjectFile $file)
+    public function diff(Project $project, ProjectFile $file, StorageLifecycle $storage): View
     {
         $this->authorizeView($project, $file);
 
@@ -100,7 +88,7 @@ class FileController extends Controller
         $from = $file->versions()->find($fromId);
         $to = $file->versions()->find($toId);
 
-        if (!$from || !$to) {
+        if (! $from || ! $to) {
             abort(404, 'Version not found.');
         }
 
@@ -110,113 +98,84 @@ class FileController extends Controller
             $to = $tmp;
         }
 
-        $fromText = $this->extractText($from);
-        $toText = $this->extractText($to);
+        abort_unless($from->isText() && $to->isText(), 422, 'Only plain text/code files support synchronous diff. Download Office files for comparison.');
+        $fromText = $storage->readText($from, config('schoolshare.operations.max_diff_bytes'));
+        $toText = $storage->readText($to, config('schoolshare.operations.max_diff_bytes'));
+        abort_if($fromText === null || $toText === null, 422, 'The diff inputs are missing or too large. Download them for comparison.');
+        abort_if(substr_count($fromText, "\n") + 1 > config('schoolshare.operations.max_diff_lines') || substr_count($toText, "\n") + 1 > config('schoolshare.operations.max_diff_lines'), 422, 'The diff has too many lines. Download the files for comparison.');
 
         $diffOptions = [
             'context' => 3,
             'ignoreCase' => false,
             'ignoreWhitespace' => false,
         ];
-        
+
         $rendererOptions = [
             'detailLevel' => 'line',
             'language' => 'eng',
             'resultForIdenticals' => 'Files are identical.',
         ];
 
-        $diff = new \Jfcherng\Diff\Diff(explode("\n", $fromText), explode("\n", $toText), $diffOptions);
-        $renderer = \Jfcherng\Diff\Factory\RendererFactory::make('Inline', $rendererOptions);
-        $htmlDiff = $renderer->renderArray($diff);
+        $diff = new Differ(explode("\n", $fromText), explode("\n", $toText), $diffOptions);
+        $renderer = RendererFactory::make('Inline', $rendererOptions);
+        $htmlDiff = $renderer->render($diff);
 
         return view('projects.files.diff', compact('project', 'file', 'from', 'to', 'htmlDiff'));
     }
 
-    private function extractText(FileVersion $version): string
+    public function update(Request $request, Project $project, ProjectFile $file, StorageLifecycle $storage): JsonResponse|RedirectResponse
     {
-        $path = Storage::disk('local')->path($version->storage_path);
-        if (!file_exists($path)) return '';
-        
-        $ext = strtolower(pathinfo($version->projectFile->original_name, PATHINFO_EXTENSION));
-        
-        if (in_array($ext, ['txt', 'md', 'csv', 'json', 'js', 'css', 'html', 'php', 'py', 'sh'])) {
-            return file_get_contents($path);
-        }
-        
-        if (in_array($ext, ['doc', 'docx'])) {
-            try {
-                $phpWord = \PhpOffice\PhpWord\IOFactory::load($path);
-                $text = '';
-                foreach ($phpWord->getSections() as $section) {
-                    foreach ($section->getElements() as $element) {
-                        if (method_exists($element, 'getText')) {
-                            $text .= $element->getText() . "\n";
-                        } elseif (method_exists($element, 'getElements')) {
-                            foreach ($element->getElements() as $child) {
-                                if (method_exists($child, 'getText')) {
-                                    $text .= $child->getText() . "\n";
-                                }
-                            }
-                        }
-                    }
-                }
-                return $text;
-            } catch (\Exception $e) {
-                return 'Could not extract text from docx: ' . $e->getMessage();
-            }
-        }
-        
-        return 'Unsupported format for text diff.';
-    }
-
-    public function update(Request $request, Project $project, ProjectFile $file)
-    {
-        if (!$project->canEdit(auth()->user())) {
+        if (! $project->canEdit(auth()->user())) {
             abort(403);
         }
         abort_if($file->project_id !== $project->id, 404);
 
         $request->validate([
             'original_name' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[\w\-\.]+$/'],
-            'folder_id' => ['nullable', 'exists:project_folders,id'],
-            'content' => ['sometimes', 'string', 'nullable'],
+            'folder_id' => ['nullable', 'integer', Rule::exists('project_folders', 'id')->where('project_id', $project->id)],
+            'content' => ['sometimes', 'string', 'nullable', 'max:'.config('schoolshare.operations.max_editor_bytes')],
         ], [
-            'original_name.regex' => 'The file name may only contain letters, numbers, dashes, underscores, and dots.'
+            'original_name.regex' => 'The file name may only contain letters, numbers, dashes, underscores, and dots.',
         ]);
 
+        if ($request->filled('original_name')) {
+            ArchivePath::validate($request->input('original_name'));
+        }
+
         if ($request->has('content')) {
+            abort_unless($file->isText(), 422, 'Only text/code files may be edited in the browser.');
             $user = auth()->user();
             $content = $request->input('content') ?? '';
             $size = strlen($content);
-            
-            // Check quota
-            if ($size > $user->remainingStorageBytes()) {
-                return response()->json(['success' => false, 'message' => 'Storage quota exceeded.']);
-            }
 
-            $checkpoint = $project->checkpoints()->create([
-                'user_id' => $user->id,
-                'title' => 'Updated ' . $file->original_name,
-                'message' => 'Edited via in-browser editor',
-                'total_size_bytes' => $size,
-            ]);
+            abort_if($size > config('schoolshare.operations.max_editor_bytes'), 413, 'The editor content is too large.');
+            $storage->run(function (StorageLifecycle $storage) use ($project, $file, $user, $size, $content) {
+                $storage->checkQuota($user, $size);
+                $storage->checkProjectCapacity($project, 1);
+                $blob = $storage->create($user, $project, $size, fn (string $path) => Storage::disk('local')->put($path, $content));
+                DB::transaction(function () use ($project, $file, $user, $size, $blob) {
+                    $file->refresh();
+                    $checkpoint = $project->checkpoints()->create([
+                        'user_id' => $user->id,
+                        'title' => 'Updated '.$file->original_name,
+                        'message' => 'Edited via in-browser editor',
+                        'total_size_bytes' => $size,
+                    ]);
 
-            $dir = "projects/{$user->id}/{$project->id}/{$checkpoint->id}";
-            $storedName = $dir . '/' . uniqid() . '_' . \Illuminate\Support\Str::slug($file->original_name);
-            Storage::disk('local')->put($storedName, $content);
+                    $version = $file->versions()->create([
+                        'checkpoint_id' => $checkpoint->id,
+                        'storage_path' => $blob->storage_path,
+                        'size_bytes' => $size,
+                        'mime_type' => $file->mime_type,
+                        'version_number' => $file->version_count + 1,
+                    ]);
 
-            $version = $file->versions()->create([
-                'checkpoint_id' => $checkpoint->id,
-                'storage_path' => $storedName,
-                'size_bytes' => $size,
-                'mime_type' => $file->mime_type,
-            ]);
+                    $file->latest_version_id = $version->id;
+                    $file->version_count += 1;
+                    $file->save();
 
-            $file->latest_version_id = $version->id;
-            $file->version_count += 1;
-            $file->save();
-
-            $user->increment('storage_used_bytes', $size);
+                });
+            });
 
             return response()->json(['success' => true]);
         }
@@ -236,10 +195,10 @@ class FileController extends Controller
                 return back()->with('error', 'A file with this name already exists in the target folder.');
             }
 
-            $file->update([
+            $storage->run(fn () => $file->update([
                 'original_name' => $newName,
                 'folder_id' => $folderId,
-            ]);
+            ]));
         }
 
         return back()->with('success', 'File updated successfully.');
@@ -250,7 +209,7 @@ class FileController extends Controller
     private function authorizeView(Project $project, ProjectFile $file): void
     {
         abort_if($file->project_id !== $project->id, 404);
-        if (!$project->hasAccess(auth()->user())) {
+        if (! $project->hasAccess(auth()->user())) {
             abort(403);
         }
     }

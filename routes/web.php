@@ -1,10 +1,21 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CheckpointController;
+use App\Http\Controllers\CollaboratorController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExploreController;
 use App\Http\Controllers\FeedController;
+use App\Http\Controllers\FileController;
+use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\ForkController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\ZipController;
+use App\Http\Controllers\UpgradeController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public pages ─────────────────────────────────────────────────────────────
@@ -14,6 +25,7 @@ Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
+
     return view('welcome');
 })->name('home');
 
@@ -43,9 +55,9 @@ Route::get('/sitemap.xml', function () {
 });
 
 // Public User Profile
-Route::get('/u/{username}', [App\Http\Controllers\PublicProfileController::class, 'show'])->name('profile.public');
-Route::get('/u/{username}/followers', [App\Http\Controllers\PublicProfileController::class, 'followers'])->name('profile.followers');
-Route::get('/u/{username}/following', [App\Http\Controllers\PublicProfileController::class, 'following'])->name('profile.following');
+Route::get('/u/{username}', [PublicProfileController::class, 'show'])->name('profile.public');
+Route::get('/u/{username}/followers', [PublicProfileController::class, 'followers'])->name('profile.followers');
+Route::get('/u/{username}/following', [PublicProfileController::class, 'following'])->name('profile.following');
 
 // ── Authenticated pages ───────────────────────────────────────────────────────
 
@@ -68,7 +80,10 @@ Route::middleware(['auth', 'otp.verified'])->group(function () {
     Route::post('/users/{user}/follow', [FollowController::class, 'toggle'])->name('users.follow');
 
     // Explore (Public projects search)
-    Route::get('/explore', [App\Http\Controllers\ExploreController::class, 'index'])->name('explore');
+    Route::get('/explore', [ExploreController::class, 'index'])->name('explore');
+
+    Route::get('/upgrades/{plan}', [UpgradeController::class, 'show'])->name('upgrade.show');
+    Route::post('/upgrades', [UpgradeController::class, 'store'])->name('upgrade.store');
 
     // Profile (Breeze default)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -76,38 +91,38 @@ Route::middleware(['auth', 'otp.verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Projects
-    Route::resource('projects', App\Http\Controllers\ProjectController::class);
-    Route::post('projects/{project}/star', [App\Http\Controllers\ProjectController::class, 'toggleStar'])->name('projects.star');
-    Route::post('projects/{project}/fork', [App\Http\Controllers\ForkController::class, 'store'])->name('projects.fork');
+    Route::resource('projects', ProjectController::class);
+    Route::post('projects/{project}/star', [ProjectController::class, 'toggleStar'])->name('projects.star');
+    Route::post('projects/{project}/fork', [ForkController::class, 'store'])->middleware('throttle:forks')->name('projects.fork');
 
     // Checkpoints (nested under projects)
-    Route::prefix('projects/{project}')->name('projects.')->group(function () {
-        Route::get('/checkpoints',                   [App\Http\Controllers\CheckpointController::class, 'index']  )->name('checkpoints.index');
-        Route::get('/checkpoints/create',            [App\Http\Controllers\CheckpointController::class, 'create'] )->name('checkpoints.create');
-        Route::post('/checkpoints',                  [App\Http\Controllers\CheckpointController::class, 'store']  )->middleware('throttle:uploads')->name('checkpoints.store');
-        Route::get('/checkpoints/{checkpoint}',      [App\Http\Controllers\CheckpointController::class, 'show']   )->name('checkpoints.show');
-        Route::post('/checkpoints/{checkpoint}/restore', [App\Http\Controllers\CheckpointController::class, 'restore'])->name('checkpoints.restore');
-        Route::delete('/checkpoints/{checkpoint}',   [App\Http\Controllers\CheckpointController::class, 'destroy'])->name('checkpoints.destroy');
-        Route::post('/checkpoints/{checkpoint}/comments', [App\Http\Controllers\CommentController::class, 'store'])->name('checkpoints.comments.store');
-        Route::delete('/comments/{comment}',         [App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::prefix('projects/{project}')->name('projects.')->scopeBindings()->group(function () {
+        Route::get('/checkpoints', [CheckpointController::class, 'index'])->name('checkpoints.index');
+        Route::get('/checkpoints/create', [CheckpointController::class, 'create'])->name('checkpoints.create');
+        Route::post('/checkpoints', [CheckpointController::class, 'store'])->middleware('throttle:uploads')->name('checkpoints.store');
+        Route::get('/checkpoints/{checkpoint}', [CheckpointController::class, 'show'])->name('checkpoints.show');
+        Route::post('/checkpoints/{checkpoint}/restore', [CheckpointController::class, 'restore'])->middleware('throttle:uploads')->name('checkpoints.restore');
+        Route::delete('/checkpoints/{checkpoint}', [CheckpointController::class, 'destroy'])->name('checkpoints.destroy');
+        Route::post('/checkpoints/{checkpoint}/comments', [CommentController::class, 'store'])->name('checkpoints.comments.store');
+        Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 
         // Files (nested under projects, not checkpoints — for easy access by file ID)
-        Route::get('/files/{file}',          [App\Http\Controllers\FileController::class, 'show']    )->name('files.show');
-        Route::get('/files/{file}/download', [App\Http\Controllers\FileController::class, 'download'])->name('files.download');
-        Route::get('/files/{file}/diff',     [App\Http\Controllers\FileController::class, 'diff']    )->name('files.diff');
-        Route::put('/files/{file}',          [App\Http\Controllers\FileController::class, 'update']  )->name('files.update');
-        Route::delete('/files/{file}',       [App\Http\Controllers\FileController::class, 'destroy'] )->name('files.destroy');
+        Route::get('/files/{file}', [FileController::class, 'show'])->middleware('throttle:file-views')->name('files.show');
+        Route::get('/files/{file}/download', [FileController::class, 'download'])->middleware('throttle:downloads')->name('files.download');
+        Route::get('/files/{file}/diff', [FileController::class, 'diff'])->middleware('throttle:diffs')->name('files.diff');
+        Route::put('/files/{file}', [FileController::class, 'update'])->middleware('throttle:editor')->name('files.update');
+        Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
         // Folders
-        Route::post('/folders', [App\Http\Controllers\FolderController::class, 'store'])->name('folders.store');
-        Route::delete('/folders/{folder}', [App\Http\Controllers\FolderController::class, 'destroy'])->name('folders.destroy');
+        Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+        Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
 
         // Zip
-        Route::get('/download-zip', [App\Http\Controllers\ZipController::class, 'downloadProject'])->name('download-zip');
+        Route::get('/download-zip', [ZipController::class, 'downloadProject'])->middleware('throttle:downloads')->name('download-zip');
 
         // Collaborators
-        Route::post('/collaborators', [App\Http\Controllers\CollaboratorController::class, 'store'])->name('collaborators.store');
-        Route::put('/collaborators/{collaborator}', [App\Http\Controllers\CollaboratorController::class, 'update'])->name('collaborators.update');
-        Route::delete('/collaborators/{collaborator}', [App\Http\Controllers\CollaboratorController::class, 'destroy'])->name('collaborators.destroy');
+        Route::post('/collaborators', [CollaboratorController::class, 'store'])->name('collaborators.store');
+        Route::put('/collaborators/{collaborator}', [CollaboratorController::class, 'update'])->name('collaborators.update');
+        Route::delete('/collaborators/{collaborator}', [CollaboratorController::class, 'destroy'])->name('collaborators.destroy');
     });
 
 });

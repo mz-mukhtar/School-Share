@@ -12,14 +12,21 @@ class UpgradeRequest extends Model
         'requested_plan',
         'billing_cycle',
         'status',
+        'mail_delivery_status',
+        'mail_delivery_error',
+        'mail_sent_at',
         'admin_notes',
         'processed_at',
         'processed_by',
     ];
 
-    protected $casts = [
-        'processed_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'processed_at' => 'datetime',
+            'mail_sent_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {

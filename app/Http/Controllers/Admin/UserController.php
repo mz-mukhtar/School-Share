@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -37,7 +38,7 @@ class UserController extends Controller
     public function updatePlan(Request $request, User $user)
     {
         $validated = $request->validate([
-            'plan' => ['required', 'in:free,pro,custom'],
+            'plan' => ['required', Rule::in(array_keys(config('schoolshare.plans')))],
         ]);
 
         $user->update([

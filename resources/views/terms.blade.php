@@ -195,7 +195,7 @@
             <li><a href="#s6">What we may do with your content</a></li>
             <li><a href="#s7">What you must not do</a></li>
             <li><a href="#s8">Plans & payments</a></li>
-            <li><a href="#s9">Open source & branding</a></li>
+            <li><a href="#s9">Source licensing & branding</a></li>
             <li><a href="#s10">Service availability</a></li>
             <li><a href="#s11">Termination</a></li>
             <li><a href="#s12">Liability</a></li>
@@ -269,11 +269,11 @@
 
     <div class="terms-section" id="s5">
         <h2><i class="bi bi-shield-lock"></i> 5. Your content — ownership &amp; privacy</h2>
-        <p><em>You own everything you upload. We don't read your files or share them with anyone. Private projects stay private.</em></p>
+        <p><em>You retain ownership of your content. The current application protects private projects with owner/collaborator access checks, but this page is not a substitute for a host's privacy notice or data-processing terms.</em></p>
         <ul>
             <li><strong>You own your content.</strong> Uploading files to SchoolShare does not transfer any intellectual property rights to EthioNext.</li>
-            <li>Private projects are visible only to you and any collaborators you explicitly invite.</li>
-            <li>Public projects are visible to all logged-in users and (if enabled) search engines.</li>
+            <li>Private projects are available through the application only to their owner and current collaborators.</li>
+            <li>Public projects are available to authenticated, OTP-verified users. The current routes do not provide guest or search-engine access to project pages.</li>
             <li>We do not sell your content, share it with advertisers, or use it to train AI models.</li>
             <li>We may access files only when necessary to provide technical support, if required by law, or to investigate a reported Terms violation.</li>
         </ul>
@@ -281,13 +281,13 @@
 
     <div class="terms-section" id="s6">
         <h2><i class="bi bi-server"></i> 6. What we may do with your content</h2>
-        <p><em>We store and back up your files to run the service. That's it.</em></p>
+        <p><em>A deployment operator may need to store, back up, and transmit files to operate the service. Obtain the operator's privacy and retention terms before using a hosted deployment.</em></p>
         <p>
-            By uploading content, you grant EthioNext a limited, non-exclusive, royalty-free license to store, replicate
+            By uploading content, you grant the deployment operator a limited, non-exclusive, royalty-free license to store, replicate
             (for backup), and transmit your content solely for the purpose of providing the SchoolShare service to you.
-            This license ends when you delete your content or close your account.
+            Deletion and retention must follow the deployment operator's published policy and backup procedures.
         </p>
-        <p>We will not sublicense, sell, or otherwise exploit your content beyond what is required to operate the Service.</p>
+        <p>The current application uses external browser assets and may direct Office-document previews to Google Docs Viewer. Review the deployment operator's privacy notice before uploading sensitive content.</p>
     </div>
 
     <div class="terms-section" id="s7">
@@ -322,12 +322,12 @@
     </div>
 
     <div class="terms-section" id="s9">
-        <h2><i class="bi bi-github"></i> 9. Open source &amp; branding</h2>
-        <p><em>The code is open source. The SchoolShare brand belongs to EthioNext. If you self-host, you must keep the EthioNext credit visible unless you have a commercial license.</em></p>
+        <h2><i class="bi bi-github"></i> 9. Source licensing &amp; branding</h2>
+        <p><em>The source is distributed under the terms in the repository license. It is not described here as OSI open source because the current SchoolShare Community License contains non-commercial restrictions.</em></p>
         <ul>
-            <li>The SchoolShare source code is released under the <strong>SchoolShare Community License (SCL v1.0)</strong>, available at <a href="{{ config('schoolshare.branding.github_url') }}/blob/main/LICENSE.md" target="_blank">GitHub</a>.</li>
+            <li>Read the repository <a href="{{ config('schoolshare.branding.github_url') }}/blob/main/LICENSE.md" target="_blank">LICENSE.md</a> before using, distributing, or self-hosting the source. The copyright holder must resolve the repository's SCL-versus-Composer-MIT metadata conflict before distribution.</li>
             <li>You may fork, modify, and self-host SchoolShare for personal or educational use for free, provided the EthioNext branding and credit remain visible in the UI.</li>
-            <li>Removing or replacing EthioNext branding requires a <strong>Commercial (White-label) License</strong>.</li>
+            <li>Removing or replacing EthioNext branding requires the rights specified by the repository license. The current white-label configuration check only requires an <code>SS-</code>-prefixed value; it does not validate a commercial entitlement.</li>
             <li>Selling the software or offering it as a commercial product without a license is prohibited.</li>
         </ul>
     </div>

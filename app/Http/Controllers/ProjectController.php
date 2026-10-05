@@ -2,9 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\Project;
+use App\StorageLifecycle;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
@@ -16,12 +24,14 @@ class ProjectController extends Controller
         $query = $request->user()->projects()->latest();
 
         if ($search = $request->input('q')) {
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+            $query->where(function (Builder $query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
         $projects = $query->paginate(12);
-        
+
         $sharedProjects = $request->user()->sharedProjects()->latest()->get();
 
         return view('projects.index', compact('projects', 'sharedProjects'));
@@ -32,7 +42,7 @@ class ProjectController extends Controller
      */
     public function create(Request $request)
     {
-        if (!$request->user()->canCreateProject()) {
+        if (! $request->user()->canCreateProject()) {
             return redirect()->route('projects.index')
                 ->with('error', 'You have reached the maximum number of projects for your plan.');
         }
@@ -45,36 +55,43 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$request->user()->canCreateProject()) {
+        if (! $request->user()->canCreateProject()) {
             return redirect()->route('projects.index')
                 ->with('error', 'You have reached the maximum number of projects for your plan.');
         }
 
         $validated = $request->validate([
-            'name'        => [
-                'required', 
-                'string', 
-                'max:255', 
-                \Illuminate\Validation\Rule::unique('projects')->where('user_id', $request->user()->id)
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('projects')->where('user_id', $request->user()->id),
             ],
             'description' => ['nullable', 'string', 'max:1000'],
             'tags' => ['nullable', 'string', 'max:255'],
-            'visibility'  => ['required', 'in:public,private'],
+            'visibility' => ['required', 'in:public,private'],
         ], [
             'name.unique' => 'You already have a project with this name.',
         ]);
 
-        $project = $request->user()->projects()->create([
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'visibility' => $validated['visibility'],
-        ]);
+        $project = DB::transaction(function () use ($request, $validated): Project {
+            $owner = \App\Models\User::query()->lockForUpdate()->findOrFail($request->user()->id);
+            if (! $owner->canCreateProject()) {
+                abort(409, 'You have reached the maximum number of projects for your plan.');
+            }
 
-        if (!empty($validated['tags'])) {
+            return Project::createForOwner($owner, [
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                'visibility' => $validated['visibility'],
+            ]);
+        });
+
+        if (! empty($validated['tags'])) {
             $tagNames = array_map('trim', explode(',', $validated['tags']));
             $tagNames = array_filter($tagNames);
             $tagNames = array_unique($tagNames);
-            
+
             foreach ($tagNames as $tagName) {
                 if (strlen($tagName) > 0 && strlen($tagName) <= 100) {
                     $project->tags()->create(['tag' => $tagName]);
@@ -82,7 +99,7 @@ class ProjectController extends Controller
             }
         }
 
-        \App\Models\Activity::log('project_created', $request->user(), $project, [
+        Activity::log('project_created', $request->user(), $project, [
             'visibility' => $project->visibility,
         ]);
 
@@ -93,16 +110,15 @@ class ProjectController extends Controller
     /**
      * Display the specified project (the Repository).
      */
-    public function show(Request $request, Project $project)
+    public function show(Request $request, Project $project, StorageLifecycle $storage): View
     {
         // Access control
-        if (!$project->hasAccess(auth()->user())) {
+        if (! $project->hasAccess(auth()->user())) {
             abort(403, 'This project is private or you do not have access.');
         }
 
         $latestCheckpoint = $project->latestCheckpoint;
         $checkpoints = $project->checkpoints()->withCount('fileVersions as files_count')->limit(5)->get();
-
 
         // Folder navigation
         $currentFolderId = $request->query('folder');
@@ -123,10 +139,14 @@ class ProjectController extends Controller
         });
 
         if ($readmeFile && $readmeFile->latestVersion) {
-            $path = \Illuminate\Support\Facades\Storage::disk('local')->path($readmeFile->latestVersion->storage_path);
-            if (file_exists($path)) {
-                $markdown = file_get_contents($path);
-                $readmeHtml = Str::markdown($markdown);
+            $markdown = $storage->readText($readmeFile->latestVersion, config('schoolshare.operations.max_readme_bytes'));
+            if ($markdown !== null) {
+                $readmeHtml = Str::markdown($markdown, [
+                    'html_input' => 'escape',
+                    'allow_unsafe_links' => false,
+                    'max_nesting_level' => 32,
+                    'max_delimiters_per_line' => 1000,
+                ]);
             }
         }
 
@@ -158,20 +178,20 @@ class ProjectController extends Controller
         }
 
         $validated = $request->validate([
-            'name'        => [
-                'required', 
-                'string', 
-                'max:255', 
-                \Illuminate\Validation\Rule::unique('projects')->where('user_id', $request->user()->id)->ignore($project->id)
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('projects')->where('user_id', $request->user()->id)->ignore($project->id),
             ],
             'description' => ['nullable', 'string', 'max:1000'],
             'tags' => ['nullable', 'string', 'max:255'],
-            'visibility'  => ['required', 'in:public,private'],
+            'visibility' => ['required', 'in:public,private'],
         ], [
             'name.unique' => 'You already have a project with this name.',
         ]);
 
-        // If name changes, we could update the slug, but it breaks old URLs. 
+        // If name changes, we could update the slug, but it breaks old URLs.
         // For simplicity, we keep the original slug.
 
         $project->update([
@@ -182,11 +202,11 @@ class ProjectController extends Controller
 
         // Process tags
         $project->tags()->delete(); // Clear old tags
-        if (!empty($validated['tags'])) {
+        if (! empty($validated['tags'])) {
             $tagNames = array_map('trim', explode(',', $validated['tags']));
             $tagNames = array_filter($tagNames);
             $tagNames = array_unique($tagNames);
-            
+
             foreach ($tagNames as $tagName) {
                 if (strlen($tagName) > 0 && strlen($tagName) <= 100) {
                     $project->tags()->create(['tag' => $tagName]);
@@ -201,13 +221,18 @@ class ProjectController extends Controller
     /**
      * Remove the specified project from storage.
      */
-    public function destroy(Project $project)
+    public function destroy(Project $project, StorageLifecycle $storage): RedirectResponse
     {
         if (auth()->id() !== $project->user_id) {
             abort(403, 'Only the owner can delete the project.');
         }
 
-        $project->delete();
+        abort_if($project->hasForeignFolderReferences(), 409, 'This project has invalid folder references. Repair them before deleting it.');
+
+        $storage->run(function (StorageLifecycle $storage) use ($project) {
+            abort_if($project->hasForeignFolderReferences(), 409, 'Repair invalid folder references first.');
+            $storage->deleteFiles($project->files()->with('versions')->get(), fn () => $project->delete());
+        });
 
         return redirect()->route('projects.index')
             ->with('success', 'Project deleted successfully.');
@@ -219,24 +244,30 @@ class ProjectController extends Controller
     public function toggleStar(Project $project)
     {
         $user = auth()->user();
-        
-        $hasStarred = $user->starredProjects()->where('project_id', $project->id)->exists();
 
-        if ($hasStarred) {
-            $user->starredProjects()->detach($project->id);
-            $project->decrement('star_count');
-            $status = 'unstarred';
-        } else {
-            $user->starredProjects()->attach($project->id);
-            $project->increment('star_count');
-            $status = 'starred';
-            
-            \App\Models\Activity::log('project_starred', $user, $project);
-        }
+        abort_unless($project->hasAccess($user), 403);
+
+        [$status, $starCount] = DB::transaction(function () use ($project, $user): array {
+            $lockedProject = Project::query()->lockForUpdate()->findOrFail($project->id);
+            $hasStarred = $user->starredProjects()->where('project_id', $lockedProject->id)->exists();
+
+            if ($hasStarred) {
+                $user->starredProjects()->detach($lockedProject->id);
+                $lockedProject->update(['star_count' => max(0, $lockedProject->star_count - 1)]);
+
+                return ['unstarred', $lockedProject->star_count];
+            }
+
+            $user->starredProjects()->syncWithoutDetaching([$lockedProject->id]);
+            $lockedProject->increment('star_count');
+            Activity::log('project_starred', $user, $lockedProject);
+
+            return ['starred', $lockedProject->fresh()->star_count];
+        });
 
         return response()->json([
             'status' => $status,
-            'star_count' => $project->star_count,
+            'star_count' => $starCount,
         ]);
     }
 }

@@ -1,47 +1,45 @@
 # Changelog
 
-All notable changes to SchoolShare will be documented in this file.
+All notable user-facing, security, and operational changes are recorded here.
+The project uses Keep a Changelog-style sections; version tags should be added
+only when a release is actually cut.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## Unreleased — 2026-10-05
 
----
+### Security and access control
 
-## [Unreleased]
+- Escaped raw README HTML and blocked unsafe Markdown links.
+- Replaced the vulnerable PDF.js integration with pinned PDF.js 6.4.299 and
+  disabled PDF evaluation.
+- Scoped project search, activity visibility, nested route binding, private
+  starring, folder validation, comments, and collaborator forms.
 
-### In Progress
-- Phase 2: Foundation, auth & EthioNext branding
-- Phase 3: Landing page
+### Storage and file operations
 
----
+- Added a private-blob billing ledger, lifecycle locking, quota reservations,
+  reconciliation, and guarded cleanup.
+- Bounded uploads, editor content, README rendering, text diffs, project size,
+  exports, forks, and folder depth.
+- Hardened ZIP paths and rejected unsafe legacy archive entries.
+- Restricted synchronous diffs to bounded text/code input; Office diffing is
+  unavailable pending an isolated processing design.
 
-## [0.1.0] — 2026-10-04
+### Documentation
 
-### Added
-- Initial repository setup
-- `README.md` — full project documentation
-- `LICENSE.md` — SchoolShare Community License (SCL v1.0)
-- `CONTRIBUTING.md` — contribution guide
-- `CODE_OF_CONDUCT.md` — community behavior standards
-- `SECURITY.md` — vulnerability reporting policy
-- `SELF_HOSTING.md` — complete cPanel deployment guide
-- `CHANGELOG.md` — this file
-- `ROADMAP.md` — public development roadmap
-- `.env.example` — environment variable template
-- `docs/ARCHITECTURE.md` — technical architecture documentation
-- `docs/API.md` — internal API reference
-- `config/schoolshare.php` — application configuration
-- Laravel 11 project scaffold
-- Base `.gitignore` configuration
+- Rewrote product, deployment, architecture, route, security, and contribution
+  documentation against the current code.
+- Consolidated production guidance into `SELF_HOSTING.md`.
+- Removed the obsolete `ROADMAP.md`.
 
-### Project Details
-- Developer: Mahi Zeki Mukhtar
-- Organization: EthioNext (ethionext.com.et)
-- License: SchoolShare Community License v1.0
+### Known release blockers
 
----
+- The MySQL/MariaDB versioning migration chain still needs a clean and populated
+  production-engine repair/test.
+- OTP hardening and frontend dependency maintenance remain open security work.
+- Full historical checkpoint-tree restore is not implemented.
 
-<!-- Upcoming releases will be added above this line -->
+## 0.1.0 — 2026-10-04
 
-[Unreleased]: https://github.com/mz-mukhtar/School-Share/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/mz-mukhtar/School-Share/releases/tag/v0.1.0
+Initial project scaffolding and early documentation. Historical claims in this
+release section describe that release and should not be read as the current
+support matrix; consult Unreleased and the repository review.

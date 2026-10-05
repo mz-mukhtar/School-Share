@@ -11,8 +11,16 @@ class ProjectFolder extends Model
     protected $fillable = [
         'project_id',
         'parent_id',
+        'parent_scope',
         'name',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (ProjectFolder $folder): void {
+            $folder->parent_scope = $folder->parent_id ?? 0;
+        });
+    }
 
     public function project(): BelongsTo
     {
@@ -41,10 +49,13 @@ class ProjectFolder extends Model
     {
         $breadcrumbs = [];
         $current = $this;
-        while ($current) {
+        $visited = [];
+        while ($current && ! isset($visited[$current->id])) {
+            $visited[$current->id] = true;
             array_unshift($breadcrumbs, $current);
-            $current = $current->parent;
+            $current = $current->parent()->where('project_id', $this->project_id)->first();
         }
+
         return $breadcrumbs;
     }
 }

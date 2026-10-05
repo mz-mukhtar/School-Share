@@ -1,107 +1,62 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+## Reporting a vulnerability
 
-| Version | Supported |
-|---|---|
-| Latest (main branch) | ✅ Yes |
-| Older tagged releases | ⚠️ Best-effort |
+Do not open a public GitHub issue for a suspected vulnerability.
 
-We recommend always running the latest version of SchoolShare.
+- Email: mahizeki037@gmail.com
+- Phone: +251 992 194 042
+- Website: https://ethionext.com.et
 
----
+Include the affected version/commit, impact, reproducible steps, a safe proof
+of concept, and any suggested mitigation. Please avoid accessing other users'
+data or disrupting the service while testing.
 
-## Reporting a Vulnerability
-
-**Please do NOT report security vulnerabilities through public GitHub issues.**
-
-If you discover a security vulnerability, please report it privately so we can
-fix it before it is publicly known.
-
-### Contact
-
-**Mahi Zeki Mukhtar** — Lead Developer & Security Contact
-- 📧 **Email**: mahizeki037@gmail.com *(preferred)*
-- 📞 **Phone**: +251 992 194 042
-- 🌐 **Website**: https://ethionext.com.et
-
-### What to Include in Your Report
-
-Please provide as much detail as possible:
-
-1. **Description** — What is the vulnerability?
-2. **Severity** — How serious do you think it is? (Critical / High / Medium / Low)
-3. **Affected Component** — Which part of the app is affected?
-4. **Steps to Reproduce** — Detailed steps to trigger the vulnerability
-5. **Proof of Concept** — Code, screenshot, or video demonstrating the issue
-6. **Suggested Fix** — If you have one (optional but very helpful)
-7. **Your Contact Info** — So we can credit you (optional)
-
-### What Happens Next
-
-1. **Acknowledgement** — We will acknowledge your report within **48 hours**
-2. **Investigation** — We will investigate and assess the severity
-3. **Fix** — We will develop and test a patch
-4. **Disclosure** — We will release the fix and, with your permission,
-   credit you in the release notes
-5. **Timeline** — We aim to resolve critical issues within **7 days**,
-   and other issues within **30 days**
-
----
+The stated response targets are acknowledgement within 48 hours, investigation
+of critical reports within 7 days, and other reports within 30 days. These are
+targets, not a guarantee of a particular fix or disclosure date.
 
 ## Scope
 
-### In Scope (please report these)
+Report authentication/authorization bypasses, cross-project access, stored or
+reflected script execution, unsafe archive/file handling, quota/accounting
+bypasses, sensitive-data disclosure, request forgery bypasses, injection, and
+meaningful denial-of-service conditions. Third-party dependency vulnerabilities
+are relevant when the dependency is used by this application; include the
+affected version and reachability details.
 
-- Authentication bypass or privilege escalation
-- SQL injection
-- Remote code execution (RCE)
-- Cross-site scripting (XSS) with real impact
-- Cross-site request forgery (CSRF) bypasses
-- Path traversal / arbitrary file read
-- Insecure direct object references (users accessing other users' files)
-- Storage quota bypass
-- Branding license system bypass
+## Current controls
 
-### Out of Scope
+- Laravel session authentication, CSRF middleware, password hashing, and
+  server-side validation are in use.
+- Protected project routes require authentication and OTP verification.
+- Project/checkpoint/file/folder/comment/collaborator routes use scoped
+  project binding and application access checks.
+- README Markdown escapes raw HTML and disables unsafe links; Blade escaping is
+  still context-specific and must not be treated as a universal sanitizer.
+- PDF preview is pinned to PDF.js 6.4.299 and disables evaluation.
+- Private project blobs are kept outside the public web root. Upload names and
+  ZIP entries are validated against traversal, and current ZIP export validates
+  legacy rows too.
+- Storage blobs have a billing ledger, lifecycle lock, bounded operations, and
+  reconciliation command once the ledger migration is deployed.
+- Named rate limits apply to uploads, editing, previews, diffs, forks, and
+  downloads.
 
-- Issues that require physical access to the server
-- Social engineering attacks
-- Spam or abuse of the platform
-- Missing security headers that have no practical exploit
-- Rate limiting on non-sensitive endpoints
-- Issues in third-party libraries (report those to the library maintainer)
+## Known limitations and release status
 
----
+SchoolShare is not currently approved for a fresh production MySQL/MariaDB
+deployment: the versioning migration chain still requires repair and production
+engine tests. Group 4 OTP hardening and Group 5 frontend dependency maintenance
+are open. The current local-disk lifecycle lock is single-host only. Checkpoint
+restore is not yet a complete historical snapshot/recovery system.
 
-## Responsible Disclosure
+See [docs/REPOSITORY_REVIEW_2026-10-05.md](docs/REPOSITORY_REVIEW_2026-10-05.md)
+for verified findings, fixed groups, outstanding work, and deployment limits.
 
-We believe in responsible disclosure and will:
+## Researcher expectations
 
-- Work with you to understand and fix the issue
-- Not pursue legal action against good-faith security researchers
-- Credit you in our security advisory (if you wish)
-- Aim to fix critical vulnerabilities before public disclosure
-
-Please give us a reasonable time to fix the issue before disclosing publicly.
-
----
-
-## Known Security Measures
-
-SchoolShare implements the following security measures:
-
-- **CSRF protection** on all forms (Laravel's built-in)
-- **File type validation** — server-side MIME type checking
-- **Path traversal prevention** — filenames are sanitized before storage
-- **Authentication** — all project/file routes require login
-- **Project access control** — private projects are never accessible without permission
-- **SQL injection prevention** — all queries use Laravel's Eloquent ORM (parameterized)
-- **XSS prevention** — all output is escaped by default in Blade templates
-- **Rate limiting** — upload and login endpoints are rate-limited
-- **Storage quota** — enforced server-side, not just client-side
-
----
-
-*SchoolShare by EthioNext — ethionext.com.et*
-*Developed by Mahi Zeki Mukhtar — mahizeki037@gmail.com*
+Act in good faith: minimise data access, do not publish a proof of concept
+before a reasonable remediation window, and do not use social engineering or
+physical access. Good-faith reporting will not be pursued as a legal claim by
+the project maintainer, subject to applicable law and the boundaries above.
