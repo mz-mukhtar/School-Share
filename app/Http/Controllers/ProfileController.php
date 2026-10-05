@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\EmailOtpService;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Checkpoint;
 use App\Models\CheckpointFileSnapshot;
 use App\Models\CheckpointFolderSnapshot;
+use App\Models\EmailOtpToken;
 use App\Models\FileVersion;
 use App\Models\Project;
 use App\Models\ProjectFile;
 use App\Models\StoredBlob;
+use App\Models\User;
 use App\StorageLifecycle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -33,7 +37,7 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, EmailOtpService $otp): RedirectResponse
     {
         $user = $request->user();
         $validated = $request->validated();
@@ -46,13 +50,27 @@ class ProfileController extends Controller
             $validated['avatar_path'] = $path;
         }
 
-        $user->fill($validated);
+        $emailChanged = DB::transaction(function () use ($user, $validated): bool {
+            $account = User::query()->lockForUpdate()->findOrFail($user->id);
+            $account->fill($validated);
+            $emailChanged = $account->isDirty('email');
+            if ($emailChanged) {
+                $account->email_verified_at = null;
+                EmailOtpToken::where('user_id', $account->id)->delete();
+            }
+            $account->save();
 
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+            return $emailChanged;
+        });
+
+        if ($emailChanged) {
+            $sent = $otp->send($user->refresh());
+
+            return Redirect::route('otp.verify.show')->with(
+                $sent ? 'success' : 'warning',
+                $sent ? 'Your email was changed. Verify the new address using the code sent to it.' : 'Your email was changed, but code delivery failed. Use Resend code to try again.'
+            );
         }
-
-        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

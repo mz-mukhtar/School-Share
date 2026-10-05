@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\EmailOtpService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
@@ -24,6 +25,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        RateLimiter::for('otp-verify', fn (Request $request) => [
+            Limit::perMinutes(EmailOtpService::WINDOW_MINUTES, 10)->by('account:'.$request->user()->id),
+            Limit::perMinutes(EmailOtpService::WINDOW_MINUTES, 30)->by('source:'.$request->ip()),
+        ]);
+        RateLimiter::for('otp-send', fn (Request $request) => [
+            Limit::perMinutes(EmailOtpService::WINDOW_MINUTES, EmailOtpService::MAX_SENDS)->by('account:'.$request->user()->id),
+            Limit::perMinutes(EmailOtpService::WINDOW_MINUTES, 10)->by('source:'.$request->ip()),
+        ]);
+        RateLimiter::for('registration', fn (Request $request) => Limit::perMinutes(10, 5)->by($request->ip()));
 
         // Layer 3: Boot-time license check
         if (config('schoolshare.branding.mode') === 'whitelabel') {

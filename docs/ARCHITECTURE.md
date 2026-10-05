@@ -21,7 +21,38 @@ Laravel 13 application
 The browser uses server-rendered Blade. Bootstrap is delivered from jsDelivr;
 PDF.js 6.4.299 is loaded as a module from jsDelivr; CodeMirror modules are
 loaded from esm.sh. These external assets are not installed through the PHP
-dependency graph and should be reviewed as part of frontend dependency work.
+dependency graph or `package-lock.json`. The lockfile covers the separate
+Vite/Tailwind 4/Alpine build graph, installed with `npm ci --ignore-scripts`.
+Tailwind uses its Vite plugin and scans only the declared Blade/pagination
+sources. An npm audit does not audit the external CDN assets, which still need
+separate release review. Current application pages use the CDN layout rather
+than loading the Vite scaffold with `@vite`.
+
+## Email verification
+
+`EmailOtpService` owns issuance and verification. Both lock the user row in a
+database transaction so profile email changes, resends, and verification agree
+on the current email. One token per user stores a keyed SHA-256 digest bound to
+user ID, email, and code, never the plaintext code. The code appears only in
+the necessary mail body, not its subject or session old input.
+
+Tokens last 15 minutes, permit five incorrect guesses, and are consumed on
+success. Issuance rotates the verifier without resetting the ten-minute,
+three-delivery database budget. Registration and failed sends count toward
+that budget. Named cache-backed limiters additionally enforce account/IP
+verification and resend limits and an IP registration limit.
+
+Mail is sent synchronously after token metadata commits. Failure records a
+retryable status and displays a warning without undoing the account or email
+change; exception reporting omits transport details. Conditional delivery-status
+updates cannot overwrite a newer token. An email change clears verification
+and old tokens before sending a new code. Legacy notice/resend routes use the
+same OTP flow; valid previously-issued signed links consume any outstanding
+token and recheck the current email under lock.
+
+The protected-token migration invalidates legacy plaintext codes. Deployment
+requires persistent limiter cache, a stable application key, and a verified
+mail transport; see [SELF_HOSTING.md](../SELF_HOSTING.md).
 
 ## Access model
 
@@ -50,6 +81,7 @@ validated against that project.
 | Record | Responsibility |
 | --- | --- |
 | `users` | Authentication, profile, plan field, storage counter, admin flag |
+| `email_otp_tokens` | One current email-bound verifier per user, expiry, failed guesses, delivery budget/status |
 | `projects` | Owner, name/slug, visibility, star count |
 | `project_collaborators` | Project-user membership with `editor` or `viewer` role |
 | `project_folders` | Project-scoped parent/child folders |
@@ -137,7 +169,8 @@ promise is therefore not implemented.
 
 - A clean and populated MySQL/MariaDB deployment test is still required for the
   chosen production engine.
-- Group 4 OTP hardening and Group 5 frontend dependency maintenance remain
-  open.
+- Email is synchronous; real SMTP delivery, persistent cache, and proxy/client
+  IP behavior require deployment verification. Build dependency audits exclude
+  separately loaded CDN assets.
 
 See the review for evidence, remediation status, and deployment restrictions.

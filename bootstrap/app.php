@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\AddBrandingHeaders;
+use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\OtpVerified;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,13 +22,14 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(\App\Http\Middleware\AddBrandingHeaders::class);
+        $middleware->append(AddBrandingHeaders::class);
         $middleware->alias([
-            'otp.verified' => \App\Http\Middleware\OtpVerified::class,
-            'is_admin'     => \App\Http\Middleware\IsAdmin::class,
+            'otp.verified' => OtpVerified::class,
+            'is_admin' => IsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['otp']);
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

@@ -70,7 +70,74 @@ For recovery after failed or interrupted operations, inspect retained charges/or
 
 The lock assumes one application host and its current private local disk, with a writable `storage/framework/cache` directory. Multiple replicas, independent deployment directories, object storage, preemptive time limits, and larger queued exports/parsing require a coordinated distributed lifecycle design. Avatars remain outside project-blob billing. No concurrency/load test against a production database or multi-node deployment was performed.
 
-Security Groups 4–5 and the other unresolved functional findings remain outstanding. The assessment and rating below are the original review, not a reassessment after these batches.
+The preceding Group 1–3 entries record their verification state at the time of
+each batch, including the then-outstanding baseline failures. Subsequent
+functional/data-integrity remediation repaired the F01–F22 findings, including
+the migration conversion path and the two baseline test failures. Current
+deployment limitations are in `SELF_HOSTING.md`; the original assessment and
+rating below have not been recalculated.
+
+### Groups 4 and 5 remediation (5 October 2026)
+
+Group 4 (OTP verification, delivery abuse, and email identity) is fixed in the
+application code:
+
+- **S07 fixed:** `EmailOtpService` stores an HMAC-SHA-256 verifier bound to
+  user ID, current email, and code. Codes expire after 15 minutes, stop accepting
+  guesses after five failures, and are consumed on success. The unique user
+  token and locked user-row transactions serialize issuance, verification, and
+  email changes. Tokens are not plaintext, their verifier is hidden from model
+  serialization, OTP input is not flashed, and mail subjects omit the code.
+- Named verification limits permit ten submissions per account and thirty per
+  IP per ten minutes. Both resend routes share three requests per account and
+  ten per IP per ten minutes. A persisted delivery counter additionally allows
+  three sends per account per ten minutes, counting initial and failed sends;
+  token replacement and cache clearing do not reset it. Registration has a
+  five-attempt IP limit per ten minutes.
+- Changing email clears verification and the prior token before sending a
+  recipient-bound replacement. Old signed links fail for the changed address.
+  Valid already-issued signed links check the email under lock and consume
+  outstanding tokens. Legacy notice/resend routes now use the same OTP flow.
+- Registration and email changes survive SMTP failure and display an actionable
+  resend warning. Delivery metadata is committed before sending, and an older
+  delivery cannot overwrite a replacement token's status. Error reporting
+  records the exception class, not potentially sensitive transport contents.
+- The new protected-token migration invalidates legacy plaintext codes without
+  deleting accounts or clearing verified status. It has **not** been run on the
+  configured application database. Deploy in maintenance mode; unverified
+  users must resend. Keep `APP_KEY` stable and use persistent limiter cache and
+  a real mail transport. Actual SMTP delivery and production concurrency remain
+  deployment checks.
+- Regression coverage: 16 OTP security cases cover account/email binding,
+  expiry, guess/route limits, resend rotation and persistent budgets, legacy
+  route compatibility, token consumption, identity changes, mail failures,
+  session input handling, and populated legacy-token migration/recovery.
+
+Group 5 (frontend dependency reproducibility and advisory chain) is fixed:
+
+- **S11 fixed:** added `package-lock.json` and changed the setup workflow to
+  `npm ci --ignore-scripts`. Migrated the unused mixed Tailwind 3/Tailwind 4
+  build configuration to Tailwind 4.3.3 with its Vite plugin, retaining the
+  Figtree/forms configuration and bounding content scanning to declared
+  templates. Removed the obsolete PostCSS/Tailwind 3 integration. The legacy
+  `braces`/`micromatch`/`fast-glob`/`chokidar` chain is absent from the lockfile.
+  Updating within Tailwind 3 alone still retained the
+  [unpatched braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm),
+  which is why the build integration was migrated.
+- The build environment requires Node.js 22.12+ and npm 10+. Current pages
+  still use the existing Bootstrap/CDN layout; this is not a visual redesign
+  or a claim that npm audits cover separately loaded CDN assets.
+- A fresh offline cached `npm ci --ignore-scripts`, `npm run build`, and
+  `npm test` passed. Direct execution of the PDF-preview test file passed all
+  five JavaScript cases. `npm audit` reported zero vulnerabilities at all
+  severities, and `composer audit --locked` reported no advisories or abandoned
+  packages at remediation time. Rerun audits before release as advisories change.
+
+Final verification for this batch: **181 PHP tests passed, 853 assertions**;
+Laravel Pint and `git diff --check` passed. Test writes used isolated SQLite,
+fake mail, and fake storage, not existing application data. The production
+database upgrade gate, real SMTP/proxy/cache verification, single-host storage
+constraint, and source-license/metadata conflict remain documented limitations.
 
 ### Documentation remediation (5 October 2026)
 

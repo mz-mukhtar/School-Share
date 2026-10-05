@@ -42,13 +42,29 @@ affected version and reachability details.
   reconciliation command once the ledger migration is deployed.
 - Named rate limits apply to uploads, editing, previews, diffs, forks, and
   downloads.
+- OTPs are stored as keyed SHA-256 digests bound to the account and current
+  email, expire after 15 minutes, and stop accepting guesses after five failures.
+  Successful verification consumes the token; an email change invalidates it.
+- OTP verification is limited to ten submissions per account and thirty per IP
+  per ten minutes. Resend routes share account/IP limits and a persistent
+  database-backed three-delivery budget, including initial and failed sends.
+  Registration has an additional five-attempt IP limit per ten minutes.
+- Mail failures leave accounts/email changes recoverable, and reported OTP mail
+  errors omit transport details. OTP input is not flashed back to the session
+  and the code is not included in the mail subject.
+- Frontend build dependencies are locked in `package-lock.json`. The Tailwind 4
+  Vite integration removes the vulnerable legacy `braces` dependency chain;
+  registry audits must be rerun as advisories change.
 
 ## Known limitations and release status
 
 The migration chain has been repaired and is covered on SQLite; a clean and
 populated test on the selected production MySQL/MariaDB engine remains a
-release gate. Group 4 OTP hardening and Group 5 frontend dependency maintenance
-are open. The local-disk lifecycle lock is single-host only. New checkpoints
+release gate. The protected OTP migration must be deployed; it intentionally
+invalidates pending legacy codes so users must resend. Use a working SMTP
+transport and persistent cache, not the development log/array mailers or an
+in-memory rate-limit cache. npm audits do not cover separately loaded CDN
+assets. The local-disk lifecycle lock is single-host only. New checkpoints
 have complete snapshot manifests; legacy checkpoints without a manifest are not
 restored.
 

@@ -5,11 +5,10 @@ separate production/Cloudflare guide.
 
 ## Release gate
 
-Do **not** deploy this revision to a new MySQL or MariaDB environment yet. The
-repository review reproduced failures in the existing project-file versioning
-migration on MariaDB and with populated legacy data. The checked-in migration
-chain must be repaired and tested on the exact production engine before this
-guide can become a production-install procedure.
+The original project-file versioning migration defects have been repaired and
+fresh/populated migration paths are covered on SQLite. A clean and populated
+upgrade test on the exact production MySQL/MariaDB engine remains a release
+gate. Do **not** treat the SQLite checks as proof of a production-engine upgrade.
 
 SQLite is the verified development/test path. This guide documents the
 operational prerequisites and the safe sequence once the database release gate
@@ -21,6 +20,8 @@ has been verified.
 - PHP 8.4.1 or later for the current `composer.lock`.
 - Composer 2.x and the PHP extensions required by Laravel, the selected
   database driver, `mbstring`, `fileinfo`, and `zip`.
+- Node.js 22.12+ and npm 10+ in the frontend build environment. Install from
+  `package-lock.json`, not a fresh unconstrained dependency resolution.
 - A web server whose document root is the repository's `public/` directory.
 - One application host with a writable `storage/framework/cache/` and private
   local storage. The current lifecycle lock is a local OS file lock; multiple
@@ -35,6 +36,7 @@ Keep `.env` outside version control. At minimum set:
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-domain.example
+CACHE_STORE=file
 
 DB_CONNECTION=your-supported-driver
 DB_HOST=...
@@ -50,6 +52,16 @@ MAIL_PASSWORD=...
 MAIL_ENCRYPTION=...
 MAIL_FROM_ADDRESS=...
 ```
+
+Keep the application's existing `APP_KEY` when upgrading. OTP digests use this
+key; rotating it invalidates pending codes as well as Laravel encrypted data.
+Use a persistent cache shared across requests for rate limiting. The file store
+fits the supported single-host deployment; do not use `array`, `null`, or a
+failover configuration that silently falls back to an in-memory store.
+
+Configure and verify a real SMTP transport. Development `log` mail writes the
+OTP body to logs, and `array` mail does not deliver it to a mailbox. Neither is
+a production delivery configuration. Protect logs, backups, and `.env` access.
 
 Set PHP's `upload_max_filesize` and `post_max_size` high enough for the
 application's configured single-file and batch limits. The application defaults
@@ -68,7 +80,8 @@ those values deliberately and keep product pricing copy aligned.
    root to `public/`.
 3. Run `composer install --no-dev --optimize-autoloader` with the required PHP
    version.
-4. Create `.env`, run `php artisan key:generate`, and verify `APP_DEBUG=false`.
+4. Create `.env`, generate a key only for a new installation, and verify
+   `APP_DEBUG=false`. Preserve the existing key for an upgrade.
 5. Enter maintenance mode: `php artisan down`.
 6. Run the database migration only after it has passed a clean and populated
    migration test on the target engine: `php artisan migrate --force`.
@@ -80,6 +93,8 @@ those values deliberately and keep product pricing copy aligned.
 9. Build/cache only after configuration is correct:
 
    ```sh
+   npm ci --ignore-scripts
+   npm run build
    php artisan config:cache
    php artisan route:cache
    php artisan view:cache
@@ -92,6 +107,30 @@ If migration or reconciliation fails, keep maintenance mode enabled. Restore
 the coordinated database/private-storage backup or repair the reported legacy
 records first. Do not reset quota counters manually and do not delete private
 objects to make the command succeed.
+
+## Email-verification upgrade
+
+The `2026_10_05_000004_protect_email_otp_verifiers` migration removes legacy
+plaintext OTP rows and replaces them with email-bound keyed verifiers and
+attempt/delivery counters. Apply it in maintenance mode with the other
+migrations; accounts and verified email status are retained, but pending codes
+are deliberately invalidated. Unverified users must request a new code. A
+rollback also clears ephemeral tokens; it cannot restore the old codes.
+
+Codes expire after 15 minutes and allow five incorrect guesses. Verification
+allows ten submissions per account and thirty per IP per ten minutes. Both
+resend routes share a three-request account limit and ten-request IP limit per
+ten minutes. The database also permits three deliveries per account per ten
+minutes, including registration delivery and failed sends; clearing the cache
+does not reset that delivery budget. Registration permits five attempts per IP
+per ten minutes. Configure trusted proxy addresses correctly before relying on
+client-IP limits behind a reverse proxy.
+
+Changing an email clears verification and issues a code for the new address.
+If SMTP fails, registration/email changes remain saved and the OTP page shows
+a retry warning. Correct the transport and use Resend code; exhausted budgets
+require waiting for the ten-minute window. Delivery is synchronous and real
+mailbox receipt still needs a deployment smoke test.
 
 ## File permissions and storage
 
@@ -129,6 +168,8 @@ Before accepting a deployment:
 - Confirm private files cannot be fetched unauthenticated.
 - Check `storage/logs/laravel.log`, available private-disk capacity, and mail
   delivery with a real test mailbox.
+- Verify an email change sends a new code, the previous code/link is rejected,
+  resend/guess limits return 429, and a failed delivery can be retried.
 - Run the focused regression commands in [README.md](README.md#local-development).
 
 ## Backups, retention, and recovery
@@ -151,5 +192,5 @@ Generated exports are retained for at most one hour on normal cleanup paths.
   deployment has been validated.
 - Large/long-running operations are bounded synchronously; individual stalled
   filesystem/database calls still need web-server and PHP timeouts.
-- Group 4 OTP hardening and Group 5 frontend dependency maintenance remain
-  outstanding security work.
+- Registry audits cover the locked build dependencies, not separately loaded
+  CDN assets or future advisories. Recheck both before each release.

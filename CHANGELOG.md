@@ -13,6 +13,18 @@ only when a release is actually cut.
   disabled PDF evaluation.
 - Scoped project search, activity visibility, nested route binding, private
   starring, folder validation, comments, and collaborator forms.
+- Hardened OTP verification with keyed, email/account-bound digests, single-use
+  consumption, expiry, guess caps, and shared account/IP throttles. Added a
+  persistent delivery budget that includes initial and failed sends.
+- Email changes invalidate prior verification and send a new code. SMTP errors
+  preserve account/profile changes with a retry warning and sanitized reporting.
+  Legacy verification routes now share the OTP flow; already-issued signed
+  links are still accepted only for the current email and clear outstanding OTPs.
+- Added the protected-token migration; pending legacy codes are invalidated and
+  must be resent after deployment.
+- Added a reproducible npm lockfile and migrated the build to Tailwind 4's Vite
+  plugin, removing the advisory-bearing legacy `braces` chain. Clean install,
+  build, JavaScript tests, and npm/Composer audits pass at remediation time.
 
 ### Storage and file operations
 
@@ -44,7 +56,8 @@ only when a release is actually cut.
 
 - A clean and populated MySQL/MariaDB deployment test is still required on the
   chosen production engine.
-- OTP hardening and frontend dependency maintenance remain open security work.
+- Real SMTP delivery and production cache/proxy configuration still require
+  deployment verification; audits do not cover separately loaded CDN assets.
 
 ## 0.1.0 — 2026-10-04
 

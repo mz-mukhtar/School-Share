@@ -7,7 +7,8 @@ checkpoint, access-control, migration, OTP, or deployment behavior.
 
 ## Local setup
 
-Use PHP 8.4.1+ with Composer 2.x. SQLite is the currently verified local
+Use PHP 8.4.1+ with Composer 2.x and Node.js 22.12+/npm 10+ for frontend builds.
+SQLite is the currently verified local
 database path:
 
 ```sh
@@ -22,6 +23,8 @@ Set `DB_CONNECTION=sqlite` and `DB_DATABASE` to the absolute SQLite path, then:
 ```sh
 php artisan migrate
 php artisan storage:link
+npm ci --ignore-scripts
+npm run build
 php artisan serve
 ```
 
@@ -38,6 +41,12 @@ migration chain has been tested on the intended engine.
   deletion, fork, restore, or account deletion must preserve its lifecycle and
   compensation behavior.
 - Do not expose private files merely to make an external preview service work.
+- Keep OTP issuance/verification in `EmailOtpService`; preserve email binding,
+  locking, single-use behavior, persistent delivery budgets, and sanitized mail
+  failure reporting. Never store plaintext OTPs or flash them to the session.
+- Commit `package-lock.json` with intentional dependency updates and verify a
+  clean `npm ci --ignore-scripts`, build, tests, and audit. Do not use forced
+  audit upgrades without reviewing their compatibility.
 - Do not add a dependency, deployment target, or license claim without maintainer
   approval.
 - Update documentation whenever a visible feature, route, operation limit,
@@ -55,14 +64,16 @@ php artisan test --compact tests/Feature/ProjectPreviewSecurityTest.php \
   tests/Feature/ProjectBoundaryTest.php \
   tests/Feature/StorageLifecycleSecurityTest.php \
   tests/Feature/ResourceBoundsSecurityTest.php
-node tests/JavaScript/PdfPreview.test.mjs
+npm test
 vendor/bin/pint --dirty --format agent
 ```
 
-The complete PHP suite currently contains two documented baseline failures: a
-registration redirect expectation and a profile test fixture missing a storage
-default. Do not treat those as an acceptable release state; fix or update them
-when your work reaches them.
+For verification/profile changes, run
+`php artisan test --compact tests/Feature/Auth/OtpSecurityTest.php tests/Feature/Auth/EmailVerificationTest.php tests/Feature/ProfileTest.php`.
+Before handing off broad changes, run `php artisan test --compact` and
+`npm run build`. Dependency changes also require `npm run audit:security` and
+`composer audit --locked`. The full PHP suite passes; the two historical
+baseline failures have been corrected.
 
 ## Pull requests
 

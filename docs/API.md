@@ -19,7 +19,7 @@ are scoped to that project.
 | GET | `/u/{username}` | Public profile |
 | GET | `/u/{username}/followers` | Public follower list |
 | GET | `/u/{username}/following` | Public following list |
-| GET/POST | `/register`, `/login` | Guest registration/login |
+| GET/POST | `/register`, `/login` | Guest registration/login; registration POST limited to five attempts per IP per ten minutes |
 | GET/POST | `/forgot-password` | Guest password-reset request |
 | GET | `/reset-password/{token}` | Password-reset form |
 | POST | `/reset-password` | Set reset password |
@@ -28,14 +28,21 @@ are scoped to that project.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET/POST | `/otp/verify` | Display/submit the custom OTP verification form |
-| POST | `/otp/resend` | Resend OTP; `throttle:6,1` |
-| GET | `/verify-email` | Framework email-verification notice |
-| GET | `/verify-email/{id}/{hash}` | Signed framework verification link |
-| POST | `/email/verification-notification` | Framework verification resend |
+| GET | `/otp/verify` | Display OTP form; already-verified users go to dashboard |
+| POST | `/otp/verify` | Submit code; ten submissions/account and thirty/IP per ten minutes |
+| POST | `/otp/resend` | Send a new OTP; shared `throttle:otp-send` |
+| GET | `/verify-email` | Redirect to OTP form (or dashboard if verified) |
+| GET | `/verify-email/{id}/{hash}` | Accept a valid already-issued signed link for the current email and consume outstanding OTP; `throttle:6,1` |
+| POST | `/email/verification-notification` | Send OTP through the same service and shared `throttle:otp-send`, not a new signed link |
 | GET/POST | `/confirm-password` | Password confirmation |
 | PUT | `/password` | Update password |
 | POST | `/logout` | Log out |
+
+`otp-send` allows three requests/account and ten/IP per ten minutes across both
+resend routes. A separate database budget allows three deliveries/account per
+ten minutes, including initial delivery and failures. Codes expire after
+15 minutes, and five incorrect guesses disable a code. Delivery failure redirects
+to the OTP form with a retry warning rather than claiming delivery succeeded.
 
 ## OTP-verified user routes
 
@@ -49,7 +56,7 @@ are scoped to that project.
 | POST | `/notifications/mark-all-read` | Mark notifications read |
 | GET | `/notifications/{id}/read` | Mark one notification read |
 | GET | `/profile` | Profile form |
-| PATCH | `/profile` | Update profile |
+| PATCH | `/profile` | Update profile; an email change clears verification, sends a new OTP, and redirects to the OTP form |
 | DELETE | `/profile` | Delete account after password confirmation |
 
 ## Project routes

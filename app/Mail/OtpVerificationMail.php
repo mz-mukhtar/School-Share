@@ -13,18 +13,19 @@ class OtpVerificationMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $otp;
+
     public string $userName;
 
     public function __construct(string $otp, string $userName)
     {
-        $this->otp      = $otp;
+        $this->otp = $otp;
         $this->userName = $userName;
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your SchoolShare Verification Code: ' . $this->otp,
+            subject: 'Your SchoolShare Verification Code',
         );
     }
 

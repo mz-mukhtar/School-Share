@@ -38,8 +38,8 @@ behavior.
 - Storage accounting, project ZIPs, uploads, restores, forks, and edits are
   bounded for the current single-host private-local-disk design. See the
   architecture and deployment guides for operational limits.
-- OTP attempt/resend hardening and JavaScript dependency maintenance remain
-  open security work (Groups 4 and 5 in the review).
+- OTP delivery requires a working mail transport and persistent rate-limit
+  cache. The hardened token schema must be migrated before deploying this code.
 
 ## Runtime requirements
 
@@ -51,6 +51,7 @@ or PHP 8.1 instructions from older releases.
 | --- | --- |
 | PHP | 8.4.1+ for the current lock file |
 | Composer | 2.x |
+| Frontend build environment | Node.js 22.12+ and npm 10+; use `package-lock.json` with `npm ci` |
 | Database for local development/testing | SQLite is covered by the test suite |
 | Production MySQL/MariaDB | Migration code is portable by design, but a clean and populated deployment test on the chosen engine is still required before release |
 | Private uploads | `storage/app/private` on the `local` disk |
@@ -80,10 +81,12 @@ Then run:
 ```sh
 php artisan migrate
 php artisan storage:link
+npm ci --ignore-scripts
+npm run build
 php artisan serve
 ```
 
-Run the relevant test file for a change. The Group 1–3 regression suite is:
+Run the relevant test file for a change. The security regression commands are:
 
 ```sh
 php artisan test --compact tests/Feature/ProjectPreviewSecurityTest.php \
@@ -91,13 +94,27 @@ php artisan test --compact tests/Feature/ProjectPreviewSecurityTest.php \
   tests/Feature/ActivityVisibilityTest.php \
   tests/Feature/ProjectBoundaryTest.php \
   tests/Feature/StorageLifecycleSecurityTest.php \
-  tests/Feature/ResourceBoundsSecurityTest.php
-node tests/JavaScript/PdfPreview.test.mjs
+  tests/Feature/ResourceBoundsSecurityTest.php \
+  tests/Feature/Auth/OtpSecurityTest.php
+npm test
+npm run audit:security
+composer audit --locked
 ```
 
 The full PHP suite currently passes. The historical baseline failures documented
 in the review were fixed: registration now enters OTP verification and user
 defaults include the storage counter.
+
+OTP codes expire after 15 minutes and are stored as keyed digests bound to the
+account and current email. Five incorrect guesses disable a code. Verification
+and delivery have account/IP rate limits, and a database-backed delivery budget
+allows three sends per account per ten minutes, including initial delivery and
+failed sends. An email change clears verification and issues a fresh code;
+delivery failures preserve the account/change and offer a resend path.
+
+The locked Vite/Tailwind build is separate from the Bootstrap, PDF.js, and
+CodeMirror CDN assets used by the current pages. An npm audit covers the locked
+build dependencies, not those external assets.
 
 ## Storage and recovery
 

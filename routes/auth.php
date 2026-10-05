@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\OtpVerificationController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -15,7 +16,7 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', [RegisteredUserController::class, 'store'])->middleware('throttle:registration');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
@@ -37,13 +38,14 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     // OTP email verification (custom, replaces Breeze's signed-link verification)
-    Route::get('/otp/verify', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'show'])
+    Route::get('/otp/verify', [OtpVerificationController::class, 'show'])
         ->name('otp.verify.show');
-    Route::post('/otp/verify', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'verify'])
+    Route::post('/otp/verify', [OtpVerificationController::class, 'verify'])
+        ->middleware('throttle:otp-verify')
         ->name('otp.verify');
-    Route::post('/otp/resend', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'resend'])
+    Route::post('/otp/resend', [OtpVerificationController::class, 'resend'])
         ->name('otp.resend')
-        ->middleware('throttle:6,1');
+        ->middleware('throttle:otp-send');
 
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
@@ -53,7 +55,7 @@ Route::middleware('auth')->group(function () {
         ->name('verification.verify');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
+        ->middleware('throttle:otp-send')
         ->name('verification.send');
 
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])

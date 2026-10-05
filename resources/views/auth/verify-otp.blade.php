@@ -49,7 +49,7 @@
 
     <h1 class="text-center">Check your email</h1>
     <p class="subtitle text-center">
-        We sent a 6-digit verification code to<br>
+        Enter the 6-digit verification code for<br>
         <strong style="color:var(--ss-text);">{{ $email }}</strong>
     </p>
 
@@ -61,6 +61,10 @@
     @endif
 
     {{-- Error message --}}
+    @if (session('warning'))
+        <div class="alert alert-warning" role="alert">{{ session('warning') }}</div>
+    @endif
+
     @if ($errors->any())
         <div class="alert" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:10px;font-size:.85rem;padding:.75rem 1rem;margin-bottom:1rem;">
             <i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}
