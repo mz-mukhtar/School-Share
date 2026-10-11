@@ -15,8 +15,8 @@
             <select name="plan" class="form-select bg-dark text-light border-secondary">
                 <option value="">All Plans</option>
                 <option value="free" {{ request('plan') === 'free' ? 'selected' : '' }}>Free</option>
-                <option value="pro" {{ request('plan') === 'pro' ? 'selected' : '' }}>Pro (Monthly)</option>
-                <option value="custom" {{ request('plan') === 'custom' ? 'selected' : '' }}>Pro (Yearly)</option>
+                <option value="pro" {{ request('plan') === 'pro' ? 'selected' : '' }}>Pro</option>
+                <option value="custom" {{ request('plan') === 'custom' ? 'selected' : '' }}>Custom</option>
             </select>
         </div>
         <div class="col-md-4">
@@ -53,7 +53,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 align-middle">
-                            {{ \Illuminate\Support\Number::fileSize($user->storage_used_bytes) }}
+                            {{ $user->storageUsedHuman() }}
                         </td>
                         <td class="px-4 py-3 align-middle" style="font-size:0.875rem;color:var(--ss-text-muted);">
                             {{ $user->created_at->format('M j, Y') }}
@@ -87,15 +87,15 @@
         <h5 class="modal-title">Edit Plan: {{ $user->name }}</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="{{ route('admin.users.update-plan', $user) }}" method="POST">
+      <form action="{{ route('admin.users.updatePlan', $user) }}" method="POST">
           @csrf
           @method('PATCH')
           <div class="modal-body">
               <label class="form-label" style="color:var(--ss-text-muted);font-size:0.875rem;">Select New Plan</label>
               <select name="plan" class="form-select bg-dark text-light border-secondary">
                   <option value="free" {{ $user->plan === 'free' ? 'selected' : '' }}>Free</option>
-                  <option value="pro" {{ $user->plan === 'pro' ? 'selected' : '' }}>Pro (Monthly)</option>
-                  <option value="custom" {{ $user->plan === 'custom' ? 'selected' : '' }}>Custom/Pro (Yearly)</option>
+                  <option value="pro" {{ $user->plan === 'pro' ? 'selected' : '' }}>Pro</option>
+                  <option value="custom" {{ $user->plan === 'custom' ? 'selected' : '' }}>Custom</option>
               </select>
           </div>
           <div class="modal-footer border-0">

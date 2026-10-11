@@ -4,7 +4,24 @@ All notable user-facing, security, and operational changes are recorded here.
 The project uses Keep a Changelog-style sections; version tags should be added
 only when a release is actually cut.
 
-## Unreleased — 2026-10-05
+## Unreleased — updated 2026-10-11
+
+### Release preparation — 2026-10-11
+
+- Updated locked development dependencies to `concurrently` 10.0.6 and
+  `shell-quote` 1.12.0 to resolve the critical command-injection advisory.
+- Preserve existing usernames on blank saves and backfill missing legacy route
+  identities with a collision-safe, repeatable data migration.
+- Reuse application storage formatting in admin pages without `intl`, fix the
+  plan-edit form route, group combined search/plan filters, and distinguish
+  custom plans from yearly billing in the user-management labels.
+- Lock the account before finding/creating a pending upgrade; retries reuse the
+  same request. Real concurrent acceptance on the chosen engine remains required.
+- Standardize redacted OTP/invitation/upgrade mail failures without chaining raw
+  exceptions, and add a migration to redact previously stored upgrade errors.
+- Add committed identity, admin, upgrade retry, mail-failure, and repair-migration
+  regressions. Correct production SMTP scheme/DSN, session, extension, persistent
+  storage, and upgrade instructions in the existing guides.
 
 ### Security and access control
 

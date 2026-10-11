@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\EmailOtpService;
 use App\Mail\OtpVerificationMail;
+use App\MailDeliveryFailure;
 use App\Models\EmailOtpToken;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
@@ -198,7 +199,7 @@ class OtpSecurityTest extends TestCase
         $this->assertAuthenticatedAs($user);
         $this->assertNull($user->email_verified_at);
         $this->assertDatabaseHas('email_otp_tokens', ['user_id' => $user->id, 'delivery_status' => 'failed']);
-        Exceptions::assertReported(fn (\RuntimeException $exception): bool => $exception->getMessage() === 'OTP mail delivery failed (RuntimeException).');
+        Exceptions::assertReported(fn (MailDeliveryFailure $exception): bool => $exception->getMessage() === 'OTP mail delivery failed (RuntimeException).' && $exception->getPrevious() === null);
         Mail::fake();
 
         $this->post(route('otp.resend'))->assertRedirect()->assertSessionHas('success');

@@ -1,18 +1,23 @@
 # SchoolShare repository review — current reassessment
 
-Updated: 5 October 2026
+Updated: 11 October 2026
 
-Reviewed application commit: `b9bc3a7`
+Reviewed application base: `ec62e40`, plus the October 11 working-tree release
+repairs described below. These changes have not been committed or deployed by
+this verification pass.
 
 Original pre-remediation baseline: `c6bf19b`
 
-Scope: current source, migrations, configuration, committed tests, dependencies,
-documentation, and isolated diagnostic probes. This update did not deploy the
-application or repeat the complete browser workflow on the current revision.
+Scope: current source, migrations, configuration, repository tests, dependencies,
+documentation, and production cache compilation with isolated temporary paths.
+This update did not deploy the application, change the existing development
+database/environment, or repeat the complete browser workflow.
 
 ## Current assessment
 
-**Overall rating: 7.5/10, up from the original 4/10.**
+**Release repairs R01–R05 are implemented; production acceptance remains open.**
+The October 5 engineering rating was 7.5/10, up from the original 4/10; that
+historical score is retained below and has not been recalculated for this pass.
 
 The repository is substantially stronger than the baseline. Security Groups
 1–5 have been remediated in code, storage ownership and checkpoint snapshots
@@ -21,11 +26,13 @@ the committed regression suite passes. The previous XSS, privacy leaks,
 archive traversal, broken checkpoint/diff/comment paths, plaintext OTPs, and
 frontend advisory chain must not be presented as unchanged current findings.
 
-However, “all F01–F22 fixed” was too broad. Reassessment found residual
-username and admin-runtime failures, a plan-filter defect, and remaining
-upgrade-request concurrency risk. Production-engine upgrades, real mail,
-backup recovery, and concurrent production behavior are not yet verified.
-This is an improved, tested repository, not a production-readiness certificate.
+The October 11 repairs preserve/backfill missing usernames, remove the admin
+formatter's `intl` dependency, repair its plan-edit route, group admin search
+filters, lock pending upgrade creation, and standardize redacted delivery errors
+for OTP/invitation/upgrade mail. A newly reported critical npm advisory was also
+resolved by updating `concurrently` and `shell-quote` within the existing ranges.
+Production-engine upgrades, concurrent acceptance, real mail, and backup recovery
+remain unverified. Repository checks do not close those deployment gates.
 
 ## Verification evidence
 
@@ -34,22 +41,30 @@ earlier evidence:
 
 | Check | Current result | Boundary of the evidence |
 | --- | --- | --- |
-| `php artisan test --compact` | **181 passed; 853 assertions** | SQLite in-memory database, fake storage/mail where used; not a production-engine or live-SMTP test |
-| `node tests/JavaScript/PdfPreview.test.mjs` | **5 passed** | PDF integration logic with simulated browser/library objects, not a new real-browser run |
+| `php artisan test --compact` | **207 passed; 1,027 assertions** | SQLite in-memory database, fake storage/mail where used; not a production-engine or live-SMTP test |
+| `npm test` and `node tests/JavaScript/PdfPreview.test.mjs` | **5 JavaScript cases passed** | Simulated browser/library objects; npm's process runner reports one file, direct execution confirms all five cases |
 | `npm run build` | Passed; Vite 8.3.2 | Builds the Vite scaffold, which current application layouts do not load through `@vite` |
 | `composer validate --strict --no-check-publish` | Passed | Manifest/lockfile validation, not deployment verification |
-| `npm audit --json` | **0 vulnerabilities at every severity** | Registry audit of `package-lock.json`; does not audit hardcoded CDN assets |
-| `composer audit --locked --format=json` | **No advisories or abandoned packages** | Current registry results for the locked PHP graph; not proof of application security |
-| Fresh locked npm installation | Passed during Group 5 remediation | `npm ci --ignore-scripts` was verified then; this reassessment reran build/tests/audits without replacing dependencies |
-| SQLite migration chain | Exercised successfully by the committed suite | Includes a populated legacy-OTP migration test; does not establish populated MySQL/MariaDB upgrade safety |
-| Additional residual probes | **3 diagnostic cases confirmed the observed defects; 8 assertions** | Separate temporary probes asserted undesirable current behavior; they are not three new product acceptance tests |
+| `npm run audit:security` | **0 vulnerabilities** | Fresh online registry audit after the locked update; does not audit hardcoded CDN assets |
+| `composer audit --locked` | **No security advisories** | Current online registry results for the locked PHP graph; not proof of application security |
+| Fresh locked npm installation | **Passed: `npm ci --ignore-scripts --offline`** | Clean installation using cached package archives; build/tests rerun afterward, with online audit separately |
+| SQLite migration chain | Exercised successfully by the repository suite | Includes populated legacy-OTP and new username/error-repair cases; not populated MySQL/MariaDB upgrade proof |
+| Release regression coverage | **26 additional cases** | Identity, admin, upgrade retry/validation, redaction/failure recovery, and idempotent/chunked data repairs; no concurrent production-engine run |
+| PHP formatting / platform | Pint and non-dev Composer platform checks passed | Local PHP lacks `intl` and `pdo_mysql`; admin pages succeed without `intl`, but MySQL/MariaDB cannot be tested in this runtime |
+| Production cache compilation | Config, routes, and Blade views passed | Temporary paths with production/debug/secure-session/SMTP overrides; safe effective fields checked, temporary caches removed; no live SMTP connection |
+| Existing development instance | **10 migrations pending; local/debug/log-mail configuration** | Read-only status check; 8 previous migrations plus 2 new repairs were not applied to existing user data |
 | Real browser / responsive UI | Earlier evidence only | Original/remediation checks included responsive widths and PDF navigation; full current end-to-end browser acceptance was not rerun |
 
-The three residual probes reproduced a blank-username project-page failure,
-an admin search/plan-filter mismatch, and a populated admin user-list failure
-without `intl`. They used isolated SQLite data; no existing application rows
-or uploads were modified. Their results are explained below and do not rely
-on temporary files remaining available.
+The October 5 diagnostic probes are historical evidence. Their failures are now
+covered by normal regressions in `ProfileTest`, `AdminUserManagementTest`, and
+`ReleaseDataRepairTest`. New tests reproduced blank-username and admin-page
+failures before the fixes, then passed afterward. Existing application rows and
+uploads were not modified; migrations were exercised only in test databases.
+
+The repaired npm graph is `concurrently` 10.0.6 → `shell-quote` 1.12.0. The prior
+10.0.5 → 1.9.0 graph produced two critical findings for
+[GHSA-pqg4-j6r4-53mv](https://github.com/advisories/GHSA-pqg4-j6r4-53mv).
+Only these two lockfile package entries changed; no dependency was added.
 
 Installed PHP/Laravel/PHPUnit versions are 8.5.11 / 13.34.0 / 12.5.37.
 The current Composer lock requires PHP 8.4.1+, despite the manifest allowing
@@ -123,81 +138,98 @@ production-engine coverage.
 | F05 | Bounded text diff uses the installed API and escapes output | Office diffing is intentionally disabled, not implemented |
 | F06 | Comments bind beneath their project and enforce access/deletion permissions | Scoped comment regression cases pass |
 | F07 | Collaborator forms pass model IDs consistently | Numeric usernames and foreign-member management are covered |
-| F08 | **Partially fixed:** new users receive generated usernames | Clearing a username still produces null and breaks profile-link rendering; existing null usernames are not repaired by a creation hook; see R01 |
+| F08 | **Fixed in code:** blank saves retain route identities; missing identities are generated/backfilled | Backfill must be migrated; blank legacy names, collisions, reader pages, and generated-name length are covered; see R01 |
 | F09 | Explore searches the current tag relationship | MySQL-family query behavior still needs release testing |
 | F10 | Project/account lifecycle cleanup and recoverable logical-file deletion implemented | Folder/file history retention is deliberate; final physical collection is reference-aware and may require cleanup retry |
 | F11 | Complete immutable checkpoint manifests and restore implemented | Rename/move/delete/restore regression passes; legacy checkpoints without manifests fail safely rather than inventing history |
 | F12 | Reconciliation uses private version/blob paths and correct billing ownership | Reconciliation and destructive `--cleanup` require coordinated backup and deployment review |
-| F13 | **Partially fixed:** admin routes, method, relationship and detail view repaired | Populated admin user list still fails without `intl`; deployment requirements omit it; see R02 |
-| F14 | Canonical `free`/`pro`/`custom` plans and legacy `student` conversion implemented | Admin plan labels still conflate custom and yearly billing; stored billing-cycle labels are not recurring billing |
+| F13 | **Fixed in code:** populated admin pages use the application formatter and correct plan-edit route | List/detail/dashboard and authorized/unauthorized/invalid plan changes pass without `intl`; see R02 |
+| F14 | Canonical `free`/`pro`/`custom` plans, corrected admin user-management labels, and legacy `student` conversion implemented | Stored billing-cycle labels are not recurring billing |
 | F15 | Version sequence allocation and immutable per-version MIME metadata implemented | Broad concurrent production-engine verification remains outstanding |
 | F16 | Historical links select the recorded version; documentation narrowed to current-project ZIP export | A historical checkpoint ZIP remains out of scope, not silently “completed” |
 | F17 | Shared edit/access helpers align owner/editor/viewer operations and UI decisions | Continue expanding role-matrix coverage for remaining screens; editors may delete project content/history under the current contract |
-| F18 | Upgrade routes, retryable mail and locked pending-only approve/reject transitions implemented | Concurrent pending-request deduplication remains unsafe; automatic subscriptions/expiry/renewal are not implemented; see R04 |
+| F18 | Upgrade routes, retryable mail, account-locked pending creation, and pending-only approve/reject transitions implemented | Repeated submissions reuse one account/plan request; real concurrent target-engine acceptance remains open; automatic subscriptions/expiry/renewal are not implemented; see R04 |
 | F19 | Project/collaborator limits, operation bounds and transactional star/follow mutations implemented | Some legacy config keys remain unused, including cache TTLs and the separate global storage setting; avoid presenting them as enforced controls |
 | F20 | Non-null root scope columns and uniqueness constraints implemented | Backfill/deduplication and collation behavior need populated target-engine checks |
-| F21 | Account/invitation/upgrade changes survive mail failure with retry paths; OTP reporting is sanitized | Real SMTP is unverified; invitation/upgrade exception handling still needs consistent redaction review; see R05 |
+| F21 | Account/invitation/upgrade changes survive mail failure with retry paths; specified delivery reports and stored upgrade errors are redacted | Real SMTP remains unverified; apply the legacy-error migration and protect old logs/backups; see R05 |
 | F22 | Contributor deletion preserves foreign-project checkpoints with anonymized attribution | The committed history-preservation regression passes; billing ownership can intentionally block account deletion while foreign live blobs remain charged |
 
 The two original registration/profile test failures are fixed. There are no
-failures in the committed 181-case suite, but the additional probes demonstrate
-why that must not be described as complete functional coverage.
+failures in the current 207-case suite. This remains bounded coverage, not proof
+of every production-engine, concurrent, or browser behavior.
 
-## Remaining problems and release priorities
+## Release repairs and remaining priorities
 
-### R01 — P1: nullable usernames can still break rendered pages
+### R01 — P1: missing usernames — repaired in code
 
-**Reproduced:** submit a profile update with the unchanged email and an empty
-`username`. The request succeeds, the username becomes null, and viewing that
-user's existing project returns 500. `ProfileUpdateRequest` permits nullable
-usernames; `User::booted()` generates them only during creation; project,
-explore and feed templates require them for `profile.public` URLs.
+**Historical defect:** a blank profile update cleared the username and broke
+project/profile URL rendering. `User::saving` now preserves a filled original
+username, or generates one when the account has no identity. Valid changes to
+an available username still work. Generated names and collision suffixes fit
+the profile's 50-character validation limit.
 
-Prevent clearing the route identity or consistently support a stable fallback;
-backfill existing null identities. Add committed tests for blank updates and
-legacy accounts, including the reader-facing pages, before closing F08.
+`2026_10_11_104126_backfill_missing_usernames` repairs existing null, empty, and
+space-only values in chunks using deterministic `user_{id}` names and collision
+suffixes. It leaves filled identities alone and is repeatable; rollback retains
+the assigned identities. `ProfileTest` and `ReleaseDataRepairTest` cover blank
+updates, duplicate rejection, long-name collisions, legacy saves/backfill,
+reruns, chunk boundaries, and project/profile/explore/feed page rendering.
+The migration still needs staging/target-engine acceptance and deployment.
 
-### R02 — P1: admin user-list runtime requirement is incomplete
+### R02 — P1: populated admin pages — repaired in code
 
-**Reproduced in the current PHP runtime:** the populated admin user list returns
-500 without `intl`. Its view calls `Illuminate\Support\Number::fileSize`.
-The current PHP module list lacks `intl`, and README/self-hosting requirements
-do not explicitly include it. Passing authentication/project tests did not
-exercise this screen.
+**Historical defect:** populated admin pages called `Number::fileSize`, which
+requires the locally absent `intl` extension. They now reuse `User`'s existing
+storage formatter, so `intl` is optional for these pages. Verification also
+found and repaired the user-list form's nonexistent `admin.users.update-plan`
+route; the form now uses the actual `admin.users.updatePlan` route.
 
-Either require/install/document `intl` and verify the admin workflow, or use a
-supported formatting fallback. Commit populated admin-list/detail/plan-change
-tests, including the intended deployment-extension configuration.
+`AdminUserManagementTest` verifies populated list/detail/dashboard rendering
+without `intl`, correct form links, all supported plan changes, invalid-plan
+rejection, and denied non-admin access. User-management plan labels now show
+Pro and Custom without conflating Custom with yearly billing. Hosting guides
+explicitly name the required database driver and the removed `intl` dependency.
 
-### R03 — P2: admin search can bypass the selected plan filter
+### R03 — P2: combined admin filters — repaired in code
 
-**Reproduced at the query/view-data boundary:** search plus `plan=pro` returns a
-free-plan user whose name matches. `Admin/UserController::index` applies an
-ungrouped name/email OR before the plan condition, yielding `name matches OR
-(email matches AND plan matches)` rather than `(name OR email) AND plan`.
-This is a functional admin-filter defect, not demonstrated private-data leakage
-to non-admins. Group the search alternatives and add a combined-filter test.
+**Historical defect:** the ungrouped name/email OR allowed a name match to bypass
+the selected plan. `Admin/UserController::index` now groups the alternatives
+before applying the plan filter. A rendered-page/view-data regression includes
+both name and email matches on Pro, a matching Free account, and an unrelated
+Pro account; only the two matching Pro accounts are returned.
 
-### R04 — P2: pending upgrade requests are not concurrency-safe
+### R04 — P2: pending upgrade creation — account lock implemented
 
-**Source-inspected risk, not a reproduced concurrent run:**
-`UpgradeController::store` checks for an existing pending request before its
-creation transaction. The schema has no matching pending-request uniqueness
-constraint, and creation locks no shared user/request row. Concurrent requests
-can both observe no pending row and create duplicates. Locked approve/reject
-transitions do not close this separate creation race.
+**Historical risk:** pending-request lookup occurred outside the creation
+transaction, allowing two requests to observe no pending row. Creation now
+locks the account first inside the transaction, then performs a locking lookup
+and creates only if no pending request exists for that account/plan. Laravel
+retries concurrency failures up to three transaction attempts. Mail delivery
+runs after the transaction commits.
 
-Serialize creation around a stable account lock or enforce a suitable database
-invariant, then test concurrent submissions on the chosen database engine.
+`UpgradeRequestTest` verifies repeat submission reuse, preservation of the
+original billing cycle, creation after a rejected request, input validation,
+and unverified-account rejection. `MailDeliverySecurityTest` verifies failed
+deliveries retry the same row. These are sequential SQLite cases: SQLite does
+not provide MySQL/MariaDB row-lock behavior. Real simultaneous submissions on
+the selected target engine remain part of R06; no such run is claimed here.
 
-### R05 — P2: mail error redaction is not yet a system-wide contract
+### R05 — P2: OTP/invitation/upgrade mail redaction — repaired in code
 
-**Source-inspected risk:** OTP failures are sanitized, but collaborator and
-upgrade paths still report original transport exceptions. Upgrade delivery
-also stores a truncated raw message in `mail_delivery_error`. Transport errors
-can contain sensitive details depending on the driver; no actual credential
-leak was demonstrated. Apply a consistent redaction policy and restricted log
-access without losing retry/operational diagnostics.
+`MailDeliveryFailure` standardizes the specified OTP, collaborator-invitation,
+and upgrade-instruction failure reports. It retains only the operation and
+exception class, with no raw transport message or previous exception. Upgrade
+requests store that safe message, while delivery status and retry behavior are
+preserved. `2026_10_11_104127_redact_upgrade_mail_delivery_errors` replaces
+previously stored non-null errors with a generic retry diagnostic; rollback
+does not restore the original messages.
+
+OTP regressions and `MailDeliverySecurityTest` exercise synthetic sensitive
+transport messages, absence of raw reports/exception chains, failed buyer and
+admin emails, saved collaborator/request state, and successful retries.
+`ReleaseDataRepairTest` covers legacy stored-error redaction without changing
+request status. Apply the migration and restrict historical logs/backups; it
+cannot erase messages already copied there. Real SMTP remains an R06 gate.
 
 ### R06 — release gate: prove deployment and recovery
 
@@ -211,14 +243,16 @@ Before a public production release:
    reconcile legacy blobs. Do not run destructive cleanup without reviewing
    its targets and recovery backup. Pending legacy OTPs are invalidated.
 3. Verify real SMTP delivery/failure/retry, persistent cache, HTTPS/session
-   behavior and trusted-proxy client IPs. `config/mail.php` reads `MAIL_SCHEME`
-   and `MAIL_URL`, not the legacy `MAIL_ENCRYPTION` setting shown in the guide.
+   behavior and trusted-proxy client IPs. `.env.example` and `SELF_HOSTING.md`
+   now use `MAIL_SCHEME`/`MAIL_URL` correctly, describe SMTPS/STARTTLS and DSN
+   precedence, and include secure sessions and persistent single-host storage.
+   Template correction/cache compilation does not demonstrate real delivery.
 4. Demonstrate a coordinated backup restore and reconciliation, establish
    monitoring/alerts, and select a reviewed cleanup schedule. No production
    recovery drill or operational service configuration was verified here.
-5. Add CI for PHP tests, JavaScript tests, build and dependency audits. Add the
-   missing admin/upgrade/identity regressions and a repeatable browser smoke
-   workflow. There is currently no checked-in CI or automated browser suite.
+5. Add CI for the repository's PHP/JavaScript tests, build, and dependency audits,
+   including the new admin/upgrade/identity/redaction regressions. Add a repeatable
+   browser smoke workflow. CI and an automated browser suite are still absent.
 6. Run concurrent quota/identity/upgrade and representative load checks. Set
    PHP/proxy body and time limits; cooperative application budgets do not
    interrupt a stalled individual filesystem, database or SMTP call.
@@ -261,8 +295,8 @@ implemented; historical checkpoint ZIPs are not.
 
 | Document | Current decision / remaining work |
 | --- | --- |
-| `README.md` | Keep as the entry point; setup and feature limits are much more accurate, but add the explicit admin `intl` requirement |
-| `SELF_HOSTING.md` | Keep as the single operations guide; retain the production-engine gate, correct the SMTP variable example, add `intl`, and record actual deployment/recovery evidence when obtained |
+| `README.md` | Updated requirements, release regression commands, and production configuration link; admin formatting no longer needs `intl` |
+| `SELF_HOSTING.md` | Updated production SMTP/session/driver/storage template and irreversible repair guidance; retain the production-engine gate and record real deployment/recovery evidence when obtained |
 | `docs/ARCHITECTURE.md` | Keep; reflects the ledger, snapshots, OTP service, access rules and single-host limits |
 | `docs/API.md` | Keep as a web-route reference, not a REST specification; add the implemented `GET /upgrades/{plan}` and `POST /upgrades` user routes |
 | `SECURITY.md` | Keep; reports current controls and deployment boundaries without claiming absolute security |
@@ -273,8 +307,8 @@ implemented; historical checkpoint ZIPs are not.
 | `AGENTS.md`, `CLAUDE.md`, generated skills/MCP files | Tooling, not runtime product requirements; keep common policy aligned and local/generated material separate from shipped code |
 
 Remaining product/documentation mismatches include the guest layout's “Open
-Source” label alongside the restrictive SCL text, custom/yearly plan-label
-confusion in the admin UI, and promised ZIP attribution not inserted by the
+Source” label alongside the restrictive SCL text and promised ZIP attribution
+not inserted by the
 current exporter. The application checks only an `SS-` license-key prefix;
 it does not implement commercial entitlement validation. These are explicit
 limitations, not validated licensing enforcement or subscription automation.
@@ -286,14 +320,14 @@ public/private content, collaboration and external CDN/viewer requests. Third-
 party notices must match redistributed assets. Legal/product choices belong to
 the maintainer; this reassessment does not choose the source-license model.
 
-## Recalculated project rating
+## Historical engineering rating — 5 October 2026
 
-Weights are unchanged from the original review so the comparison is meaningful.
-The score is an engineering judgment about the repository and available
-verification evidence, not an industry certification or a percentage of lines
-covered by tests.
+The following table preserves the October 5 assessment and its then-current
+reasoning for comparison with the original baseline. It is not the current
+issue list: R01–R05 repairs and the 207-case results are recorded above. The
+October 11 pass did not rerate architecture, interface, or production operations.
 
-| Area | Score / 10 | Weight | Current reasoning |
+| Area | Score / 10 | Weight | October 5 reasoning (historical) |
 | --- | --- | --- | --- |
 | Security | 8 | 20% | Original groups remediated with targeted tests and clean locked audits; CDN, deployment and non-OTP error-redaction checks remain |
 | Functional correctness / data integrity | 7.5 | 25% | Stronger snapshots, version metadata, ownership and failure handling; residual identity/admin defects and upgrade creation race prevent a higher score |
@@ -306,20 +340,21 @@ covered by tests.
 Weighted result: **7.525/10**, rounded overall rating: **7.5/10**.
 The original weighted result was 3.95/10, rounded to 4/10.
 
-The strongest next gains are fixing R01–R04, making those failures part of the
-committed suite/CI, and proving deployment plus restore on the intended host.
-More features or a framework rewrite would not substitute for those checks.
+The next release gains are CI/browser automation and proving clean/populated
+deployment, concurrent behavior, real SMTP, and coordinated restore on the
+intended host. The code repairs above do not substitute for those checks.
 
 ## Baseline and history
 
 At `c6bf19b`, the review recorded reproduced browser execution/private metadata
 leaks, unsafe ZIP entries, broken core feature paths, migration failures and two
 failures in the original 25-test suite. Those were historical findings, not the
-results of today's 181-case run. Subsequent remediation is recorded in
+results of today's 207-case run. Subsequent remediation is recorded in
 [CHANGELOG.md](../CHANGELOG.md) and Git history; the previous detailed report is
 available in the report file at commit `b9bc3a7`.
 
-This reassessment replaces obsolete present-tense findings, intermediate test
-counts, expired temporary-artifact references and the old rating with current
-statuses. Only documentation is changed in the repository by this update;
-the residual issues above were investigated, not fixed or deployed.
+The October 11 update includes application/lockfile repairs, two data migrations,
+new regressions, and corrected production documentation. It supersedes the
+October 5 present-tense R01–R05 findings while preserving their IDs and historical
+rating. No live deployment, existing-database migration, cleanup, or production
+recovery/concurrency drill was performed.

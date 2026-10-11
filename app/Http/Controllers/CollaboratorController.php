@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ProjectInvitationMail;
+use App\MailDeliveryFailure;
 use App\Models\Project;
 use App\Models\User;
+use App\Notifications\ProjectInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -46,12 +49,12 @@ class CollaboratorController extends Controller
 
         try {
             Mail::to($user->email)
-                ->send(new \App\Mail\ProjectInvitationMail($project, auth()->user(), $user));
-            $user->notify(new \App\Notifications\ProjectInvitationNotification($project, auth()->user()));
+                ->send(new ProjectInvitationMail($project, auth()->user(), $user));
+            $user->notify(new ProjectInvitationNotification($project, auth()->user()));
 
             $message = empty($sync['attached']) ? 'Collaborator invitation resent.' : 'Collaborator added and invitation sent.';
         } catch (Throwable $exception) {
-            report($exception);
+            report(new MailDeliveryFailure('Collaborator invitation', $exception::class));
 
             return back()->with('warning', 'The collaborator was saved, but invitation delivery failed. Submit the same collaborator again to retry delivery.');
         }

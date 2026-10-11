@@ -56,7 +56,7 @@ or PHP 8.1 instructions from older releases.
 | Production MySQL/MariaDB | Migration code is portable by design, but a clean and populated deployment test on the chosen engine is still required before release |
 | Private uploads | `storage/app/private` on the `local` disk |
 | Public assets | `storage/app/public` for public assets such as avatars; `storage:link` exposes that disk only |
-| Required PHP extensions | At least `mbstring`, `fileinfo`, and `zip`; enable the extensions required by your chosen database/PHP build |
+| Required PHP extensions | Laravel/Composer platform requirements plus `mbstring`, `fileinfo`, and `zip`; `pdo_mysql` for MySQL/MariaDB or `pdo_sqlite` for SQLite; admin storage formatting does not require `intl` |
 
 ## Local development
 
@@ -95,7 +95,12 @@ php artisan test --compact tests/Feature/ProjectPreviewSecurityTest.php \
   tests/Feature/ProjectBoundaryTest.php \
   tests/Feature/StorageLifecycleSecurityTest.php \
   tests/Feature/ResourceBoundsSecurityTest.php \
-  tests/Feature/Auth/OtpSecurityTest.php
+  tests/Feature/Auth/OtpSecurityTest.php \
+  tests/Feature/ProfileTest.php \
+  tests/Feature/AdminUserManagementTest.php \
+  tests/Feature/UpgradeRequestTest.php \
+  tests/Feature/MailDeliverySecurityTest.php \
+  tests/Feature/ReleaseDataRepairTest.php
 npm test
 npm run audit:security
 composer audit --locked
@@ -115,6 +120,13 @@ delivery failures preserve the account/change and offer a resend path.
 The locked Vite/Tailwind build is separate from the Bootstrap, PDF.js, and
 CodeMirror CDN assets used by the current pages. An npm audit covers the locked
 build dependencies, not those external assets.
+
+Production configuration is in [SELF_HOSTING.md](SELF_HOSTING.md#configuration).
+Set production/debug/HTTPS/session values explicitly and provide a real SMTP
+transport using `MAIL_SCHEME` (not `MAIL_ENCRYPTION`). Keep private local storage,
+sessions, and rate-limit cache persistent across releases on the single host.
+The October 11 migrations repair missing legacy usernames and redact stored mail
+errors; apply them with the full migration chain after staging validation.
 
 ## Storage and recovery
 

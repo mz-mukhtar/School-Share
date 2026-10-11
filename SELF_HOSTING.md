@@ -17,9 +17,13 @@ has been verified.
 
 ## Platform requirements
 
-- PHP 8.4.1 or later for the current `composer.lock`.
+- PHP 8.4.1 or later for the current `composer.lock`; development verification
+  currently uses PHP 8.5.11.
 - Composer 2.x and the PHP extensions required by Laravel, the selected
-  database driver, `mbstring`, `fileinfo`, and `zip`.
+  database driver, `mbstring`, `fileinfo`, and `zip`. MySQL and MariaDB require
+  `pdo_mysql`; the verified SQLite path requires `pdo_sqlite`. Verify the web
+  PHP runtime as well as CLI PHP. Admin storage formatting uses the existing
+  application formatter and no longer requires `intl`.
 - Node.js 22.12+ and npm 10+ in the frontend build environment. Install from
   `package-lock.json`, not a fresh unconstrained dependency resolution.
 - A web server whose document root is the repository's `public/` directory.
@@ -36,22 +40,37 @@ Keep `.env` outside version control. At minimum set:
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-domain.example
+LOG_LEVEL=warning
 CACHE_STORE=file
+SESSION_DRIVER=file
+SESSION_SECURE_COOKIE=true
+QUEUE_CONNECTION=sync
+FILESYSTEM_DISK=local
 
-DB_CONNECTION=your-supported-driver
+DB_CONNECTION=mysql
 DB_HOST=...
+DB_PORT=3306
 DB_DATABASE=...
 DB_USERNAME=...
 DB_PASSWORD=...
 
 MAIL_MAILER=smtp
 MAIL_HOST=...
-MAIL_PORT=...
+MAIL_SCHEME=smtps
+MAIL_PORT=465
+MAIL_URL=null
 MAIL_USERNAME=...
 MAIL_PASSWORD=...
-MAIL_ENCRYPTION=...
 MAIL_FROM_ADDRESS=...
+MAIL_FROM_NAME="SchoolShare"
 ```
+
+Use `DB_CONNECTION=mariadb` for Laravel's MariaDB connection when that is the
+selected engine; validate the full migration chain on that exact version.
+The values above are a template, not live credentials. Quote credentials with
+spaces or special characters according to dotenv syntax and restrict `.env`
+permissions. `.env.example` deliberately retains development defaults; do not
+deploy its debug/log-mail configuration unchanged.
 
 Keep the application's existing `APP_KEY` when upgrading. OTP digests use this
 key; rotating it invalidates pending codes as well as Laravel encrypted data.
@@ -62,6 +81,30 @@ failover configuration that silently falls back to an in-memory store.
 Configure and verify a real SMTP transport. Development `log` mail writes the
 OTP body to logs, and `array` mail does not deliver it to a mailbox. Neither is
 a production delivery configuration. Protect logs, backups, and `.env` access.
+
+For implicit TLS, use `MAIL_SCHEME=smtps` and your provider's port (usually 465).
+For a provider using STARTTLS, use `MAIL_SCHEME=smtp` and port 587. The installed
+Symfony transport negotiates STARTTLS automatically when OpenSSL is available
+and the server advertises it; verify TLS and mailbox receipt with your provider.
+`MAIL_ENCRYPTION=tls`/`ssl` has no effect in this application. Leave `MAIL_URL=null`
+when using individual host/port/credential variables. A configured `MAIL_URL`
+DSN overrides those values; inspect it securely if SMTP settings appear ignored.
+For STARTTLS endpoints that must reject unencrypted connections, a provider DSN
+may include `?require_tls=true`; do not disable certificate verification.
+
+Use `php artisan config:show mail.default` and
+`php artisan config:show mail.mailers.smtp.scheme` to inspect safe fields. Avoid
+printing the complete mail/database configuration because it includes credentials.
+Refresh `php artisan config:cache` after environment changes. Configure SMTP,
+PHP, and proxy timeouts for synchronous delivery; no worker is required for the
+current mail paths. Do not configure mail failover to `log`/`array` in production:
+it can report success without delivering and can write private mail to logs.
+
+OTP, collaborator invitations, and upgrade-instruction failure reports retain
+the operation and exception class, but discard raw transport messages and
+previous exceptions. The October 11 error-redaction migration also replaces
+legacy stored transport errors. It does not remove them from existing logs or
+backups; keep those restricted and apply your retention policy.
 
 Set PHP's `upload_max_filesize` and `post_max_size` high enough for the
 application's configured single-file and batch limits. The application defaults
@@ -77,7 +120,9 @@ those values deliberately and keep product pricing copy aligned.
 1. Back up the database and `storage/app/private` together. Confirm that the
    backup can be restored together in a non-production environment.
 2. Deploy application code outside the web root and point the site document
-   root to `public/`.
+   root to `public/`. Preserve one shared `storage/` directory across releases,
+   including private/public files, file sessions/cache, and the lifecycle lock.
+   Separate release directories must use that same lock path while overlapping.
 3. Run `composer install --no-dev --optimize-autoloader` with the required PHP
    version.
 4. Create `.env`, generate a key only for a new installation, and verify
@@ -143,6 +188,28 @@ provider instead of applying recursive world-writable permissions.
 as avatars. It does not expose project uploads: those stay under
 `storage/app/private` and are served through authorized routes.
 
+Private project operations explicitly use `Storage::disk('local')`; merely
+changing `FILESYSTEM_DISK` cannot migrate them to object storage. An ephemeral
+platform such as Laravel Cloud or multiple hosts requires persistent shared
+storage and coordinated locking changes before deployment. Database and private
+file backups are mandatory; back up `storage/app/public` too if avatars must be
+restored, and preserve `APP_KEY` securely for recovery.
+
+## Identity and delivery-error data repairs
+
+The October 11 `backfill_missing_usernames` migration assigns deterministic
+`user_{id}` names to legacy null/empty/space-only identities, adding a numeric
+suffix if that name is already taken. It leaves valid existing usernames alone
+and can safely be rerun. Saving an account preserves an existing username when
+the submitted value is blank; accounts still missing one receive a generated
+name. Users can continue changing their username to an available, valid value.
+
+`redact_upgrade_mail_delivery_errors` replaces stored non-null raw SMTP error
+messages with a generic retry diagnostic. Both repairs retain their results
+on rollback: a rollback cannot reconstruct missing names or restore sensitive
+messages. Rehearse both on the target engine and review the assigned identities
+in staging before applying the full migration chain in maintenance mode.
+
 ## Cloudflare and reverse proxies
 
 Cloudflare is optional and has not been integration-tested for this application.
@@ -170,6 +237,10 @@ Before accepting a deployment:
   delivery with a real test mailbox.
 - Verify an email change sends a new code, the previous code/link is rejected,
   resend/guess limits return 429, and a failed delivery can be retried.
+- Verify admin dashboard, populated user list/detail, combined search/plan
+  filters, and plan changes. A blank profile username must retain working
+  project/profile links. Repeated upgrade submissions must reuse one pending
+  request; concurrently exercise this on the selected production engine.
 - Run the focused regression commands in [README.md](README.md#local-development).
 
 ## Backups, retention, and recovery

@@ -15,7 +15,7 @@
     <div class="col-md-3">
         <div class="ss-card text-center">
             <h6 style="color:var(--ss-text-muted);text-transform:uppercase;font-size:0.75rem;">Storage Used</h6>
-            <div style="font-size:2rem;font-weight:700;">{{ \Illuminate\Support\Number::fileSize($totalStorageBytes) }}</div>
+            <div style="font-size:2rem;font-weight:700;">{{ \App\Models\User::formatBytes((int) $totalStorageBytes) }}</div>
             <div style="font-size:0.8rem;color:var(--ss-text-muted);">across all projects</div>
         </div>
     </div>

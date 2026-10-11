@@ -49,8 +49,11 @@ affected version and reachability details.
   per ten minutes. Resend routes share account/IP limits and a persistent
   database-backed three-delivery budget, including initial and failed sends.
   Registration has an additional five-attempt IP limit per ten minutes.
-- Mail failures leave accounts/email changes recoverable, and reported OTP mail
-  errors omit transport details. OTP input is not flashed back to the session
+- Mail failures leave accounts/email changes, collaborators, and upgrade requests
+  recoverable. OTP, invitation, and upgrade-instruction reports omit raw transport
+  details and previous exceptions; stored upgrade errors are redacted too. The
+  October 11 migration redacts legacy stored messages, not existing logs/backups.
+  OTP input is not flashed back to the session
   and the code is not included in the mail subject.
 - Frontend build dependencies are locked in `package-lock.json`. The Tailwind 4
   Vite integration removes the vulnerable legacy `braces` dependency chain;

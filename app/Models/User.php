@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class User extends Authenticatable
@@ -48,18 +48,19 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at'  => 'datetime',
-            'last_active_at'     => 'datetime',
-            'password'           => 'hashed',
+            'email_verified_at' => 'datetime',
+            'last_active_at' => 'datetime',
+            'password' => 'hashed',
             'storage_used_bytes' => 'integer',
         ];
     }
 
     protected static function booted(): void
     {
-        static::creating(function (User $user): void {
+        static::saving(function (User $user): void {
             if (blank($user->username)) {
-                $user->username = static::nextAvailableUsername($user->name);
+                $originalUsername = $user->getOriginal('username');
+                $user->username = filled($originalUsername) ? $originalUsername : static::nextAvailableUsername($user->name);
             }
         });
     }
@@ -73,7 +74,7 @@ class User extends Authenticatable
      */
     public function projects(): HasMany
     {
-        return $this->hasMany(\App\Models\Project::class);
+        return $this->hasMany(Project::class);
     }
 
     /**
@@ -81,8 +82,8 @@ class User extends Authenticatable
      */
     public function starredProjects()
     {
-        return $this->belongsToMany(\App\Models\Project::class, 'starred_projects')
-                    ->withTimestamps();
+        return $this->belongsToMany(Project::class, 'starred_projects')
+            ->withTimestamps();
     }
 
     /**
@@ -91,7 +92,7 @@ class User extends Authenticatable
     public function following()
     {
         return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
-                    ->withPivot('created_at');
+            ->withPivot('created_at');
     }
 
     /**
@@ -100,7 +101,7 @@ class User extends Authenticatable
     public function followers()
     {
         return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
-                    ->withPivot('created_at');
+            ->withPivot('created_at');
     }
 
     /**
@@ -108,7 +109,7 @@ class User extends Authenticatable
      */
     public function activities(): HasMany
     {
-        return $this->hasMany(\App\Models\Activity::class);
+        return $this->hasMany(Activity::class);
     }
 
     /**
@@ -116,7 +117,7 @@ class User extends Authenticatable
      */
     public function comments(): HasMany
     {
-        return $this->hasMany(\App\Models\Comment::class);
+        return $this->hasMany(Comment::class);
     }
 
     /**
@@ -124,9 +125,9 @@ class User extends Authenticatable
      */
     public function sharedProjects()
     {
-        return $this->belongsToMany(\App\Models\Project::class, 'project_collaborators', 'user_id', 'project_id')
-                    ->withPivot('role')
-                    ->withTimestamps();
+        return $this->belongsToMany(Project::class, 'project_collaborators', 'user_id', 'project_id')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     public function upgradeRequests(): HasMany
@@ -144,6 +145,7 @@ class User extends Authenticatable
     public function maxStorageBytes(): int
     {
         $gb = $this->planConfiguration()['storage_gb'];
+
         return (int) ($gb * 1024 * 1024 * 1024);
     }
 
@@ -161,7 +163,10 @@ class User extends Authenticatable
     public function storageUsagePercent(): float
     {
         $max = $this->maxStorageBytes();
-        if ($max === 0) return 100.0;
+        if ($max === 0) {
+            return 100.0;
+        }
+
         return round(($this->storage_used_bytes / $max) * 100, 1);
     }
 
@@ -170,7 +175,7 @@ class User extends Authenticatable
      */
     public function storageUsedHuman(): string
     {
-        return $this->formatBytes($this->storage_used_bytes);
+        return self::formatBytes($this->storage_used_bytes);
     }
 
     /**
@@ -178,7 +183,7 @@ class User extends Authenticatable
      */
     public function maxStorageHuman(): string
     {
-        return $this->formatBytes($this->maxStorageBytes());
+        return self::formatBytes($this->maxStorageBytes());
     }
 
     /**
@@ -234,18 +239,19 @@ class User extends Authenticatable
     // Utilities
     // -------------------------------------------------------------------------
 
-    private function formatBytes(int $bytes): string
+    public static function formatBytes(int $bytes): string
     {
         if ($bytes >= 1073741824) {
-            return round($bytes / 1073741824, 2) . ' GB';
+            return round($bytes / 1073741824, 2).' GB';
         }
         if ($bytes >= 1048576) {
-            return round($bytes / 1048576, 1) . ' MB';
+            return round($bytes / 1048576, 1).' MB';
         }
         if ($bytes >= 1024) {
-            return round($bytes / 1024, 1) . ' KB';
+            return round($bytes / 1024, 1).' KB';
         }
-        return $bytes . ' B';
+
+        return $bytes.' B';
     }
 
     /** @return array{storage_gb: int, max_projects: int, max_collaborators: int} */
@@ -257,12 +263,12 @@ class User extends Authenticatable
     private static function nextAvailableUsername(string $name): string
     {
         $base = Str::slug(Str::ascii($name), '_');
-        $base = $base !== '' ? Str::limit($base, 56, '') : 'user';
+        $base = $base !== '' ? Str::limit($base, 50, '') : 'user';
         $candidate = $base;
         $suffix = 1;
 
         while (static::where('username', $candidate)->exists()) {
-            $candidate = Str::limit($base, 56 - strlen((string) $suffix), '').'_'.$suffix;
+            $candidate = Str::limit($base, 49 - strlen((string) $suffix), '').'_'.$suffix;
             $suffix++;
         }
 

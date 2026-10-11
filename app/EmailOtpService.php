@@ -68,8 +68,7 @@ class EmailOtpService
             Mail::to($recipient->email)->send(new OtpVerificationMail($code, $recipient->name));
             $status = 'sent';
         } catch (Throwable $exception) {
-            // Transport messages may contain credentials or message contents.
-            report(new \RuntimeException('OTP mail delivery failed ('.$exception::class.').'));
+            report(new MailDeliveryFailure('OTP', $exception::class));
             $status = 'failed';
         }
 

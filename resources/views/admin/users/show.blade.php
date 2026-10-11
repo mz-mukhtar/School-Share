@@ -18,7 +18,7 @@
             <dl class="mb-0 small">
                 <dt>Plan</dt><dd>{{ ucfirst($user->plan) }}</dd>
                 <dt>Projects</dt><dd>{{ $user->projects->count() }}</dd>
-                <dt>Storage used</dt><dd>{{ \Illuminate\Support\Number::fileSize($user->storage_used_bytes) }}</dd>
+                <dt>Storage used</dt><dd>{{ $user->storageUsedHuman() }}</dd>
                 <dt>Joined</dt><dd>{{ $user->created_at->format('M j, Y') }}</dd>
             </dl>
         </div>
