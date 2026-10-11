@@ -2,6 +2,12 @@
 
 return [
 
+    'admin_email' => env('SCHOOLSHARE_ADMIN_EMAIL', 'mahizeki037@gmail.com'),
+
+    'monitoring' => [
+        'minimum_free_bytes' => (int) env('SCHOOLSHARE_MINIMUM_FREE_MB', 100) * 1024 * 1024,
+    ],
+
     'operations' => [
         'max_upload_files' => 20,
         'max_upload_bytes' => 200 * 1024 * 1024,
@@ -53,7 +59,7 @@ return [
         'free' => [
             'max_projects' => 15,
             'max_collaborators' => 5,
-            'storage_gb' => 1,
+            'storage_gb' => 3,
         ],
         'pro' => [
             'max_projects' => 20,

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('source_folder_id')->nullable();
             $table->json('folder_path');
             $table->timestamps();
-            $table->unique(['checkpoint_id', 'source_folder_id']);
+            $table->unique(['checkpoint_id', 'source_folder_id'], 'checkpoint_folder_source_unique');
         });
 
         Schema::create('checkpoint_file_snapshots', function (Blueprint $table): void {
@@ -30,8 +30,8 @@ return new class extends Migration
             $table->string('mime_type')->nullable();
             $table->json('folder_path')->nullable();
             $table->timestamps();
-            $table->unique(['checkpoint_id', 'project_file_id']);
-            $table->unique(['checkpoint_id', 'file_version_id']);
+            $table->unique(['checkpoint_id', 'project_file_id'], 'checkpoint_file_source_unique');
+            $table->unique(['checkpoint_id', 'file_version_id'], 'checkpoint_file_version_unique');
         });
     }
 

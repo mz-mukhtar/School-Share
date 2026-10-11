@@ -13,6 +13,20 @@ class UpgradeRequestTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_upgrade_notifications_use_the_configured_admin_recipient(): void
+    {
+        Mail::fake();
+        config(['schoolshare.admin_email' => 'owner@schoolshare.example']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('upgrade.store'), ['plan' => 'pro', 'billing_cycle' => 'monthly'])
+            ->assertRedirect(route('pricing'))->assertSessionHas('success');
+
+        $this->assertDatabaseCount('upgrade_requests', 1);
+        Mail::assertSent(AdminUpgradeReminderMail::class, fn (AdminUpgradeReminderMail $mail): bool => $mail->hasTo('owner@schoolshare.example'));
+        Mail::assertSent(UpgradeInstructionsMail::class, fn (UpgradeInstructionsMail $mail): bool => $mail->hasTo($user->email));
+    }
+
     public function test_repeated_submissions_reuse_the_pending_request_and_original_billing_cycle(): void
     {
         Mail::fake();

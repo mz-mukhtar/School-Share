@@ -2,12 +2,15 @@
 <?php
 
 use Illuminate\Foundation\Application;
+use App\InstallationBootstrap;
 use Symfony\Component\Console\Input\ArgvInput;
 
 define('LARAVEL_START', microtime(true));
 
 // Register the Composer autoloader...
 require __DIR__.'/vendor/autoload.php';
+
+InstallationBootstrap::prepare(__DIR__);
 
 // Bootstrap Laravel and handle the command...
 /** @var Application $app */

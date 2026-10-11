@@ -107,35 +107,41 @@ return new class extends Migration
 
     private function deduplicateFileNames(): void
     {
-        $seen = [];
-        DB::table('project_files')->orderBy('id')->each(function (object $file) use (&$seen): void {
-            $key = $file->project_id.'|'.$file->folder_scope.'|'.$file->original_name;
-            if (! isset($seen[$key])) {
-                $seen[$key] = true;
-
+        DB::table('project_files')->orderBy('id')->each(function (object $file): void {
+            $scope = DB::table('project_files')->where('project_id', $file->project_id)->where('folder_scope', $file->folder_scope);
+            if (! (clone $scope)->where('id', '<', $file->id)->where('original_name', $file->original_name)->exists()) {
                 return;
             }
-            $name = pathinfo($file->original_name, PATHINFO_FILENAME).'-'.$file->id;
+
             $extension = pathinfo($file->original_name, PATHINFO_EXTENSION);
-            $name .= $extension === '' ? '' : '.'.$extension;
+            $ending = $extension === '' ? '' : '.'.Str::limit($extension, 100, '');
+            $attempt = 0;
+            do {
+                $suffix = '-'.$file->id.($attempt === 0 ? '' : '-'.$attempt);
+                $name = Str::limit(pathinfo($file->original_name, PATHINFO_FILENAME), 255 - Str::length($suffix.$ending), '').$suffix.$ending;
+                $attempt++;
+            } while ((clone $scope)->where('id', '!=', $file->id)->where('original_name', $name)->exists());
+
             DB::table('project_files')->where('id', $file->id)->update(['original_name' => $name]);
-            $seen[$file->project_id.'|'.$file->folder_scope.'|'.$name] = true;
         });
     }
 
     private function deduplicateFolderNames(): void
     {
-        $seen = [];
-        DB::table('project_folders')->orderBy('id')->each(function (object $folder) use (&$seen): void {
-            $key = $folder->project_id.'|'.$folder->parent_scope.'|'.$folder->name;
-            if (! isset($seen[$key])) {
-                $seen[$key] = true;
-
+        DB::table('project_folders')->orderBy('id')->each(function (object $folder): void {
+            $scope = DB::table('project_folders')->where('project_id', $folder->project_id)->where('parent_scope', $folder->parent_scope);
+            if (! (clone $scope)->where('id', '<', $folder->id)->where('name', $folder->name)->exists()) {
                 return;
             }
-            $name = Str::limit($folder->name, 240 - strlen((string) $folder->id), '').'-'.$folder->id;
+
+            $attempt = 0;
+            do {
+                $suffix = '-'.$folder->id.($attempt === 0 ? '' : '-'.$attempt);
+                $name = Str::limit($folder->name, 255 - Str::length($suffix), '').$suffix;
+                $attempt++;
+            } while ((clone $scope)->where('id', '!=', $folder->id)->where('name', $name)->exists());
+
             DB::table('project_folders')->where('id', $folder->id)->update(['name' => $name]);
-            $seen[$folder->project_id.'|'.$folder->parent_scope.'|'.$name] = true;
         });
     }
 };

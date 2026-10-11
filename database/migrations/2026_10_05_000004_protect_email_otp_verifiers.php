@@ -29,6 +29,12 @@ return new class extends Migration
     {
         DB::table('email_otp_tokens')->delete();
 
+        if (! Schema::hasIndex('email_otp_tokens', ['user_id'], 'index')) {
+            Schema::table('email_otp_tokens', function (Blueprint $table): void {
+                $table->index('user_id');
+            });
+        }
+
         Schema::table('email_otp_tokens', function (Blueprint $table): void {
             $table->dropUnique(['user_id']);
             $table->dropColumn(['email', 'otp_hash', 'failed_attempts', 'send_count', 'send_window_started_at', 'delivery_status']);

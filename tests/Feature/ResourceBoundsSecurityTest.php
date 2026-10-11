@@ -189,7 +189,7 @@ class ResourceBoundsSecurityTest extends TestCase
         $from = $file->latestVersion;
         $path = 'diff/new.txt';
         Storage::disk('local')->put($path, '<script>changed</script>');
-        $to = $file->versions()->create(['checkpoint_id' => $from->checkpoint_id, 'storage_path' => $path, 'size_bytes' => 24, 'version_number' => 2]);
+        $to = $file->versions()->create(['checkpoint_id' => $from->checkpoint_id, 'storage_path' => $path, 'size_bytes' => 24, 'mime_type' => 'text/plain', 'version_number' => 2]);
 
         $response = $this->actingAs($user)->get(route('projects.files.diff', [$project, $file, 'from' => $from->id, 'to' => $to->id]));
 

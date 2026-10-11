@@ -78,7 +78,7 @@ class UpgradeController extends Controller
     {
         try {
             Mail::to($user->email)->send(new UpgradeInstructionsMail($user, $upgradeRequest));
-            Mail::to('mahizeki037@gmail.com')->send(new AdminUpgradeReminderMail($upgradeRequest));
+            Mail::to(config('schoolshare.admin_email'))->send(new AdminUpgradeReminderMail($upgradeRequest));
             $upgradeRequest->update([
                 'mail_delivery_status' => 'sent',
                 'mail_delivery_error' => null,

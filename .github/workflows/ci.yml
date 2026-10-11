@@ -1,0 +1,127 @@
+name: Release gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.5'
+          extensions: intl, pdo_mysql, pdo_sqlite, zip, fileinfo, mbstring
+          coverage: none
+          tools: composer:v2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies and audit
+        run: |
+          composer validate --strict --no-check-publish
+          composer install --prefer-dist --no-interaction
+          composer audit --locked
+          npm ci --ignore-scripts
+          npm run audit:security
+      - name: Prepare disposable test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+      - name: Test and build
+        run: |
+          vendor/bin/phpunit --exclude-group staging,recovery,installation,package
+          npm test
+          node tests/JavaScript/PdfPreview.test.mjs
+          npm run build
+
+  staging:
+    needs: repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: mysql
+            driver: mysql
+            app: app
+            public_directory: public_html
+            mail_scheme: smtp
+          - engine: mariadb
+            driver: mariadb
+            app: app-mariadb
+            public_directory: public_html
+            mail_scheme: smtp
+          - engine: mariadb-cpanel
+            driver: mariadb
+            app: app-cpanel
+            public_directory: schoolshare.ethionext.com.et
+            mail_scheme: smtps
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.5'
+          extensions: intl, pdo_mysql, pdo_sqlite, zip, fileinfo, mbstring
+          coverage: none
+          tools: composer:v2
+      - name: Install test dependencies and generate isolated secrets
+        run: |
+          composer install --prefer-dist --no-interaction
+          php -r 'file_put_contents(".env.staging", "STAGING_APP_KEY=base64:".base64_encode(random_bytes(32))."\nSTAGING_DB_PASSWORD=".bin2hex(random_bytes(24))."\nSTAGING_DB_ROOT_PASSWORD=".bin2hex(random_bytes(24))."\n");'
+          chmod 600 .env.staging
+      - name: Build exact PHP runtime and provision isolated services
+        run: |
+          docker compose --env-file .env.staging -f compose.staging.yaml build app test
+          docker compose --env-file .env.staging -f compose.staging.yaml up -d --wait mysql mariadb mariadb-cpanel mailpit
+          docker compose --env-file .env.staging -f compose.staging.yaml exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE schoolshare_testing; CREATE DATABASE schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
+          docker compose --env-file .env.staging -f compose.staging.yaml exec -T mariadb sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "CREATE DATABASE schoolshare_testing; CREATE DATABASE schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
+          docker compose --env-file .env.staging -f compose.staging.yaml exec -T mariadb-cpanel sh -c 'MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -uroot -e "CREATE DATABASE schoolshare_testing; CREATE DATABASE schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
+          docker compose --env-file .env.staging -f compose.staging.yaml run --rm --user root --entrypoint sh test -c 'mkdir -p storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache; chown -R www-data:www-data storage bootstrap/cache'
+      - name: Run engine regressions, clean/populated migrations, and coordinated recovery
+        env:
+          ENGINE: ${{ matrix.engine }}
+          DRIVER: ${{ matrix.driver }}
+        run: |
+          docker compose --env-file .env.staging -f compose.staging.yaml run --rm -e DB_CONNECTION="$DRIVER" -e DB_HOST="$ENGINE" -e LOG_CHANNEL=null test test --compact --exclude-group=staging,recovery,installation,package
+          docker compose --env-file .env.staging -f compose.staging.yaml run --rm -e DB_CONNECTION="$DRIVER" -e DB_HOST="$ENGINE" -e STAGING_INSTALLATION=1 -e LOG_CHANNEL=null test test --compact tests/Feature/InstallationAcceptanceTest.php
+          docker compose --env-file .env.staging -f compose.staging.yaml run --rm -e DB_CONNECTION="$DRIVER" -e DB_HOST="$ENGINE" -e STAGING_RECOVERY=1 test test --compact tests/Feature/BackupRestorationTest.php
+      - name: Run production Apache/SMTP/file/concurrency acceptance
+        env:
+          ENGINE: ${{ matrix.engine }}
+          DRIVER: ${{ matrix.driver }}
+          APP_SERVICE: ${{ matrix.app }}
+        run: |
+          docker compose --env-file .env.staging -f compose.staging.yaml up -d app "$APP_SERVICE"
+          app_service="$APP_SERVICE"
+          docker compose --env-file .env.staging -f compose.staging.yaml exec -T --user www-data "$app_service" php artisan migrate --force --no-interaction
+          docker compose --env-file .env.staging -f compose.staging.yaml exec -T --user www-data "$app_service" php artisan optimize --no-interaction
+          docker compose --env-file .env.staging -f compose.staging.yaml exec -T --user www-data "$app_service" php artisan schoolshare:health --no-interaction
+          docker compose --env-file .env.staging -f compose.staging.yaml run --rm -e DB_CONNECTION="$DRIVER" -e DB_HOST="$ENGINE" -e STAGING_ACCEPTANCE=1 -e STAGING_BASE_URL="http://$app_service" test test --compact tests/Feature/StagingAcceptanceTest.php
+      - name: Verify extracted cPanel package over HTTPS and authenticated encrypted SMTP
+        env:
+          STAGING_PACKAGE: '1'
+          STAGING_PACKAGE_ENGINE: ${{ matrix.engine }}
+          STAGING_PACKAGE_PUBLIC_DIRECTORY: ${{ matrix.public_directory }}
+          STAGING_PACKAGE_MAIL_SCHEME: ${{ matrix.mail_scheme }}
+        run: |
+          docker cp schoolshare-staging-app-1:/var/www/html/public/build public/build
+          vendor/bin/phpunit tests/Feature/CpanelPackageAcceptanceTest.php
+      - name: Show service status on failure
+        if: failure()
+        run: docker compose --env-file .env.staging -f compose.staging.yaml ps -a
+      - name: Stop this CI stack
+        if: always()
+        run: docker compose --env-file .env.staging -f compose.staging.yaml down

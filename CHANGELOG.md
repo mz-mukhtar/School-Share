@@ -8,6 +8,34 @@ only when a release is actually cut.
 
 ### Release preparation — 2026-10-11
 
+- Add isolated upstream MariaDB 10.11.19 staging for the actual cPanel target,
+  guarded 10.11.19+ release-line support, and a matching CI matrix entry.
+- Allow a validated public-folder name in cPanel packaging; configure both web
+  and CLI public paths for the SchoolShare subdomain without packaging or
+  overwriting the main website's `public_html` directory.
+- Extend extracted-package acceptance to authenticated implicit TLS on port 465
+  and preservation of a neighbouring main-site folder; update the host-specific
+  installation guide without embedding production credentials.
+- Add a fresh-install cPanel ZIP builder and HTTPS browser wizard with a private
+  owner token, hosting/version checks, empty-database protection, migrations,
+  one chosen administrator, existing OTP verification, and permanent setup locks.
+- Package locked production dependencies and built assets without credentials,
+  user data, or development caches; document the standard cPanel installation.
+- Verify extracted packages on both engines over HTTPS with real CSRF/session
+  handling, authenticated STARTTLS, admin verification, and cached operation.
+- Make upgrade-notification recipients configurable; fresh setup selects the
+  chosen administrator instead of the original application's hardcoded address.
+- Add isolated PHP 8.5 / MySQL 8.4 / MariaDB 11.4 Docker staging with persistent
+  local disks, production Apache configuration, and an SMTP capture/fault service.
+- Fix production-engine migration blockers: foreign-key support indexes,
+  oversized snapshot index names, and collation-aware legacy-name collisions.
+- Add clean/populated engine migration, coordinated database/private-file
+  recovery, real HTTP/SMTP retry, role/upload/avatar/ZIP/checkpoint, and parallel
+  upgrade-request acceptance tests.
+- Add pinned GitHub Actions release gates, minimal `/ready` diagnostics, Docker
+  health checks, and a scheduled `schoolshare:health` command. External alerts
+  and hosted CI must still be configured and confirmed before production.
+
 - Updated locked development dependencies to `concurrently` 10.0.6 and
   `shell-quote` 1.12.0 to resolve the critical command-injection advisory.
 - Preserve existing usernames on blank saves and backfill missing legacy route
@@ -16,7 +44,8 @@ only when a release is actually cut.
   plan-edit form route, group combined search/plan filters, and distinguish
   custom plans from yearly billing in the user-management labels.
 - Lock the account before finding/creating a pending upgrade; retries reuse the
-  same request. Real concurrent acceptance on the chosen engine remains required.
+  same request. Independent-session concurrent acceptance now passes locally
+  on both supported production engines.
 - Standardize redacted OTP/invitation/upgrade mail failures without chaining raw
   exceptions, and add a migration to redact previously stored upgrade errors.
 - Add committed identity, admin, upgrade retry, mail-failure, and repair-migration
@@ -71,10 +100,10 @@ only when a release is actually cut.
 
 ### Known release blockers
 
-- A clean and populated MySQL/MariaDB deployment test is still required on the
-  chosen production engine.
-- Real SMTP delivery and production cache/proxy configuration still require
-  deployment verification; audits do not cover separately loaded CDN assets.
+- Local staging acceptance is not public production deployment. A real hosting
+  target/domain, HTTPS/proxy acceptance, SMTP-provider mailbox delivery, off-host
+  backup retention, alert delivery, and green hosted CI remain required.
+- Audits do not cover separately loaded CDN assets or representative load testing.
 
 ## 0.1.0 — 2026-10-04
 

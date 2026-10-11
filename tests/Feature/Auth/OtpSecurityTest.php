@@ -22,6 +22,18 @@ class OtpSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Schema changes implicitly commit transactions on MySQL/MariaDB.
+     *
+     * @return list<string|null>
+     */
+    protected function connectionsToTransact(): array
+    {
+        return $this->name() === 'test_the_security_migration_invalidates_legacy_plaintext_codes_without_deleting_accounts'
+            && in_array(config('database.connections.'.config('database.default').'.driver'), ['mysql', 'mariadb'], true)
+            ? [] : [config('database.default')];
+    }
+
     public function test_a_valid_code_verifies_only_its_account_and_is_consumed(): void
     {
         Mail::fake();
@@ -255,21 +267,25 @@ class OtpSecurityTest extends TestCase
     {
         $user = User::factory()->unverified()->create();
         $migration = require database_path('migrations/2026_10_05_000004_protect_email_otp_verifiers.php');
-        $migration->down();
-        DB::table('email_otp_tokens')->insert([
-            'user_id' => $user->id, 'otp' => '123456', 'expires_at' => now()->addMinutes(15),
-            'created_at' => now(), 'updated_at' => now(),
-        ]);
+        try {
+            $migration->down();
+            DB::table('email_otp_tokens')->insert([
+                'user_id' => $user->id, 'otp' => '123456', 'expires_at' => now()->addMinutes(15),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
 
-        $migration->up();
+            $migration->up();
 
-        $this->assertModelExists($user);
-        $this->assertDatabaseCount('email_otp_tokens', 0);
-        $this->actingAs($user)->post(route('otp.verify'), ['otp' => '123456'])->assertSessionHasErrors('otp');
-        Mail::fake();
-        $this->post(route('otp.resend'))->assertRedirect()->assertSessionHas('success');
-        Mail::assertSent(OtpVerificationMail::class);
-        $this->assertDatabaseHas('email_otp_tokens', ['user_id' => $user->id, 'email' => $user->email, 'delivery_status' => 'sent']);
+            $this->assertModelExists($user);
+            $this->assertDatabaseCount('email_otp_tokens', 0);
+            $this->actingAs($user)->post(route('otp.verify'), ['otp' => '123456'])->assertSessionHasErrors('otp');
+            Mail::fake();
+            $this->post(route('otp.resend'))->assertRedirect()->assertSessionHas('success');
+            Mail::assertSent(OtpVerificationMail::class);
+            $this->assertDatabaseHas('email_otp_tokens', ['user_id' => $user->id, 'email' => $user->email, 'delivery_status' => 'sent']);
+        } finally {
+            DB::table('users')->where('id', $user->id)->delete();
+        }
     }
 
     private function sendCode(User $user): string

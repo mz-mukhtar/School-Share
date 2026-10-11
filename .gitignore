@@ -3,6 +3,14 @@
 .env
 .env.backup
 .env.production
+.env.staging
+/staging-backups/
+/setup-token.txt
+/.cpanel-layout
+/storage/app/releases/
+/storage/app/*installation*.lock
+/storage/app/installed.lock
+/storage/app/setup-bootstrap.lock
 .phpactor.json
 .phpunit.result.cache
 /.codex

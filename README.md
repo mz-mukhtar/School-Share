@@ -53,10 +53,10 @@ or PHP 8.1 instructions from older releases.
 | Composer | 2.x |
 | Frontend build environment | Node.js 22.12+ and npm 10+; use `package-lock.json` with `npm ci` |
 | Database for local development/testing | SQLite is covered by the test suite |
-| Production MySQL/MariaDB | Migration code is portable by design, but a clean and populated deployment test on the chosen engine is still required before release |
+| Supported staging engines | PHP 8.5.11, MySQL 8.4.11, MariaDB 11.4.13, and upstream MariaDB 10.11.19: local compatibility gates are recorded in the review; the cPanel CloudLinux variant and real hosting still require acceptance |
 | Private uploads | `storage/app/private` on the `local` disk |
 | Public assets | `storage/app/public` for public assets such as avatars; `storage:link` exposes that disk only |
-| Required PHP extensions | Laravel/Composer platform requirements plus `mbstring`, `fileinfo`, and `zip`; `pdo_mysql` for MySQL/MariaDB or `pdo_sqlite` for SQLite; admin storage formatting does not require `intl` |
+| Required PHP extensions | Laravel/Composer platform requirements plus `intl`, `mbstring`, `fileinfo`, and `zip`; `pdo_mysql` for MySQL/MariaDB or `pdo_sqlite` for SQLite; admin storage formatting itself does not require `intl` |
 
 ## Local development
 
@@ -127,6 +127,18 @@ transport using `MAIL_SCHEME` (not `MAIL_ENCRYPTION`). Keep private local storag
 sessions, and rate-limit cache persistent across releases on the single host.
 The October 11 migrations repair missing legacy usernames and redact stored mail
 errors; apply them with the full migration chain after staging validation.
+
+New cPanel installations can use the standard browser wizard and packaged
+production dependencies; see [the installation guide](docs/INSTALLATION_CPANEL.md).
+This fresh-install flow does not replace the production operational gates or
+the backup-first upgrade procedure.
+
+Repeatable local staging and engine acceptance are documented in
+[SELF_HOSTING.md](SELF_HOSTING.md#repeatable-isolated-staging). The sample domain
+is `schoolshare.example`; the stack does not provision real DNS, HTTPS, or a mail
+provider. GitHub Actions release gates, Docker readiness checks, and scheduled
+health diagnostics are included. Public deployment still requires green hosted
+CI, verified HTTPS/provider mailbox delivery, off-host backups, and live alerts.
 
 ## Storage and recovery
 
