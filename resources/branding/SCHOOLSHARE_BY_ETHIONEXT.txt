@@ -1,53 +1,44 @@
-================================================================================
-  SchoolShare — Version Control for Students
-  by EthioNext · ethionext.com.et
-================================================================================
+SchoolShare — Student project and checkpoint management
+by EthioNext · ethionext.com.et
 
-This file was downloaded from SchoolShare, a free and open-source version
-control platform for students, teachers, and creators.
+Attribution template for SchoolShare project downloads.
+The current exporter does not automatically insert this template into ZIPs.
+Fields below must be populated by any future integration before distribution.
 
   Project Name:  {PROJECT_NAME}
   Downloaded by: {USER_NAME}
   Date:          {DOWNLOAD_DATE}
   Checkpoint:    {CHECKPOINT_MESSAGE}
 
---------------------------------------------------------------------------------
-  About SchoolShare
---------------------------------------------------------------------------------
+About SchoolShare
 
-SchoolShare is a simplified, GUI-based version control system designed for
-high school students and anyone who wants to track their work — essays,
-presentations, PDFs, images, code, and more.
-
-No command line. No technical knowledge needed.
+SchoolShare organizes student projects, retains file versions, and records
+checkpoint snapshots. It supports browser-based file management and
+owner/editor/viewer collaboration. A project ZIP contains current files;
+it is not a complete historical backup.
 
   Live App:    https://schoolshare.ethionext.com.et
   GitHub:      https://github.com/mz-mukhtar/School-Share
   License:     SchoolShare Community License (SCL v1.0)
 
---------------------------------------------------------------------------------
-  Developer & Contact
---------------------------------------------------------------------------------
+Developer and contact
 
   Name:    Mahi Zeki Mukhtar
   Email:   mahizeki037@gmail.com
   Phone:   +251 992 194 042
   Website: https://ethionext.com.et
 
---------------------------------------------------------------------------------
-  Licensing Notice
---------------------------------------------------------------------------------
+Licensing notice
 
-SchoolShare is open source, licensed under the SchoolShare Community License
-(SCL v1.0). Self-hosting is permitted, but EthioNext branding must be retained
-unless you purchase a Commercial License.
+The repository contains the SchoolShare Community License (SCL v1.0), with
+attribution and non-commercial-use restrictions. Refer to LICENSE.md for the
+complete terms and permitted uses; this notice does not grant additional rights.
+Commercial permissions are issued separately by the copyright holder.
 
   Community License:  Free — branding required
   Commercial License: Paid — branding can be removed
 
   For commercial licensing: mahizeki037@gmail.com
 
-================================================================================
   © 2026 Mahi Zeki Mukhtar / EthioNext · All rights reserved
   schoolshare.ethionext.com.et
-================================================================================

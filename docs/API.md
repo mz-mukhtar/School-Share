@@ -9,6 +9,24 @@ All project-management routes require an authenticated, OTP-verified account
 unless noted otherwise. `{project}` resolves by project slug; nested resources
 are scoped to that project.
 
+This reference describes the current source. Confirm the routes of a deployed
+release with `php artisan route:list --except-vendor`; route documentation is
+not an authorization boundary.
+
+## Installation and health routes
+
+| Method | Path | Purpose / access |
+| --- | --- | --- |
+| GET | `/install` | Fresh-install wizard; HTTPS required; unavailable after setup locks |
+| POST | `/install/unlock` | Private owner-token unlock; session/CSRF checks and five-attempt/minute throttle |
+| POST | `/install` | Install into an empty database; authorized setup session, CSRF, and throttle required |
+| GET | `/up` | Application boot/liveness check |
+| GET | `/ready` | Minimal readiness status: 200 `ok` or 503 `unavailable`; no-store response |
+
+Health endpoints are unauthenticated by design and do not test SMTP or backups.
+Before installation completes, global installation middleware restricts normal
+application access. Setup is not an existing-site update API.
+
 ## Public routes
 
 | Method | Path | Purpose |
@@ -58,6 +76,8 @@ to the OTP form with a retry warning rather than claiming delivery succeeded.
 | GET | `/profile` | Profile form |
 | PATCH | `/profile` | Update profile; an email change clears verification, sends a new OTP, and redirects to the OTP form |
 | DELETE | `/profile` | Delete account after password confirmation |
+| GET | `/upgrades/{plan}` | Upgrade-request form for `pro` or `custom` |
+| POST | `/upgrades` | Save/reuse a pending request and send instructions; retry preserves the request |
 
 ## Project routes
 
@@ -115,6 +135,9 @@ All routes below require `auth`, `otp.verified`, and `is_admin`:
 | GET | `/admin/upgrades` | Upgrade requests |
 | PATCH | `/admin/upgrades/{upgradeRequest}/approve` | Approve request |
 | PATCH | `/admin/upgrades/{upgradeRequest}/reject` | Reject request |
+
+Approval changes a user's plan after administrator review. It does not verify a
+payment, create recurring billing, or establish commercial-license entitlement.
 
 ## Error and response behavior
 

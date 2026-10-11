@@ -4,9 +4,28 @@ SchoolShare is a server-rendered Laravel application for student projects. It
 organises files into projects, records checkpoint-based file versions, supports
 private collaboration, and provides browser previews for selected file types.
 
-The [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) records the current
-assessment, remediation status, remaining release risks, and a short baseline
-comparison; consult it and the changelog for current behavior.
+## Start here
+
+| Goal | Guide |
+| --- | --- |
+| Install a new site on cPanel | [cPanel installation](docs/INSTALLATION_CPANEL.md) |
+| Operate, upgrade, or recover an existing site | [Self-hosting and operations](SELF_HOSTING.md) |
+| Understand the application | [Architecture](docs/ARCHITECTURE.md) and [web routes](docs/API.md) |
+| Contribute a change | [Contribution guide](CONTRIBUTING.md) |
+| Report a vulnerability privately | [Security policy](SECURITY.md) |
+| Review release evidence and outstanding work | [Repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) |
+
+## Deployment status
+
+Local migration, recovery, installer, and HTTP acceptance checks have passed on
+the documented MySQL/MariaDB targets. On 11 October 2026, the operator also
+confirmed a cPanel installation, SMTP authentication, OTP receipt, and access
+to the verified account dashboard. That is operator-reported hosting evidence,
+not an independent audit of production.
+
+Hosted CI enforcement, off-host backup restoration, external alert delivery,
+and the complete real-host permission/upload/recovery checklist still require
+confirmation. A successful installation does not close those operational gates.
 
 ## Current capabilities
 
@@ -41,6 +60,24 @@ comparison; consult it and the changelog for current behavior.
 - OTP delivery requires a working mail transport and persistent rate-limit
   cache. The hardened token schema must be migrated before deploying this code.
 
+## Plans and storage
+
+| Plan | Storage per account | Owned projects | Collaborators per project |
+| --- | --- | --- | --- |
+| Free | 3 GB | 15 | 5 |
+| Pro | 10 GB | 20 | 20 |
+| Custom | 10 GB | 20 | 20 |
+
+These are the current defaults in `config/schoolshare.php`. Storage is calculated
+in binary units: the interface's 3 GB allowance is 3,221,225,472 bytes (3 GiB).
+Retained file versions count toward the account's storage; a checkpoint restore
+reuses retained bytes rather than charging for another copy. The 100 MiB
+single-file and 200 MiB upload-batch/export limits are separate from that quota.
+
+Upgrades are administrator-reviewed requests, not automated payments or
+subscriptions. Custom branding requires the applicable commercial permission;
+the application does not validate commercial entitlement. See [LICENSE.md](LICENSE.md).
+
 ## Runtime requirements
 
 The checked-in lock file currently resolves Laravel 13.34.0 and requires PHP
@@ -49,11 +86,12 @@ or PHP 8.1 instructions from older releases.
 
 | Component | Current requirement/status |
 | --- | --- |
-| PHP | 8.4.1+ for the current lock file |
+| PHP | 8.5 for supported deployment and the installer; the dependency lockfile minimum is 8.4.1 |
 | Composer | 2.x |
 | Frontend build environment | Node.js 22.12+ and npm 10+; use `package-lock.json` with `npm ci` |
 | Database for local development/testing | SQLite is covered by the test suite |
-| Supported staging engines | PHP 8.5.11, MySQL 8.4.11, MariaDB 11.4.13, and upstream MariaDB 10.11.19: local compatibility gates are recorded in the review; the cPanel CloudLinux variant and real hosting still require acceptance |
+| Supported installer database lines | MySQL 8.4, MariaDB 11.4, or MariaDB 10.11.19+ within the 10.11 line |
+| Locally tested versions | PHP 8.5.11, MySQL 8.4.11, MariaDB 11.4.13, and upstream MariaDB 10.11.19; hosting-provider builds require their own acceptance |
 | Private uploads | `storage/app/private` on the `local` disk |
 | Public assets | `storage/app/public` for public assets such as avatars; `storage:link` exposes that disk only |
 | Required PHP extensions | Laravel/Composer platform requirements plus `intl`, `mbstring`, `fileinfo`, and `zip`; `pdo_mysql` for MySQL/MariaDB or `pdo_sqlite` for SQLite; admin storage formatting itself does not require `intl` |
@@ -61,6 +99,9 @@ or PHP 8.1 instructions from older releases.
 ## Local development
 
 Use SQLite for the currently verified local path:
+
+The following commands are for a new development checkout. Do not overwrite
+an existing `.env`, regenerate an installed site's key, or use production data.
 
 ```sh
 composer install
@@ -73,7 +114,7 @@ Set the following values in `.env`:
 
 ```ini
 DB_CONNECTION=sqlite
-DB_DATABASE=/absolute/path/to/School Share/database/database.sqlite
+DB_DATABASE="/absolute/path/to/School Share/database/database.sqlite"
 ```
 
 Then run:
@@ -106,9 +147,9 @@ npm run audit:security
 composer audit --locked
 ```
 
-The full PHP suite currently passes. The historical baseline failures documented
-in the review were fixed: registration now enters OTP verification and user
-defaults include the storage counter.
+For the full repository suite, run `php artisan test --compact`. Opt-in engine,
+recovery, and package tests require the isolated setup in the operations guide;
+a normal test run skips them. Test results are dated in the repository review.
 
 OTP codes expire after 15 minutes and are stored as keyed digests bound to the
 account and current email. Five incorrect guesses disable a code. Verification
@@ -137,14 +178,17 @@ Repeatable local staging and engine acceptance are documented in
 [SELF_HOSTING.md](SELF_HOSTING.md#repeatable-isolated-staging). The sample domain
 is `schoolshare.example`; the stack does not provision real DNS, HTTPS, or a mail
 provider. GitHub Actions release gates, Docker readiness checks, and scheduled
-health diagnostics are included. Public deployment still requires green hosted
-CI, verified HTTPS/provider mailbox delivery, off-host backups, and live alerts.
+health diagnostics are included. Public operation requires green hosted CI,
+verified HTTPS/provider mailbox delivery, off-host backups, and live alerts.
+The operator has confirmed the initial cPanel/mail workflow; the remaining
+acceptance checks are listed above.
 
 ## Storage and recovery
 
 New private objects are recorded in a `stored_blobs` ledger with a billing
-owner and byte count. The migration and reconciliation command have not been
-run against a production database or existing uploads.
+owner and byte count. Fresh installations run the complete migration chain.
+Existing installations must reconcile legacy uploads as part of a reviewed
+upgrade; local recovery drills do not prove a production restore.
 
 After a coordinated backup and only after the database migration chain is
 proven on the selected production engine, the intended migration sequence is:
@@ -172,11 +216,11 @@ and expired generated exports. The complete recovery guidance is in
 
 ## License
 
-The intended source-license terms are in [LICENSE.md](LICENSE.md). The Composer
-package metadata currently says MIT while that license is a restrictive,
-custom SchoolShare Community License. That is a legal/metadata conflict that
-the copyright holder must resolve before distribution; this README does not
-assert either as the controlling license.
+The repository includes the custom [SchoolShare Community License](LICENSE.md),
+with attribution and commercial-use restrictions. Do not describe these terms
+as an unrestricted open-source license. Composer metadata currently declares
+MIT; that inconsistency requires a decision by the copyright holder before
+distribution. This documentation update does not change the license terms.
 
 ## Security reports
 

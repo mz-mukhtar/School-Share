@@ -1,6 +1,6 @@
 # Code of Conduct
 
-## Our Pledge
+## Our pledge
 
 We, as members, contributors, and maintainers of SchoolShare, pledge to make
 participation in our community a harassment-free experience for everyone,
@@ -14,7 +14,7 @@ diverse, inclusive, and healthy community.
 
 ---
 
-## Our Standards
+## Our standards
 
 **Examples of behavior that contributes to a positive environment:**
 
@@ -37,7 +37,7 @@ diverse, inclusive, and healthy community.
 
 ---
 
-## Enforcement Responsibilities
+## Enforcement responsibilities
 
 Project maintainers are responsible for clarifying and enforcing our standards
 of acceptable behavior. They will take appropriate and fair corrective action
@@ -65,8 +65,9 @@ Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the project maintainer:
 
 **Mahi Zeki Mukhtar**
-📧 mahizeki037@gmail.com
-📞 +251 992 194 042
+
+- Email: mahizeki037@gmail.com
+- Phone: +251 992 194 042
 
 All complaints will be reviewed and investigated promptly and fairly.
 All community members are obligated to respect the privacy and security of
@@ -74,25 +75,29 @@ the reporter of any incident.
 
 ---
 
-## Enforcement Guidelines
+## Enforcement guidelines
 
 Maintainers will follow these guidelines in determining consequences:
 
 ### 1. Correction
+
 **Impact:** Minor, first-time violation.
 **Consequence:** Private written warning, with clarification of the violation
 and an explanation of why the behavior was inappropriate.
 
 ### 2. Warning
+
 **Impact:** A violation through a single incident or series of actions.
 **Consequence:** A warning with consequences for continued behavior.
 No interaction with the people involved for a specified period.
 
-### 3. Temporary Ban
+### 3. Temporary ban
+
 **Impact:** A serious violation or sustained inappropriate behavior.
 **Consequence:** A temporary ban from community interaction.
 
-### 4. Permanent Ban
+### 4. Permanent ban
+
 **Impact:** Demonstrating a pattern of violation, or harassment of an
 individual.
 **Consequence:** A permanent ban from any sort of public interaction

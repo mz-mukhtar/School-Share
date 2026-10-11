@@ -32,9 +32,10 @@ your real domain everywhere. No production credentials are included in the ZIP.
 The packaged layout has been tested on isolated PHP 8.5 Apache hosting with
 MySQL 8.4, MariaDB 11.4, and upstream MariaDB 10.11.19, HTTPS, and authenticated
 STARTTLS/SMTPS capture (implicit TLS on port 465 for the tailored package).
-That is not an actual cPanel account or production SMTP deliverability test;
-complete the real-host checks below before opening the site publicly.
-The CloudLinux `10.11.19-MariaDB-cll-lve` build reported by your host is a
+On 11 October 2026, the operator also confirmed initial cPanel installation,
+SMTP authentication, OTP receipt, and verified dashboard access. These reports
+do not replace the complete operational checks below. The CloudLinux
+`10.11.19-MariaDB-cll-lve` build reported by the deployment operator is a
 provider variant; local tests use the matching upstream version, not that exact
 provider build. PHP 8.4 shown inside phpMyAdmin is not your domain's PHP version.
 
@@ -52,7 +53,7 @@ In cPanel, open **Database Wizard** (older versions: MySQL Database Wizard):
 5. Ask the host for the database hostname and port. `localhost:3306` is common,
    but not universal. Do not use the database server's root account.
 
-See the [official cPanel Database Wizard guide](https://docs.cpanel.net/cpanel/databases/mysql-database-wizard/).
+See the [official cPanel Database Wizard guide](https://docs.cpanel.net/cpanel/databases/database-wizard/).
 Existing tables or views cause SchoolShare setup to refuse the database. No SQL
 dump needs importing manually.
 
@@ -62,11 +63,17 @@ Use the generated **cPanel release ZIP**, not GitHub's source ZIP. Production
 dependencies and frontend assets are already included; Composer/npm are not
 needed on the hosting account for normal installation.
 
-Choose the package whose public folder matches the domain's existing document
-root. For **schoolshare.ethionext.com.et**, use
-**`schoolshare-ethionext-cpanel-mariadb-10.11.19-2026-10-11.zip`**, not the older
-generic `public_html` package. Your main website already uses `public_html` and
-must not be overwritten or selected as SchoolShare's document root.
+Choose a tested release package whose public folder matches the domain's
+existing document root. For the documented subdomain layout, the package must
+target `schoolshare.ethionext.com.et`, not `public_html`. If the main website
+already uses `public_html`, it must not be overwritten or selected as
+SchoolShare's document root.
+
+The initial `schoolshare-ethionext-cpanel-mariadb-10.11.19-2026-10-11.zip` is a
+historical artifact built before the 3 GB quota change. Its recorded checksum
+does not certify newer source changes. For new installations, build and accept
+a new uniquely named package from the intended release commit, and publish its
+own checksum. Do not reinstall an existing site merely to increase its quota.
 
 In cPanel File Manager, enable **Show Hidden Files**. Confirm the private
 `schoolshare` folder does not already exist and the SchoolShare document root
@@ -102,7 +109,7 @@ The generic package still targets `public_html` and is only for a dedicated,
 empty site/account. A different layout requires a newly configured package and
 acceptance tests, not just moving or renaming files. cPanel normally does not allow
 changing the main domain's document root through its domain interface.
-See [cPanel's domain management documentation](https://docs.cpanel.net/cpanel/domains/domains/manage-the-domain/110/).
+See [cPanel's domain management documentation](https://docs.cpanel.net/cpanel/domains/domains/manage-the-domain/).
 
 Remove the uploaded ZIP from the hosting account after extracting it. Keep a
 trusted release copy locally. Do not leave downloadable application archives
@@ -149,10 +156,15 @@ After unlocking:
    12 characters containing uppercase, lowercase, a number, and a symbol.
 6. Click **Install SchoolShare once**, and keep the page open until it finishes.
 
-For the hosting settings you supplied, choose **MariaDB**, database host
+For the documented MariaDB hosting example, choose **MariaDB**, database host
 `localhost`, port `3306` (confirm with your provider), and the full database/user
 names created in cPanel. Enter the site address `https://schoolshare.ethionext.com.et`
-only after its certificate is valid. Use these SMTP settings from Connect Devices:
+only after its certificate is valid. The following public endpoint example was
+supplied by the deployment operator; verify your own account's Connect Devices
+settings instead of assuming it applies to another host. See the
+[official mail-client settings reference](https://docs.cpanel.net/cpanel/email/set-up-mail-client/).
+
+Use the secure outgoing SMTP settings:
 
 | Field | Value |
 | --- | --- |
@@ -180,6 +192,21 @@ does not undo the administrator or reopen setup. Sign in, correct the private
 SMTP configuration if needed, then use **Resend code** on the verification page.
 Do not run installation again to fix mail.
 
+### SMTP troubleshooting
+
+- Check the administrator's destination mailbox and spam folder, not just the
+  sender mailbox. SMTP-sent application mail need not appear in Roundcube's
+  Sent folder.
+- Confirm the SMTP username is the full mailbox address and the password is
+  that mailbox's password, not a cPanel, database, or administrator password.
+- An authentication rejection requires checking the saved mailbox credentials;
+  successful TLS connectivity alone does not prove SMTP authentication.
+- Edit only the private `.env`. If configuration is cached, refresh it using
+  the correct PHP CLI and `php artisan config:cache`. Do not print complete
+  mail configuration or raw transport errors in public support requests.
+- Use Resend code after correction, respecting the verification page's cooldown
+  and account delivery budget. Do not bypass verification in the database.
+
 ## 5. Sign in and verify the administrator
 
 Sign in with the credentials you chose and enter the six-digit email code.
@@ -194,6 +221,12 @@ The panel provides account/plan statistics, user search/details and plan changes
 plus manual upgrade approval/rejection. Approving changes the account's plan;
 it does not verify payment or create an automated subscription. Review the
 existing payment instructions/contact details before offering paid upgrades.
+
+The administrator flag and plan allowance are separate: an administrator can
+still have a Free account. Current source gives Free accounts 3 GiB (displayed
+as 3 GB), while Pro/Custom default to 10 GiB. See the
+[plan configuration guidance](../SELF_HOSTING.md#configuration) before changing
+allowances. Administrative access does not imply an unlimited storage plan.
 
 On completion, `schoolshare/storage/app/installed.lock` is written, setup is
 disabled in `.env`, and `setup-token.txt` is removed. Visiting `/install` should
@@ -261,3 +294,8 @@ packages allowlisted runtime paths, empty runtime directories, and the cPanel
 front controller, not `.env`, setup tokens, populated databases, user files,
 compiled caches, development tooling, or public storage links. Each deployed
 copy generates its own key/token at first launch.
+
+Record the source commit, supported runtime, SHA-256 digest, and acceptance-test
+results for each release. Test the newly extracted artifact, not only the source
+tree or an older ZIP. A Git push runs the included CI checks; it does not upload
+or update the cPanel installation.

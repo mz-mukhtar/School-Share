@@ -4,13 +4,14 @@
 
 Do not open a public GitHub issue for a suspected vulnerability.
 
-- Email: mahizeki037@gmail.com
-- Phone: +251 992 194 042
-- Website: https://ethionext.com.et
+- Private reporting email: mahizeki037@gmail.com
+- Project website: https://ethionext.com.et
 
 Include the affected version/commit, impact, reproducible steps, a safe proof
-of concept, and any suggested mitigation. Please avoid accessing other users'
-data or disrupting the service while testing.
+of concept, and any suggested mitigation. Do not include live credentials,
+OTPs, session cookies, private user files, or unredacted logs. Use a disposable
+account and synthetic data; avoid accessing other users' data or disrupting
+the service while testing.
 
 The stated response targets are acknowledgement within 48 hours, investigation
 of critical reports within 7 days, and other reports within 30 days. These are
@@ -61,15 +62,58 @@ affected version and reachability details.
 
 ## Known limitations and release status
 
-The migration chain has been repaired and is covered on SQLite; a clean and
-populated test on the selected production MySQL/MariaDB engine remains a
-release gate. The protected OTP migration must be deployed; it intentionally
-invalidates pending legacy codes so users must resend. Use a working SMTP
-transport and persistent cache, not the development log/array mailers or an
-in-memory rate-limit cache. npm audits do not cover separately loaded CDN
-assets. The local-disk lifecycle lock is single-host only. New checkpoints
-have complete snapshot manifests; legacy checkpoints without a manifest are not
-restored.
+The documented SQLite and MySQL/MariaDB migration/recovery checks passed in
+isolated environments. The operator confirmed the initial cPanel and OTP/mail
+workflow on 11 October 2026. Hosted CI enforcement, off-host restore drills,
+external alert delivery, and full real-host acceptance remain unconfirmed.
+Neither those checks nor a dependency audit constitute a penetration test.
+
+- Deploy the full migration chain under a backup-first procedure. The protected
+  OTP migration invalidates pending legacy codes; users must request new ones.
+- Use authenticated, certificate-validated production SMTP and persistent
+  rate-limit cache. Development `log`/`array` mailers and in-memory stores are
+  not production configurations.
+- Private files belong outside the web root. The supported storage lock is
+  single-host; distributed/object-storage deployment requires design changes.
+- Dependency audits exclude separately loaded CDN assets. Review their versions,
+  availability, integrity, and data exposure independently.
+- Legacy checkpoints without snapshot manifests cannot be safely restored.
+- White-label configuration is not commercial entitlement validation. Licensing
+  metadata and ZIP attribution inconsistencies are tracked in the review; they
+  are not substitutes for application authorization controls.
+
+## Credentials and incident handling
+
+Keep live environment files, SMTP/database passwords, application keys, license
+keys, setup tokens, backups, and logs out of source control and public web roots.
+Documentation examples must use placeholders, not reusable credentials.
+
+If a credential is exposed, restrict further access and rotate or revoke the
+affected credential at its issuer. Update the private application configuration
+and refresh its configuration cache. Preserve a restricted incident record.
+Removing a file or Git commit alone does not revoke a disclosed secret.
+Treat an exposed `APP_KEY` as a separate incident: plan rotation around encrypted
+data and recovery requirements rather than generating a new key indiscriminately.
+Never bypass OTP verification or edit verification timestamps to resolve SMTP
+delivery failures; repair SMTP and use the supported resend flow.
+
+## Privacy and retention boundaries
+
+Public profiles, follower lists, and public-project metadata are visible by
+design. Private-project content requires current project access. Public avatars
+are served from the public disk; project files use authorized application routes.
+Collaborators can download accessible content, and editors can modify/delete
+project content and history. Private visibility is not a restriction on copies
+already downloaded by authorized users.
+
+Retained versions and checkpoint references can keep a deleted logical file's
+bytes available and billable. Cleanup is reference-aware; backups may retain
+older data according to the operator's retention policy. The operator must
+publish applicable privacy/retention terms before accepting user data.
+
+CDNs receive browser asset requests. The external Office viewer may receive a
+file URL but cannot fetch authenticated downloads; never expose private content
+to make preview work. SMTP providers process verification and notification mail.
 
 See [docs/REPOSITORY_REVIEW_2026-10-05.md](docs/REPOSITORY_REVIEW_2026-10-05.md)
 for verified findings, fixed groups, outstanding work, and deployment limits.

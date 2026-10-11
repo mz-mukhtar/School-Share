@@ -6,6 +6,14 @@ only when a release is actually cut.
 
 ## Unreleased — updated 2026-10-11
 
+### Storage allowance
+
+- Increase the Free plan allowance from 1 GiB to 3 GiB (displayed as 3 GB).
+  Existing Free accounts read the updated plan configuration without a data
+  migration. Pro and Custom remain at 10 GiB.
+- Add quota regressions for existing accounts, usage above the old allowance,
+  the exact new boundary, and rejected uploads that must not write data.
+
 ### Release preparation — 2026-10-11
 
 - Add isolated upstream MariaDB 10.11.19 staging for the actual cPanel target,
@@ -97,12 +105,24 @@ only when a release is actually cut.
   documentation against the current code.
 - Consolidated production guidance into `SELF_HOSTING.md`.
 - Removed the obsolete `ROADMAP.md`.
+- Audit all first-party Markdown and related documentation for credentials,
+  unsafe examples, route omissions, stale evidence, and product inconsistencies.
+- Align storage, admin, installation, privacy, and operational guidance with
+  current source; distinguish operator-reported cPanel/SMTP success from local
+  acceptance and unconfirmed production checks.
+- Mark the original cPanel ZIP as a historical artifact that predates the
+  3 GiB allowance. New source requires a separately built and tested release.
+- Preserve source-license terms and the historical security findings; improve
+  their presentation without claiming unresolved issues have been fixed.
 
 ### Known release blockers
 
-- Local staging acceptance is not public production deployment. A real hosting
-  target/domain, HTTPS/proxy acceptance, SMTP-provider mailbox delivery, off-host
-  backup retention, alert delivery, and green hosted CI remain required.
+- The operator reported initial cPanel installation and SMTP/OTP success on
+  11 October 2026. Hosted CI enforcement, coordinated off-host restoration,
+  external alert delivery, and complete real-host smoke acceptance still need
+  confirmation before broad public use.
+- Source-license metadata and ZIP-attribution inconsistencies require maintainer
+  resolution before distribution; this documentation pass does not change terms.
 - Audits do not cover separately loaded CDN assets or representative load testing.
 
 ## 0.1.0 — 2026-10-04

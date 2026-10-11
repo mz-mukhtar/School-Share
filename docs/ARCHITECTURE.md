@@ -93,7 +93,7 @@ validated against that project.
 | `activities` | Polymorphic activity records filtered by current project access |
 | `comments`, `follows`, `starred_projects`, `project_forks` | Social/project features |
 
-`stored_blobs` is introduced by the Group 3 migration. It is only authoritative
+`stored_blobs` is introduced by the storage-ledger migration. It is only authoritative
 after that migration and reconciliation have been run on the deployed database
 and private disk.
 
@@ -148,6 +148,12 @@ Current defaults in `config/schoolshare.php` are:
 | Folder depth | 32 |
 | Cooperative operation budget | 30 seconds |
 
+Per-account storage is configured separately in `schoolshare.plans`: Free has
+3 GiB, and Pro/Custom have 10 GiB. The UI labels these allowances as GB. Retained
+versions remain billable until their referenced bytes can be collected;
+restoration reuses existing blobs. Historical global storage configuration
+does not override these per-plan limits.
+
 Uploads/restores, editing, previews, diffs, downloads/ZIP exports, and forks
 also have named route rate limits. PHP and reverse-proxy body/timeout limits
 still need deployment configuration.
@@ -167,10 +173,29 @@ promise is therefore not implemented.
 
 ## Known architectural limits
 
-- A clean and populated MySQL/MariaDB deployment test is still required for the
-  chosen production engine.
+- Clean/populated migration and coordinated recovery tests have passed on the
+  documented local engine targets. Existing-site upgrades still require staging
+  with representative data and a coordinated, restorable backup.
 - Email is synchronous; real SMTP delivery, persistent cache, and proxy/client
   IP behavior require deployment verification. Build dependency audits exclude
   separately loaded CDN assets.
 
 See the review for evidence, remediation status, and deployment restrictions.
+
+## Installation and operations
+
+The cPanel package keeps the private application and public document root in
+sibling directories. `InstallationBootstrap` prepares private configuration and
+an owner token; `InstallationAccess` requires HTTPS and a short-lived authorized
+session. `SchoolShareInstaller` checks an empty database, runs migrations,
+creates one chosen administrator, and permanently disables setup. Interrupted
+schema changes require operator recovery; SMTP failure does not reopen setup.
+
+`/up` is a liveness check. `/ready` tests database/cache/private-disk availability
+and runtime capacity without exposing diagnostic details. Scheduled health
+checks do not replace external alert delivery or off-host backup monitoring.
+GitHub Actions runs release checks; it does not deploy to hosting.
+
+See [the cPanel guide](INSTALLATION_CPANEL.md),
+[operations runbook](../SELF_HOSTING.md), and
+[privacy/retention boundaries](../SECURITY.md#privacy-and-retention-boundaries).

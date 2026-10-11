@@ -1,7 +1,9 @@
 # Self-hosting and operations
 
-This is the authoritative deployment and recovery guide. It replaces the old
-separate production/Cloudflare guide.
+This guide covers supported single-host deployment, configuration, upgrades,
+monitoring, and coordinated recovery. Use it alongside the release evidence in
+the repository review; it is not a claim that every hosting environment has
+passed acceptance.
 
 For a **new cPanel installation**, use the ready-to-upload package and
 [browser installation guide](docs/INSTALLATION_CPANEL.md). That wizard is
@@ -17,13 +19,16 @@ private/public disks, persistent sessions/cache, captured SMTP, and concurrent
 upgrade requests. See the current evidence in
 [the repository review](docs/REPOSITORY_REVIEW_2026-10-05.md).
 
-This is **local staging evidence**, not a public production release. The sample
-domain is `schoolshare.example`; it is not a registered domain or a TLS/mail
-configuration. A selected host, real domain/HTTPS/proxy settings, provider SMTP
-and actual mailbox receipt, off-host backup retention, live alert delivery, and
-green remote CI checks remain required before deployment. Mailpit captures mail
-locally; additional authenticated STARTTLS/SMTPS tests prove local encrypted
-transport only, never provider authentication, DNS, or mailbox deliverability.
+The operator confirmed an initial cPanel installation, certificate-validated
+SMTP authentication, OTP receipt, and verified dashboard access on 11 October
+2026. These are operator-reported checks, not independently reproduced hosting
+acceptance. Off-host restoration, external alert delivery, hosted CI enforcement,
+and the remaining real-host smoke checks must still be confirmed before broad
+public use.
+
+The sample domain `schoolshare.example` is a placeholder, not provisioned DNS or
+TLS/mail infrastructure. Mailpit captures mail locally; authenticated local
+STARTTLS/SMTPS tests do not prove a provider's mailbox deliverability.
 
 ## Platform requirements
 
@@ -60,21 +65,23 @@ FILESYSTEM_DISK=local
 SCHOOLSHARE_MINIMUM_FREE_MB=1024
 
 DB_CONNECTION=mysql
-DB_HOST=...
+DB_HOST="<database-host>"
 DB_PORT=3306
-DB_DATABASE=...
-DB_USERNAME=...
-DB_PASSWORD=...
+DB_DATABASE="<database-name>"
+DB_USERNAME="<database-user>"
+DB_PASSWORD="<database-password>"
 
 MAIL_MAILER=smtp
-MAIL_HOST=...
+MAIL_HOST="<smtp-host>"
 MAIL_SCHEME=smtps
 MAIL_PORT=465
 MAIL_URL=null
-MAIL_USERNAME=...
-MAIL_PASSWORD=...
-MAIL_FROM_ADDRESS=...
+MAIL_USERNAME="<smtp-username>"
+MAIL_PASSWORD="<smtp-password>"
+MAIL_FROM_ADDRESS="notifications@schoolshare.example"
 MAIL_FROM_NAME="SchoolShare"
+MAIL_REQUIRE_TLS=true
+MAIL_TIMEOUT=15
 ```
 
 Use `DB_CONNECTION=mariadb` for Laravel's MariaDB connection when that is the
@@ -101,8 +108,9 @@ and the server advertises it; verify TLS and mailbox receipt with your provider.
 `MAIL_ENCRYPTION=tls`/`ssl` has no effect in this application. Leave `MAIL_URL=null`
 when using individual host/port/credential variables. A configured `MAIL_URL`
 DSN overrides those values; inspect it securely if SMTP settings appear ignored.
-For STARTTLS endpoints that must reject unencrypted connections, a provider DSN
-may include `?require_tls=true`; do not disable certificate verification.
+Set `MAIL_REQUIRE_TLS=true` so a STARTTLS endpoint cannot silently fall back to
+an unencrypted connection. A provider DSN may also specify `?require_tls=true`;
+review any DSN override privately. Do not disable certificate verification.
 
 Use `php artisan config:show mail.default` and
 `php artisan config:show mail.mailers.smtp.scheme` to inspect safe fields. Avoid
@@ -127,7 +135,22 @@ be smaller than the intended request size.
 per-account quota. Canonical per-plan limits are in `schoolshare.plans`; change
 those values deliberately and keep product pricing copy aligned.
 
-## Installation sequence after the database release gate closes
+The default Free allowance is 3 GiB (displayed as 3 GB); Pro and Custom defaults
+are 10 GiB. Account quotas are not host-disk reservations. Size the host for
+retained versions, avatars, backups, temporary exports, and growth, and set an
+appropriate free-space alert threshold.
+
+For an existing site, change the relevant `storage_gb` value in the private
+`config/schoolshare.php`, validate the PHP syntax, and rebuild configuration
+caches if enabled. Existing accounts read the plan configuration; a quota
+increase does not require a database migration or counter reset. Deploy this
+through the normal reviewed release process, not a fresh-install ZIP.
+
+## Manual deployment and upgrade sequence
+
+For a first-time cPanel installation, use the browser guide instead. For an
+existing site, confirm target-engine staging and a recoverable backup before
+following this sequence. Do not run destructive test commands on production.
 
 1. Back up the database and `storage/app/private` together. Confirm that the
    backup can be restored together in a non-production environment.
@@ -290,9 +313,10 @@ or use `migrate:fresh` on an existing application database.
 
 The root `Dockerfile` builds a no-dev production Apache image and a separate
 PHP test image. The pinned images reproduce PHP 8.5.11 / MySQL 8.4.11 /
-MariaDB 11.4.13 and upstream MariaDB 10.11.19. The latter matches the cPanel
-server's upstream version, not its exact CloudLinux build; actual-host acceptance
-is still required. Update pins deliberately and rerun acceptance for upgrades.
+MariaDB 11.4.13 and upstream MariaDB 10.11.19. The latter matches the reported
+cPanel server's upstream version, not its exact CloudLinux build; retain
+real-host acceptance evidence separately. Update pins deliberately and rerun
+acceptance for upgrades.
 `compose.staging.yaml` uses its own project name and volumes. Database and SMTP
 ports are internal; HTTP ports 18080/18081/18082 and Mailpit UI port 18025 are bound
 only to loopback. Do not publish this sample stack as production: it uses local
@@ -310,8 +334,8 @@ chmod 600 .env.staging
 dc() { docker compose --env-file .env.staging -f compose.staging.yaml "$@"; }
 dc build app test
 dc up -d --wait mysql mariadb mariadb-cpanel mailpit
-dc exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS schoolshare_testing; CREATE DATABASE IF NOT EXISTS schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
-dc exec -T mariadb sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS schoolshare_testing; CREATE DATABASE IF NOT EXISTS schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
+dc exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot -e "CREATE DATABASE IF NOT EXISTS schoolshare_testing; CREATE DATABASE IF NOT EXISTS schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
+dc exec -T mariadb sh -c 'MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -uroot -e "CREATE DATABASE IF NOT EXISTS schoolshare_testing; CREATE DATABASE IF NOT EXISTS schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
 dc exec -T mariadb-cpanel sh -c 'MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -uroot -e "CREATE DATABASE IF NOT EXISTS schoolshare_testing; CREATE DATABASE IF NOT EXISTS schoolshare_restore_testing; GRANT ALL ON schoolshare_testing.* TO schoolshare; GRANT ALL ON schoolshare_restore_testing.* TO schoolshare;"'
 dc run --rm --user root --entrypoint sh test -c 'mkdir -p storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache; chown -R www-data:www-data storage bootstrap/cache'
 dc up -d app app-mariadb app-cpanel
@@ -402,9 +426,10 @@ external notification service is not configured by this sample stack.
 
 - Local MySQL/MariaDB migration/recovery and captured SMTP checks do not prove
   a real hosted upgrade, public-domain mail delivery, or off-host recovery.
-- Remote CI, real HTTPS/proxy settings, external alert delivery and production
-  backup scheduling remain unverified. CDN and multi-node behavior are outside
-  the local gate; only the single-host local-storage deployment is supported.
+- Hosted CI enforcement, external alerts, production backup scheduling/restore,
+  and the full real-host smoke checklist remain unconfirmed. The operator has
+  reported initial HTTPS/SMTP/OTP success; reverse-proxy behavior requires its
+  own checks if a proxy is introduced. Only single-host local storage is supported.
 - Large/long-running operations are bounded synchronously; individual stalled
   filesystem/database calls still need web-server and PHP timeouts.
 - Registry audits cover the locked build dependencies, not separately loaded

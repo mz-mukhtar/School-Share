@@ -1,11 +1,16 @@
-# SchoolShare repository review — current reassessment
+# SchoolShare repository review and release evidence
 
 Updated: 11 October 2026
 
-Reviewed application base: `990758c`, plus the October 11 working-tree staging,
-migration-portability, monitoring, CI, fresh-install wizard, packaging, and
-documentation changes described below.
-This verification pass has not committed changes or made a public deployment.
+Current source reference: `598876e`. Earlier staging and exact-artifact evidence
+was collected from `990758c` plus the October 11 release-preparation changes.
+The initial package predates the subsequent 3 GiB Free-plan change. Historical
+artifact results must not be attributed to a newly built release without rerunning
+its acceptance checks.
+
+Evidence labels: **local verification** means repository or isolated staging
+checks; **operator-reported** means hosting results supplied by the deployment
+operator; **unconfirmed** means no supporting acceptance evidence was reviewed.
 
 Original pre-remediation baseline: `c6bf19b`
 
@@ -17,16 +22,19 @@ were preserved. Real HTTP workflows were tested, not a complete browser UI run.
 
 ## Current assessment
 
-**The local staging gate passes on PHP 8.5, MySQL 8.4, MariaDB 11.4, and upstream MariaDB 10.11.19;
-public production acceptance remains open.** Release repairs R01–R05 pass the
-repository tests on all three database targets. CI and monitoring are implemented,
+The local staging gate passes on PHP 8.5, MySQL 8.4, MariaDB 11.4, and upstream
+MariaDB 10.11.19. The operator subsequently confirmed initial cPanel deployment,
+SMTP authentication, OTP receipt, and verified account-dashboard access.
+Complete production operational acceptance remains open. Release repairs R01–R05
+pass the repository tests on all three database targets. CI and monitoring are implemented,
 but hosted CI execution and external alerts have not been verified.
 The standard cPanel fresh-install ZIP and owner-unlocked HTTPS wizard are now
-built and verified locally; an actual cPanel account still needs acceptance.
+built and verified locally; the reported cPanel installation is additional,
+limited hosting evidence, not a full production acceptance run.
 The tailored SchoolShare subdomain ZIP also passes an exact-artifact HTTPS/SMTPS
 installation check without touching a neighbouring main-site folder (R08).
-The October 5 engineering rating was 7.5/10, up from the original 4/10; that
-historical score is retained below and has not been recalculated for this pass.
+The October 5 engineering score is retained as historical context only; this
+pass does not assign a new score or certify the application as vulnerability-free.
 
 The repository is substantially stronger than the baseline. Security Groups
 1–5 have been remediated in code, storage ownership and checkpoint snapshots
@@ -44,17 +52,20 @@ This staging pass additionally found and repaired foreign-key support-index
 removal, overlong snapshot unique-index names, and collation-sensitive legacy
 name collisions. Clean/populated upgrades, coordinated backup restoration,
 captured SMTP failure/retry, and simultaneous upgrade submissions now pass on
-both engines. Provider mail, HTTPS/proxy behavior, off-host backups, and hosted
-operations remain separate production gates.
+both engines. The operator reported working provider mail and the initial HTTPS
+workflow. Full real-host smoke checks, proxy behavior if applicable, off-host
+backups, and hosted operations remain separate acceptance requirements.
 
 ## Verification evidence
 
-These checks were rerun for this reassessment unless explicitly marked as
-earlier evidence:
+This table records dated verification results; it is not a claim that every
+check was rerun during the documentation edit. The pre-commit review reran the
+ordinary suite on SQLite and upstream MariaDB 10.11.19 after the quota change.
+The other engine and opt-in results are earlier October 11 staging evidence.
 
 | Check | Current result | Boundary of the evidence |
 | --- | --- | --- |
-| Repository PHP suite | **277 passed; 1,962 assertions** on SQLite, MySQL 8.4.11, MariaDB 11.4.13, and upstream MariaDB 10.11.19 | The full suite reports 292 cases, with 15 opt-in staging/recovery/installation/package cases skipped; all 15 are run separately per database target below. Ordinary regressions retain their storage/mail fakes |
+| Repository PHP suite after quota change | **284 passed; 1,992 assertions** on SQLite and upstream MariaDB 10.11.19 | 299 cases, including 15 skipped opt-in staging/recovery/installation/package cases. Earlier pre-quota ordinary-suite runs passed 277 cases / 1,962 assertions on all three MySQL-family targets. The opt-in results below are earlier separate runs, not part of the 284-case result |
 | Clean/populated migration tests | **6 passed; 58 assertions per engine** (included above) | Isolated databases only: legacy version pointers/bytes, retained billing, root uniqueness, case/accent/trailing-space collation, and pre-existing rename suffixes |
 | Coordinated backup restoration | **1 passed; 22 assertions per engine** | Actual database dump/import plus private-file ZIP and SHA-256 checks; restored reconciliation, download, and checkpoint behavior. Temporary test backups removed; not an off-host production backup drill |
 | Production-mode HTTP acceptance | **4 passed; 136 assertions per engine** | Apache, real disks and sessions, captured SMTP/451 failure/retry, OTP consumption, roles, uploads/avatar, ZIP, checkpoint restoration, and independent-session parallel upgrade submissions; not real-provider delivery or browser rendering |
@@ -71,7 +82,7 @@ earlier evidence:
 | Production migration/cache compilation | All **30 migrations**, config, routes, events, and views passed on all three staging applications | Production-mode environment, debug off, persistent private/public disks and file sessions/cache; local HTTP intentionally does not prove secure-cookie/TLS behavior, covered separately by package tests |
 | Monitoring fault/recovery | `/ready` returned **503** and CLI health exited **1** while the isolated MySQL service was stopped; both recovered to **200 / exit 0** after restart | Public output contains only status; scheduled checks and Docker probes are present. No remote alert recipient or backup-age monitor configured |
 | CI | `.github/workflows/ci.yml` updated; YAML parses and its test/build commands pass locally | Three database targets, including the cPanel subdomain layout and SMTPS port 465, plus PHP/JS/audits; pinned actions/images; no hosted run or branch-protection configuration performed |
-| Production SMTP endpoint | **Unverified:** read-only TLS handshake to `schoolshare.ethionext.com.et:465` timed out from this environment | No login or message attempted; this does not establish a provider fault. Provider authentication, certificate validation from the host, DNS/mailbox receipt and retry remain required |
+| Initial cPanel and provider-mail workflow | **Operator-reported:** PHP 8.5.11, MariaDB 10.11.19 provider build, certificate-validated SMTPS on port 465, successful authentication after correcting credentials, OTP receipt, and verified dashboard access | Earlier remote TLS probe from the review environment timed out; the later hosting-terminal check succeeded. No production credentials were used by the reviewing agent. Full DNS/proxy, permission/upload/recovery, cron, backup and alert acceptance remains unconfirmed |
 | Existing development instance | Preserved; no migrations applied by this pass | Earlier read-only evidence recorded 10 pending migrations and local/debug/log-mail settings; do not confuse it with isolated staging |
 | Real browser / responsive UI | Earlier evidence only | Original/remediation checks included responsive widths and PDF navigation; full current end-to-end browser acceptance was not rerun |
 
@@ -177,7 +188,7 @@ production-engine coverage.
 | F18 | Upgrade routes, retryable mail, account-locked pending creation, and pending-only approve/reject transitions implemented | Independent-session parallel HTTP submissions produce one pending request on both engines; broader load is untested; automatic subscriptions/expiry/renewal are not implemented; see R04 |
 | F19 | Project/collaborator limits, operation bounds and transactional star/follow mutations implemented | Some legacy config keys remain unused, including cache TTLs and the separate global storage setting; avoid presenting them as enforced controls |
 | F20 | Non-null root scopes and uniqueness constraints implemented with database-collation-aware deduplication | Populated case/accent/trailing-space and existing-suffix collisions pass on both engines; apply repairs under a reviewed migration/backup procedure |
-| F21 | Account/invitation/upgrade changes survive mail failure with retry paths; specified reports and stored upgrade errors are redacted | Actual captured SMTP/451 failures and retries pass on both engines; real provider/TLS/mailbox receipt remains unverified; protect old logs/backups; see R05 |
+| F21 | Account/invitation/upgrade changes survive mail failure with retry paths; specified reports and stored upgrade errors are redacted | Captured SMTP failure/retry checks pass locally; initial provider TLS/authentication/OTP receipt is operator-reported. Broader real-provider acceptance remains unconfirmed; protect old logs/backups; see R05 |
 | F22 | Contributor deletion preserves foreign-project checkpoints with anonymized attribution | The committed history-preservation regression passes; billing ownership can intentionally block account deletion while foreign live blobs remain charged |
 
 The two original registration/profile test failures are fixed. There are no
@@ -209,7 +220,8 @@ the assigned identities. `ProfileTest` and `ReleaseDataRepairTest` cover blank
 updates, duplicate rejection, long-name collisions, legacy saves/backfill,
 reruns, chunk boundaries, and project/profile/explore/feed page rendering.
 These regressions and the migration chain now pass on both staging engines;
-application to the existing development or production database remains pending.
+fresh cPanel installation runs the full chain. Existing-site legacy-data adoption
+must still be verified per deployment; the development database was preserved.
 
 ### R02 — P1: populated admin pages — repaired in code
 
@@ -269,8 +281,9 @@ admin emails, saved collaborator/request state, and successful retries.
 request status. Apply the migration and restrict historical logs/backups; it
 cannot erase messages already copied there. The real SMTP protocol is exercised
 against isolated Mailpit, including forced 451 failures and successful OTP,
-invitation, and upgrade retries. Real-provider credentials/TLS and mailbox
-delivery remain an R06 gate.
+invitation, and upgrade retries. Real-provider TLS/authentication and mailbox
+receipt are now operator-reported for the initial cPanel OTP workflow; broader
+real-provider failure/retry acceptance remains an R06 requirement.
 
 ### R06 — release gate: local staging passed; public operations pending
 
@@ -278,11 +291,11 @@ Requested deployment sequence status:
 
 | Step | Status / next gate |
 | --- | --- |
-| 3 — Provision staging | **Passed locally:** PHP 8.5.11, MySQL 8.4.11, MariaDB 11.4.13, upstream MariaDB 10.11.19, required extensions, isolated secrets/data, Apache, and SMTP capture; provider CloudLinux variant still needs host acceptance |
+| 3 — Provision staging | **Passed locally:** documented runtime/engines/extensions, isolated data, Apache, and SMTP capture; operator also reported a successful fresh installation on the provider CloudLinux variant |
 | 4 — Migrations and recovery | **Passed locally:** clean and populated migration chains, private bytes/ledger checks, database dump/import plus private-file archive restoration and checkpoint recovery |
-| 5 — Application acceptance | **Passed locally:** actual HTTP/SMTP OTP, failures/retries, permissions, uploads/avatar, ZIP, checkpoint restoration, and parallel upgrade requests; real HTTPS/provider delivery still pending |
+| 5 — Application acceptance | **Passed locally:** HTTP/SMTP, permissions, uploads/avatar, ZIP, checkpoint restoration, and concurrent upgrade checks. Initial real-host OTP/dashboard success is operator-reported; the full hosting smoke checklist remains unconfirmed |
 | 6 — CI and monitoring | **Implemented:** pinned CI matrix, readiness probes, scheduled health checks, and tested database outage/recovery; hosted CI, external uptime/log/disk alerts, and backup-age checks still pending |
-| 7 — Public deployment | **Held:** do not deploy until real-host operational acceptance passes |
+| 7 — Public operation | **Initial installation reported; full operational gate open:** confirm remaining acceptance before broad public registration |
 
 Before a public production release:
 
@@ -300,16 +313,17 @@ Before a public production release:
 4. Enable external uptime/readiness, safe error/disk alerts, and backup-age
    monitoring with tested alert delivery. Container health status and stderr
    logging alone do not notify an operator or restart unhealthy containers.
-5. Run the new CI on the hosting repository and require its checks before
-   release. No commit, push, hosted workflow run, or branch-policy change was
-   performed here. Add a full rendered-browser smoke workflow where needed.
+5. Run CI on the hosting repository and require its checks before release.
+   Source changes have been committed; a green hosted workflow and branch
+   protection have not been verified here. Add full rendered-browser smoke
+   coverage where needed. The included workflow does not deploy to cPanel.
 6. Exercise broader concurrent quota/identity behavior and representative load
    on the selected host. Staging supplies PHP body/execution/socket bounds;
    validate real proxy, database, filesystem, and SMTP timeout behavior too.
 
 Reproduction commands and safe staging-only credentials/database boundaries are
 in [SELF_HOSTING.md](../SELF_HOSTING.md#repeatable-isolated-staging). The local
-stack remains running on loopback; it is not configured for public exposure.
+stack is configured for loopback-only access, not public exposure.
 
 ### R07 — standard cPanel browser installation: implemented and verified locally
 
@@ -343,7 +357,7 @@ was retained. Installation and maintainer packaging instructions are in
 [INSTALLATION_CPANEL.md](INSTALLATION_CPANEL.md). This is a fresh-install path,
 not an existing-site updater, and does not bypass the R06 production gates.
 
-### R08 — actual cPanel target and subdomain layout: locally verified, host gate pending
+### R08 — cPanel target and subdomain layout: local and operator-reported evidence
 
 The supplied hosting screenshots report PHP 8.5 as the account default and
 `10.11.19-MariaDB-cll-lve` as the database server. phpMyAdmin's own PHP 8.4.26
@@ -354,8 +368,9 @@ account-level PHP change, and required PHP 8.5 extensions must be verified.
 
 Added a digest-pinned upstream MariaDB 10.11.19 service and separate app/data
 volumes without replacing MariaDB 11.4 or changing development/production data.
-Clean/populated migrations, 277 ordinary regressions, coordinated dump/restore,
-all nine installer cases, and four production HTTP acceptance cases pass on this
+The earlier pre-quota run passed clean/populated migrations, 277 ordinary
+regressions, coordinated dump/restore, all nine installer cases, and four
+production HTTP acceptance cases on this
 target. An initial overlapping test-database run caused fixture table conflicts;
 both affected jobs were rerun sequentially and passed. This was a test-runner
 collision, not a production-engine defect. Local tests do not reproduce the
@@ -381,10 +396,12 @@ private-path denial, correct CLI public path, readiness and optimized caches
 pass; the neighbouring main-site sentinel remained unchanged. Generic packages
 also pass on MySQL 8.4 and MariaDB 11.4 with authenticated STARTTLS.
 
-Current tailored artifact:
+Historical tailored artifact (built before the 3 GiB Free-plan update):
 `storage/app/releases/schoolshare-ethionext-cpanel-mariadb-10.11.19-2026-10-11.zip`.
 SHA-256: `4b856da10709d7eda64a322326b89f0ef4099182c3eedb6053d8ed11a446d1c4`.
-The 8.8 MB ZIP passed integrity and secret/user-data/main-root exclusion checks.
+The 8.8 MB ZIP passed integrity and secret/user-data/main-root exclusion checks
+at build time. A newly built ZIP requires a new checksum and acceptance run;
+this artifact is not automatically updated by source commits.
 Temporary vendor copies and package-test containers/databases were removed;
 both release archives are retained and ignored by Git.
 
@@ -392,11 +409,14 @@ The updated [installation guide](INSTALLATION_CPANEL.md) gives the correct layou
 database setup, private owner-token retrieval, and supplied sender settings:
 `schoolshare.ethionext.com.et`, SMTPS port 465, and
 `notifications@schoolshare.ethionext.com.et`. No passwords or production keys
-are bundled. The read-only real SMTP connection probe timed out; do not treat
-local capture as real delivery evidence. Actual-host TLS/extensions/permissions,
-provider mailbox delivery, cron, off-host restoration, external alerts, hosted
-CI and rendered-browser acceptance remain required. No files or settings were
-changed on the hosting account, and no public deployment was performed.
+are bundled. The earlier read-only SMTP probe timed out from the review
+environment. The operator later supplied a successful certificate-validated
+hosting-terminal TLS check, corrected an SMTP authentication failure, and
+confirmed OTP receipt plus verified dashboard access after installation.
+Those reports supersede the earlier absence of real-host mail evidence, but do
+not prove the full permission/upload/recovery checklist, cron, off-host restore,
+external alerts, hosted CI, or complete browser acceptance. The reviewing agent
+did not change hosting files or use production credentials.
 
 ## Architecture: what improved and what to modify next
 
@@ -439,7 +459,7 @@ implemented; historical checkpoint ZIPs are not.
 | `README.md` | Updated verified PHP/database targets, extension requirements, and staging/runbook link; distinguishes local acceptance from public readiness |
 | `SELF_HOSTING.md` | Includes production SMTP/session/driver/storage template, portable-migration caveats, reproducible engine/recovery/HTTP acceptance, CI, monitoring, and the remaining real-host gates |
 | `docs/ARCHITECTURE.md` | Keep; reflects the ledger, snapshots, OTP service, access rules and single-host limits |
-| `docs/API.md` | Keep as a web-route reference, not a REST specification; add the implemented `GET /upgrades/{plan}` and `POST /upgrades` user routes |
+| `docs/API.md` | Web-route reference updated with upgrade requests, installer access, and liveness/readiness routes; not a public REST contract |
 | `SECURITY.md` | Keep; reports current controls and deployment boundaries without claiming absolute security |
 | `CHANGELOG.md`, `CONTRIBUTING.md` | Keep; record all five security groups and current verification/reproducible install commands |
 | `ROADMAP.md`, `PRODUCTION_GUIDE.md` | Retired; do not recreate duplicate roadmap/deployment guidance |
@@ -454,12 +474,52 @@ current exporter. The application checks only an `SS-` license-key prefix;
 it does not implement commercial entitlement validation. These are explicit
 limitations, not validated licensing enforcement or subscription automation.
 
-Extend existing guides rather than adding speculative documents. The useful
-missing detail is a supported-engine release checklist, admin provisioning and
-recovery procedure, and a deliberate privacy/retention explanation covering
-public/private content, collaboration and external CDN/viewer requests. Third-
-party notices must match redistributed assets. Legal/product choices belong to
-the maintainer; this reassessment does not choose the source-license model.
+The existing guides now include the supported-engine release checklist, admin
+provisioning, interrupted-install recovery, quota changes, and privacy/retention
+boundaries. Third-party notices must still match redistributed assets. Legal
+and product choices belong to the maintainer; this reassessment does not choose
+a different source-license model.
+
+## Documentation security audit — 11 October 2026
+
+Scope: all 13 first-party Markdown files, the public branding text template, and
+`robots.txt`. Dependency documentation, private environment files, generated
+release artifacts, and complete Git history are outside this documentation audit.
+
+No live passwords, application keys, private keys, setup tokens, session URLs,
+or provider access tokens were identified in the current documentation. Public
+contact addresses, published domains, release checksums, config variable names,
+and clearly marked placeholders are not credentials. Pattern checks and manual
+review are bounded evidence, not a guarantee that undisclosed secrets cannot exist.
+
+The documentation pass corrected stale hosting/test claims, missing route
+details, the legacy quota example, historical-package guidance, and privacy
+and incident-handling instructions. It preserved historical findings and
+source-license terms instead of describing unresolved risks as fixed.
+
+Validation for this documentation pass: all 13 Markdown documents rendered
+successfully; local file links/anchors, code fences, heading/list spacing, and
+Git whitespace checks passed. The safe-output sensitive-content scan reported
+no candidates across the 15 documentation files. The full SQLite repository
+suite was rerun: 284 passed, 1,992 assertions, and 15 opt-in cases skipped.
+Focused quota/database-version checks also passed: 23 tests, 46 assertions.
+The staging/package gates were not rerun for these documentation-only changes.
+
+Remaining security/operational concerns:
+
+- Confirm hosted CI, real-host access/upload/recovery checks, off-host backups,
+  external alert delivery, and applicable proxy/client-IP behavior.
+- Keep live `.env`, logs, backups, and SMTP configuration private. Rotate any
+  credential exposed outside the repository; a documentation scan cannot prove
+  that a credential shown in a support screenshot was revoked.
+- Review external CDN/viewer requests and their privacy/availability boundaries.
+  Encrypted storage and multi-node locking are not claimed by this architecture.
+- Resolve license metadata, source-available product labeling, and missing ZIP
+  attribution before distribution. The white-label prefix check is not commercial
+  entitlement validation; documentation changes do not implement that feature.
+
+Newly discovered, unresolved vulnerability details should be reported privately
+under [SECURITY.md](../SECURITY.md), not added as public exploit instructions.
 
 ## Historical engineering rating — 5 October 2026
 
@@ -481,10 +541,10 @@ October 11 pass did not rerate architecture, interface, or production operations
 Weighted result: **7.525/10**, rounded overall rating: **7.5/10**.
 The original weighted result was 3.95/10, rounded to 4/10.
 
-The next release gains are hosted CI enforcement and actual-host HTTPS, provider
-SMTP, off-host recovery, external alerts, representative load, and complete
-browser acceptance. Local staging closes the targeted migration, restore, and
-upgrade-race checks; it does not substitute for those operational checks.
+The next release gains are hosted CI enforcement, complete actual-host smoke
+checks, off-host recovery, external alerts, representative load, and browser
+acceptance. Initial HTTPS/provider-OTP success is operator-reported; local
+staging does not substitute for the remaining operational checks.
 
 ## Baseline and history
 
@@ -500,6 +560,7 @@ portable historical migrations, engine/HTTP/recovery regressions, CI/monitoring,
 the owner-locked fresh-install wizard, tested cPanel packaging, and corrected
 production/installation documentation. They supersede the
 October 5 present-tense R01–R05 findings while preserving their IDs and historical
-rating. No public deployment, existing-development-database migration, or
-production cleanup was performed. Recovery/concurrency drills were confined to
-the isolated local staging stack, with no provider mail or off-host backups.
+rating. The reviewing agent did not deploy, migrate the existing development
+database, or clean production storage. Local recovery/concurrency drills used
+isolated staging. The operator later installed the application on cPanel and
+confirmed the initial mail/account workflow; off-host recovery remains unconfirmed.

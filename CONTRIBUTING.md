@@ -1,15 +1,19 @@
 # Contributing to SchoolShare
 
-Thanks for contributing. This repository is a Laravel 13 application with
-security and data-integrity remediation in progress. Read the
+SchoolShare welcomes focused contributions that improve reliability,
+accessibility, security, and the student project workflow. This is a Laravel 13
+application. Read the
 [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) before changing file,
 checkpoint, access-control, migration, OTP, or deployment behavior.
 
 ## Local setup
 
-Use PHP 8.4.1+ with Composer 2.x and Node.js 22.12+/npm 10+ for frontend builds.
-SQLite is the currently verified local
-database path:
+Use PHP 8.5, Composer 2.x, and Node.js 22.12+/npm 10+ for the supported development
+workflow. SQLite is suitable for local development; use the isolated staging
+stack to verify MySQL/MariaDB behavior:
+
+Start from a new checkout. Keep existing private configuration and application
+keys intact, and use synthetic data rather than production uploads or dumps.
 
 ```sh
 composer install
@@ -54,8 +58,8 @@ migration chain has been tested on the intended engine.
 
 ## Verification
 
-Run the narrowest relevant test first. For a security/storage/change touching
-the Group 1–3 work, run:
+Run the narrowest relevant test first. For project access, file handling, or
+storage-lifecycle changes, run:
 
 ```sh
 php artisan test --compact tests/Feature/ProjectPreviewSecurityTest.php \
@@ -72,8 +76,26 @@ For verification/profile changes, run
 `php artisan test --compact tests/Feature/Auth/OtpSecurityTest.php tests/Feature/Auth/EmailVerificationTest.php tests/Feature/ProfileTest.php`.
 Before handing off broad changes, run `php artisan test --compact` and
 `npm run build`. Dependency changes also require `npm run audit:security` and
-`composer audit --locked`. The full PHP suite passes; the two historical
-baseline failures have been corrected.
+`composer audit --locked`. Ordinary PHP runs skip opt-in staging, recovery,
+installation, and package cases; use the [operations guide](SELF_HOSTING.md#repeatable-isolated-staging)
+for those checks. Document skipped tests and do not imply a local result proves
+production readiness. Pure documentation changes require link, formatting,
+example, and sensitive-content checks rather than new behavior tests.
+
+## Documentation and sensitive information
+
+- Use reserved example domains and clearly marked placeholders in generic
+  instructions. Public project contacts are not login credentials.
+- Never commit `.env`, live passwords, application/license keys, setup tokens,
+  session URLs, OTPs, customer data, database dumps, or private log excerpts.
+- Redact screenshots and support transcripts before sharing them. If a secret
+  has already been disclosed, rotate or revoke it; deleting text is not enough.
+- Preserve the distinction between historical findings, current limitations,
+  local test evidence, and operator-reported hosting checks.
+- Keep command examples scoped to the intended environment. Flag destructive
+  operations and require coordinated backups for production changes.
+- Keep `AGENTS.md` and `CLAUDE.md` aligned; they contain contributor-tooling
+  policy and are not installation prerequisites.
 
 ## Pull requests
 
