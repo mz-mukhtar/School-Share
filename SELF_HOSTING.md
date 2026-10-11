@@ -204,6 +204,56 @@ the coordinated database/private-storage backup or repair the reported legacy
 records first. Do not reset quota counters manually and do not delete private
 objects to make the command succeed.
 
+### Theme-only update on an existing cPanel installation
+
+The October 12 appearance update changes templates and public assets; it adds no
+migrations or dependencies. It is not a fresh installation.
+
+1. Back up the installed site using the coordinated backup procedure. Enter
+   maintenance mode before replacing files.
+2. Apply the changed `resources/views/` files and components to the private
+   application's matching directory. For the split cPanel layout, this is under
+   `schoolshare/`, not the subdomain's document root.
+3. Copy `public/theme.css` and `public/theme.js` into the subdomain's actual
+   document root, beside `index.php`. On a normal Laravel layout they remain
+   under `public/`. These files are loaded directly; a Vite build alone does not
+   deliver the theme.
+4. Preserve the installed `.env`, `APP_KEY`, setup locks, and all storage. Do not
+   extract a fresh-install ZIP over the site or run the installer again.
+5. From the private application root, using PHP 8.5, run
+   `php artisan view:cache`, then `php artisan up`. Do not clear the application
+   cache merely for a color change; it also contains verification rate limits.
+6. Refresh the browser and check Light, Dark, and System on Explore, a project,
+   profile/settings, and admin at desktop/mobile widths. Refresh any configured
+   static-asset/CDN cache if it serves an older file.
+
+Keep the previous templates and assets available for rollback. This procedure
+does not replace target-engine or exact-artifact acceptance for a broader release.
+
+An appearance-only update ZIP can be prepared locally with:
+
+```sh
+php artisan schoolshare:package-theme-update --output=storage/app/releases/schoolshare-ethionext-theme-update-2026-10-12.zip --no-interaction
+```
+
+Use an unused output filename; existing archives and checksum companions are
+preserved. This October 12 package is specifically mapped to the existing
+`schoolshare/` private directory and `schoolshare.ethionext.com.et/` public
+directory. It includes only 32 changed views/components, two theme assets,
+`SHA256SUMS`, and `UPDATE.md`. It excludes the installation template, environment
+files, configuration, database/migrations, dependency directories, and storage.
+It is not a general updater and does not deliver the separate quota or branding
+configuration changes.
+
+Upload the ZIP and its `.sha256` companion outside the public website. Follow
+`UPDATE.md`: verify the ZIP, extract into a **new private staging folder**, verify
+all payload checksums, enter maintenance, create a private rollback archive,
+merge the files, verify the installed files, and compile views before reopening.
+Do not extract the archive directly over the live site. The instructions include
+rollback commands; stop at any failed command and retain maintenance mode until
+it is resolved. Local verification cannot guarantee that every hosting setup is
+error-free, so the live browser checks remain required.
+
 ## Email-verification upgrade
 
 The `2026_10_05_000004_protect_email_otp_verifiers` migration removes legacy

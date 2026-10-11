@@ -55,7 +55,7 @@
 
     {{-- Success message --}}
     @if (session('success'))
-        <div class="alert" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;border-radius:10px;font-size:.85rem;padding:.75rem 1rem;margin-bottom:1rem;">
+        <div class="alert" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--ss-success);border-radius:10px;font-size:.85rem;padding:.75rem 1rem;margin-bottom:1rem;">
             <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
         </div>
     @endif
@@ -66,7 +66,7 @@
     @endif
 
     @if ($errors->any())
-        <div class="alert" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:10px;font-size:.85rem;padding:.75rem 1rem;margin-bottom:1rem;">
+        <div class="alert" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--ss-danger);border-radius:10px;font-size:.85rem;padding:.75rem 1rem;margin-bottom:1rem;">
             <i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}
         </div>
     @endif

@@ -1,23 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ asset('theme.js') }}"></script>
     <meta name="description" content="SchoolShare Terms of Service — Rules, limits, and your rights when using SchoolShare by EthioNext.">
     <title>Terms of Service · SchoolShare by EthioNext</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --ss-primary:  #2563eb;
-            --ss-dark:     #0a0f1e;
-            --ss-dark-2:   #111827;
-            --ss-dark-3:   #1e293b;
-            --ss-text:     #f1f5f9;
-            --ss-muted:    #94a3b8;
-            --ss-border:   rgba(255,255,255,0.08);
-        }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body {
@@ -122,9 +114,9 @@
             display: flex; gap: .75rem; align-items: flex-start;
         }
         .callout i { font-size: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
-        .callout-info { background: rgba(37,99,235,.1); border: 1px solid rgba(37,99,235,.25); color: #93c5fd; }
-        .callout-warn { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); color: #fcd34d; }
-        .callout-danger { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; }
+        .callout-info { background: rgba(37,99,235,.1); border: 1px solid rgba(37,99,235,.25); color: var(--ss-primary); }
+        .callout-warn { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); color: var(--ss-warning); }
+        .callout-danger { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); color: var(--ss-danger); }
 
         /* Contact box */
         .contact-card {
@@ -151,11 +143,13 @@
         }
         .back-top:hover { color: var(--ss-primary); }
     </style>
+    <link rel="stylesheet" href="{{ asset('theme.css') }}">
 </head>
 <body>
 
 {{-- Topbar --}}
 <header class="ss-topbar">
+    <x-theme-switcher />
     <a href="/" class="ss-brand"><span class="accent">School</span>Share</a>
     <a href="/" class="ss-back">
         <i class="bi bi-arrow-left"></i> Back to home

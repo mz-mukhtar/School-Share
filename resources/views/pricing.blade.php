@@ -60,7 +60,7 @@
 @endpush
 <div class="container py-5">
     <div class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-white mb-3">Simple, Transparent <span style="color:var(--ss-primary);">Pricing</span></h1>
+        <h1 class="display-5 fw-bold text-body mb-3">Simple, Transparent <span style="color:var(--ss-primary);">Pricing</span></h1>
         <p class="lead text-muted">Whether you're an individual student or an entire school, we have a plan for you.</p>
     </div>
 

@@ -36,7 +36,7 @@
             <div class="ss-card mb-4" style="background:var(--ss-dark-3);">
                 <p class="mb-3" style="color:var(--ss-text-muted);font-size:0.9rem;">For the Custom / White-label plan, please contact us directly:</p>
                 <div class="d-flex align-items-center gap-3 mb-3">
-                    <div style="width:44px;height:44px;background:var(--ss-primary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">📱</div>
+                    <div aria-hidden="true" style="width:44px;height:44px;background:var(--ss-dark-3);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">📱</div>
                     <div>
                         <div style="font-size:0.75rem;color:var(--ss-text-muted);">WhatsApp / Call</div>
                         <div style="font-size:1.25rem;font-weight:700;">0992194042</div>
@@ -79,7 +79,7 @@
                     {{-- Yearly --}}
                     <label class="flex-fill position-relative" style="cursor:pointer;">
                         <input type="radio" name="_billing_ui" value="yearly" class="d-none billing-radio" data-value="yearly">
-                        <span class="position-absolute top-0 start-50 translate-middle badge" style="background:var(--ss-success);font-size:0.7rem;z-index:1;">Save 400 ETB</span>
+                        <span class="position-absolute top-0 start-50 translate-middle badge bg-success" style="font-size:0.7rem;z-index:1;">Save 400 ETB</span>
                         <div class="billing-card ss-card p-3 text-center" style="border:2px solid var(--ss-dark-3);border-radius:12px;transition:all .2s;">
                             <div style="font-size:1.5rem;font-weight:800;">2,000 <span style="font-size:0.9rem;font-weight:500;">ETB</span></div>
                             <div style="color:var(--ss-text-muted);font-size:0.8rem;">/ year</div>
@@ -89,7 +89,7 @@
 
                 {{-- What happens info --}}
                 <div class="alert-ss p-3 rounded mb-4" style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.3);">
-                    <p style="margin:0 0 8px;font-size:0.875rem;font-weight:600;color:#93c5fd;">📋 How this works:</p>
+                    <p style="margin:0 0 8px;font-size:0.875rem;font-weight:600;color:var(--ss-primary);">📋 How this works:</p>
                     <ol style="margin:0;padding-left:1.25rem;color:var(--ss-text-muted);font-size:0.85rem;line-height:1.8;">
                         <li>Click the button below — we'll email you the payment details.</li>
                         <li>Send the payment via <strong style="color:var(--ss-text);">Telebirr (0992194042)</strong> or <strong style="color:var(--ss-text);">CBE (1000305157566)</strong>.</li>

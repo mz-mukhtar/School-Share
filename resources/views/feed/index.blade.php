@@ -31,8 +31,8 @@
                     @endif
                 </div>
                 <div class="flex-grow-1 min-width-0">
-                    <div class="text-white">
-                        <a href="{{ route('profile.public', $activity->user->username) }}" class="fw-bold text-decoration-none text-white">{{ $activity->user->name }}</a>
+                    <div class="text-body">
+                        <a href="{{ route('profile.public', $activity->user->username) }}" class="fw-bold text-decoration-none text-body">{{ $activity->user->name }}</a>
                         
                         @if($activity->type === 'checkpoint_created')
                             <span class="text-muted">created a checkpoint</span>
@@ -63,7 +63,7 @@
                         @elseif($activity->type === 'follow')
                             <span class="text-muted">started following</span>
                             @if($activity->subject)
-                                <a href="{{ route('profile.public', $activity->subject->username) }}" class="fw-bold text-decoration-none text-white">{{ $activity->subject->name }}</a>
+                                <a href="{{ route('profile.public', $activity->subject->username) }}" class="fw-bold text-decoration-none text-body">{{ $activity->subject->name }}</a>
                             @else
                                 <span class="text-muted">someone</span>
                             @endif

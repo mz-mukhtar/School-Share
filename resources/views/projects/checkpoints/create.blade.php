@@ -33,7 +33,7 @@
         {{-- Checkpoint title --}}
         <div class="mb-4">
             <label for="title" class="form-label fw-bold">Checkpoint Title <span class="text-danger">*</span></label>
-            <input type="text" class="form-control bg-transparent text-white @error('title') is-invalid @enderror"
+            <input type="text" class="form-control bg-transparent text-body @error('title') is-invalid @enderror"
                    style="border-color:var(--ss-border);"
                    id="title" name="title" value="{{ old('title') }}"
                    placeholder="e.g., First Draft, Added chapter 3, Fixed calculations" required autofocus>
@@ -45,7 +45,7 @@
         {{-- Checkpoint message --}}
         <div class="mb-4">
             <label for="message" class="form-label fw-bold">Message <span class="text-muted fw-normal">(Optional)</span></label>
-            <textarea class="form-control bg-transparent text-white @error('message') is-invalid @enderror"
+            <textarea class="form-control bg-transparent text-body @error('message') is-invalid @enderror"
                       style="border-color:var(--ss-border);"
                       id="message" name="message" rows="3"
                       placeholder="Describe what changed or what you worked on…">{{ old('message') }}</textarea>

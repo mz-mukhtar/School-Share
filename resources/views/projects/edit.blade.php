@@ -22,7 +22,7 @@
                 
                 <div class="mb-3">
                     <label for="name" class="form-label fw-bold">Project Name <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control bg-transparent text-white @error('name') is-invalid @enderror" style="border-color: var(--ss-border);" id="name" name="name" value="{{ old('name', $project->name) }}" required>
+                    <input type="text" class="form-control bg-transparent text-body @error('name') is-invalid @enderror" style="border-color: var(--ss-border);" id="name" name="name" value="{{ old('name', $project->name) }}" required>
                     @error('name')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -30,7 +30,7 @@
 
                 <div class="mb-3">
                     <label for="description" class="form-label fw-bold">Description <span class="text-muted fw-normal">(Optional)</span></label>
-                    <textarea class="form-control bg-transparent text-white @error('description') is-invalid @enderror" style="border-color: var(--ss-border);" id="description" name="description" rows="3">{{ old('description', $project->description) }}</textarea>
+                    <textarea class="form-control bg-transparent text-body @error('description') is-invalid @enderror" style="border-color: var(--ss-border);" id="description" name="description" rows="3">{{ old('description', $project->description) }}</textarea>
                     @error('description')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -38,7 +38,7 @@
 
                 <div class="mb-4">
                     <label for="tags" class="form-label fw-bold">Tags <span class="text-muted fw-normal">(Optional)</span></label>
-                    <input type="text" class="form-control bg-transparent text-white @error('tags') is-invalid @enderror" style="border-color: var(--ss-border);" id="tags" name="tags" value="{{ old('tags', $project->tags->pluck('tag')->implode(', ')) }}" placeholder="e.g., Science, Biology, Final">
+                    <input type="text" class="form-control bg-transparent text-body @error('tags') is-invalid @enderror" style="border-color: var(--ss-border);" id="tags" name="tags" value="{{ old('tags', $project->tags->pluck('tag')->implode(', ')) }}" placeholder="e.g., Science, Biology, Final">
                     @error('tags')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @else
@@ -83,16 +83,16 @@
                 @csrf
                 <div class="mb-2">
                     <label for="username" class="form-label fw-bold small">Add by Username</label>
-                    <input type="text" class="form-control bg-transparent text-white @error('username') is-invalid @enderror" style="border-color: var(--ss-border);" id="username" name="username" placeholder="Enter username" required>
+                    <input type="text" class="form-control bg-transparent text-body @error('username') is-invalid @enderror" style="border-color: var(--ss-border);" id="username" name="username" placeholder="Enter username" required>
                     @error('username')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="mb-3">
                     <label for="role" class="form-label fw-bold small">Role</label>
-                    <select class="form-select bg-transparent text-white" style="border-color: var(--ss-border);" id="role" name="role" required>
-                        <option value="editor" class="text-dark">Editor (Can edit)</option>
-                        <option value="viewer" class="text-dark">Viewer (Read-only)</option>
+                    <select class="form-select bg-transparent text-body" style="border-color: var(--ss-border);" id="role" name="role" required>
+                        <option value="editor" class="text-body">Editor (Can edit)</option>
+                        <option value="viewer" class="text-body">Viewer (Read-only)</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-ss-primary w-100">Add Collaborator</button>
@@ -101,7 +101,7 @@
             @if($project->collaborators->count() > 0)
                 <div class="list-group list-group-flush mt-3">
                     @foreach($project->collaborators as $collab)
-                        <div class="list-group-item bg-transparent text-white px-0 py-3" style="border-color: var(--ss-border);">
+                        <div class="list-group-item bg-transparent text-body px-0 py-3" style="border-color: var(--ss-border);">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="d-flex align-items-center gap-2">
                                     <img src="{{ $collab->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($collab->name).'&background=random' }}" alt="{{ $collab->name }}" class="rounded-circle" width="32" height="32">
@@ -119,9 +119,9 @@
                             <form action="{{ route('projects.collaborators.update', [$project->slug, $collab->id]) }}" method="POST">
                                 @csrf
                                 @method('PUT')
-                                <select name="role" class="form-select form-select-sm bg-transparent text-white" style="border-color: var(--ss-border);" onchange="this.form.submit()">
-                                    <option value="editor" class="text-dark" {{ $collab->pivot->role === 'editor' ? 'selected' : '' }}>Editor</option>
-                                    <option value="viewer" class="text-dark" {{ $collab->pivot->role === 'viewer' ? 'selected' : '' }}>Viewer</option>
+                                <select name="role" class="form-select form-select-sm bg-transparent text-body" style="border-color: var(--ss-border);" onchange="this.form.submit()">
+                                    <option value="editor" class="text-body" {{ $collab->pivot->role === 'editor' ? 'selected' : '' }}>Editor</option>
+                                    <option value="viewer" class="text-body" {{ $collab->pivot->role === 'viewer' ? 'selected' : '' }}>Viewer</option>
                                 </select>
                             </form>
                         </div>

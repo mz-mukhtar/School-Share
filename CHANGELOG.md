@@ -4,7 +4,26 @@ All notable user-facing, security, and operational changes are recorded here.
 The project uses Keep a Changelog-style sections; version tags should be added
 only when a release is actually cut.
 
-## Unreleased — updated 2026-10-11
+## Unreleased — updated 2026-10-12
+
+### Appearance and readability — 2026-10-12
+
+- Centralize the Bootstrap page palette and replace fixed white text with
+  theme-aware headings, descriptions, controls, previews, and status colors.
+- Add a labeled Light / Dark / System selector across public, authenticated,
+  admin, and installation layouts. Remember preferences in the browser, follow
+  system changes, and keep a readable fallback when storage or JavaScript is unavailable.
+- Improve mobile headers and admin navigation, keyboard focus, dropdowns,
+  modal close controls, pagination, and validation feedback in both themes.
+- Restore guest component content so password-recovery and confirmation forms
+  render; use the existing Bootstrap theme for their shared form components.
+- Add page-rendering, theme behavior, cPanel asset-packaging, and opt-in Chromium
+  contrast/responsive checks using isolated factory data. No production change
+  is made by this source update.
+- Add a separate allow-listed appearance-only cPanel ZIP with private/public
+  directory mapping, payload checksums, backup/merge/rollback instructions, and
+  packaging/update-rehearsal regressions. It does not include the installer,
+  credentials, configuration, migrations, dependencies, or stored user data.
 
 ### Website identity
 

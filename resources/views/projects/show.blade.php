@@ -13,7 +13,7 @@
                     <li class="breadcrumb-item">
                         <a href="{{ route('profile.public', $project->owner->username) }}" class="text-decoration-none text-muted">{{ $project->owner->name }}</a>
                     </li>
-                    <li class="breadcrumb-item active fw-bold text-white" aria-current="page">{{ $project->name }}</li>
+                    <li class="breadcrumb-item active fw-bold text-body" aria-current="page">{{ $project->name }}</li>
                 </ol>
             </nav>
             <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
@@ -22,7 +22,7 @@
                     {{ ucfirst($project->visibility) }}
                 </span>
                 @foreach($project->tags as $tag)
-                    <span class="badge rounded-pill" style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);color:#67e8f9;">
+                    <span class="badge rounded-pill" style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);color:var(--ss-accent);">
                         {{ $tag->tag }}
                     </span>
                 @endforeach
@@ -70,14 +70,14 @@
 </div>
 
 @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#86efac;">
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:var(--ss-success);">
         <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
 
 @if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#fca5a5;">
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--ss-danger);">
         <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -99,7 +99,7 @@
                             <li class="breadcrumb-item"><a href="{{ route('projects.show', ['project' => $project->slug, 'folder' => $bc->id]) }}" class="text-decoration-none">{{ $bc->name }}</a></li>
                         @endforeach
                         @if($currentFolder)
-                            <li class="breadcrumb-item active text-white" aria-current="page">{{ $currentFolder->name }}</li>
+                            <li class="breadcrumb-item active text-body" aria-current="page">{{ $currentFolder->name }}</li>
                         @endif
                     </ol>
                 </nav>
@@ -140,7 +140,7 @@
                             <tr style="border-color:var(--ss-border);">
                                 <td class="ps-0 align-middle text-center"><i class="bi bi-arrow-90deg-up"></i></td>
                                 <td class="align-middle" colspan="3">
-                                    <a href="{{ route('projects.show', ['project' => $project->slug, 'folder' => $currentFolder->parent_id]) }}" class="text-decoration-none text-white fw-medium">..</a>
+                                    <a href="{{ route('projects.show', ['project' => $project->slug, 'folder' => $currentFolder->parent_id]) }}" class="text-decoration-none text-body fw-medium">..</a>
                                 </td>
                             </tr>
                         @endif
@@ -152,7 +152,7 @@
                                 </td>
                                 <td class="align-middle">
                                     <a href="{{ route('projects.show', ['project' => $project->slug, 'folder' => $folder->id]) }}"
-                                       class="text-decoration-none text-white fw-medium">
+                                       class="text-decoration-none text-body fw-medium">
                                         {{ $folder->name }}
                                     </a>
                                 </td>
@@ -177,7 +177,7 @@
                                 </td>
                                 <td class="align-middle">
                                     <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}"
-                                       class="text-decoration-none text-white fw-medium">
+                                       class="text-decoration-none text-body fw-medium">
                                         {{ $file->original_name }}
                                     </a>
                                 </td>
@@ -231,7 +231,7 @@
                 <i class="bi bi-book text-muted"></i>
                 <h6 class="mb-0 fw-bold text-muted">README.md</h6>
             </div>
-            <div class="p-4" style="background:var(--ss-dark-1); color:#e2e8f0; font-size: 0.95rem;">
+            <div class="p-4" style="background:var(--ss-dark-1); color:var(--ss-text); font-size: 0.95rem;">
                 {!! $readmeHtml !!}
             </div>
         </div>
@@ -258,11 +258,11 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <a href="{{ route('projects.checkpoints.show', [$project->slug, $cp->id]) }}"
-                                   class="fw-bold text-white text-decoration-none">
+                                   class="fw-bold text-body text-decoration-none">
                                     {{ $cp->title }}
                                 </a>
                                 @if($loop->first)
-                                    <span class="badge ms-1" style="background:rgba(6,182,212,0.15);color:#67e8f9;font-size:0.65rem;">Latest</span>
+                                    <span class="badge ms-1" style="background:rgba(6,182,212,0.15);color:var(--ss-accent);font-size:0.65rem;">Latest</span>
                                 @endif
                                 <div class="text-muted small mt-1">
                                     @php($filesCount = $cp->snapshot_files_count ?: $cp->legacy_files_count)
@@ -303,7 +303,7 @@
                     @endif
                     <div class="modal-header border-bottom-0">
                         <h5 class="modal-title">New Folder</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
@@ -332,7 +332,7 @@
                 @method('PUT')
                 <div class="modal-header border-bottom-0">
                     <h5 class="modal-title">Rename / Move File</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">

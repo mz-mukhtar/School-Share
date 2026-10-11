@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ asset('theme.js') }}"></script>
     <meta name="robots" content="noindex,nofollow">
     <title>Install SchoolShare</title>
     <style>
@@ -18,8 +19,10 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0 1.5rem; }
         li { margin: .4rem 0; } code { overflow-wrap: anywhere; } a { color: #93c5fd; }
     </style>
+    <link rel="stylesheet" href="{{ asset('theme.css') }}">
 </head>
-<body><main>
+<body class="ss-install-page"><main>
+    <x-theme-switcher />
     <h1>Install SchoolShare</h1>
     <p class="muted">Fresh installation · PHP 8.5 · MySQL 8.4 or MariaDB 10.11.19+ / 11.4</p>
     @if ($errors->any())

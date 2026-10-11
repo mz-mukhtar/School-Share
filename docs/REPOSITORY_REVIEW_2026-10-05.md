@@ -1,6 +1,6 @@
 # SchoolShare repository review and release evidence
 
-Updated: 11 October 2026
+Updated: 12 October 2026
 
 Website-identity review base: `5322c59`, plus the changes recorded below. The
 preceding documentation review referenced `598876e`. Earlier staging and exact-artifact evidence
@@ -19,7 +19,9 @@ Scope: current source, migrations, configuration, repository tests, dependencies
 documentation, isolated production-mode Apache staging, and extracted cPanel
 packages on MySQL 8.4, MariaDB 11.4, and the additional upstream MariaDB 10.11.19
 cPanel target. The existing development environment, database, and uploads
-were preserved. Real HTTP workflows were tested, not a complete browser UI run.
+were preserved. Earlier staging exercised real HTTP workflows. The October 12
+theme follow-up adds isolated rendered-page Chromium checks, not a complete
+production browser acceptance run.
 
 ## Current assessment
 
@@ -66,7 +68,8 @@ The other engine and opt-in results are earlier October 11 staging evidence.
 
 | Check | Current result | Boundary of the evidence |
 | --- | --- | --- |
-| Repository PHP suite after website-identity changes | **293 passed; 2,025 assertions** on SQLite | 308 cases, including 15 skipped opt-in cases. Includes nine new rendered-page/mail-link regressions; production-engine and extracted-package gates were not rerun for this change |
+| Repository PHP suite after theme changes (October 12) | **303 passed; 2,475 assertions** on SQLite | 318 cases, including 15 skipped opt-in cases; new theme/rendering and package-asset coverage. Production-engine and extracted-package acceptance were not rerun for these frontend changes |
+| Repository PHP suite after website-identity changes (October 11) | **293 passed; 2,025 assertions** on SQLite | 308 cases, including 15 skipped opt-in cases. Includes nine new rendered-page/mail-link regressions; production-engine and extracted-package gates were not rerun for this change |
 | Repository PHP suite after quota change | **284 passed; 1,992 assertions** on SQLite and upstream MariaDB 10.11.19 | 299 cases, including 15 skipped opt-in staging/recovery/installation/package cases. Earlier pre-quota ordinary-suite runs passed 277 cases / 1,962 assertions on all three MySQL-family targets. The opt-in results below are earlier separate runs, not part of the 284-case result |
 | Clean/populated migration tests | **6 passed; 58 assertions per engine** (included above) | Isolated databases only: legacy version pointers/bytes, retained billing, root uniqueness, case/accent/trailing-space collation, and pre-existing rename suffixes |
 | Coordinated backup restoration | **1 passed; 22 assertions per engine** | Actual database dump/import plus private-file ZIP and SHA-256 checks; restored reconciliation, download, and checkpoint behavior. Temporary test backups removed; not an off-host production backup drill |
@@ -74,7 +77,7 @@ The other engine and opt-in results are earlier October 11 staging evidence.
 | Installer engine acceptance | **9 passed; 100 assertions per engine** | Actual empty-database migrations/admin/OTP state, wrong credentials/engine, existing tables/views, interrupted/concurrent setup, failed migrations/mail, and private/public path guards; temporary configuration with fake or deliberately failing mail |
 | Extracted cPanel-package acceptance | **1 passed; 48 assertions** on each original engine; **1 passed; 50 assertions** on MariaDB 10.11.19 | Generic package uses required STARTTLS; tailored subdomain package uses authenticated implicit TLS on port 465. HTTPS/CSRF/secure sessions, actual migrations, OTP/admin access, CLI public path, private-path denial, lock, readiness, optimized caches, and neighbouring main-site preservation. The exact downloadable tailored ZIP also passed all 50 assertions; local trusted test certificate, not the provider |
 | Fresh-install ZIP | **Tailored ZIP built: 8.8 MB; ZIP integrity passed** | Locked no-dev dependencies, assets and guide; archive checks found no environments, tokens, user data, populated caches, public storage link, or `public_html` entries. Both packaged PHP public paths match `schoolshare.ethionext.com.et`; the older generic artifact is retained separately |
-| `npm test` and `node tests/JavaScript/PdfPreview.test.mjs` | **5 JavaScript cases passed** | Simulated browser/library objects; npm's process runner reports one file, direct execution confirms all five cases |
+| `npm test` and direct JavaScript test runs (October 12) | **13 JavaScript cases passed** | Eight theme behavior cases and five PDF cases use simulated browser/library objects. The process runner reports three files; the Chromium case is opt-in and its separate execution is recorded below |
 | `npm run build` | Passed; Vite 8.3.2 | Builds the Vite scaffold, which current application layouts do not load through `@vite` |
 | `composer validate --strict --no-check-publish` | Passed | Manifest/lockfile validation, not deployment verification |
 | `npm run audit:security` | **0 vulnerabilities** | Fresh online registry audit after the locked update; does not audit hardcoded CDN assets |
@@ -86,7 +89,7 @@ The other engine and opt-in results are earlier October 11 staging evidence.
 | CI | `.github/workflows/ci.yml` updated; YAML parses and its test/build commands pass locally | Three database targets, including the cPanel subdomain layout and SMTPS port 465, plus PHP/JS/audits; pinned actions/images; no hosted run or branch-protection configuration performed |
 | Initial cPanel and provider-mail workflow | **Operator-reported:** PHP 8.5.11, MariaDB 10.11.19 provider build, certificate-validated SMTPS on port 465, successful authentication after correcting credentials, OTP receipt, and verified dashboard access | Earlier remote TLS probe from the review environment timed out; the later hosting-terminal check succeeded. No production credentials were used by the reviewing agent. Full DNS/proxy, permission/upload/recovery, cron, backup and alert acceptance remains unconfirmed |
 | Existing development instance | Preserved; no migrations applied by this pass | Earlier read-only evidence recorded 10 pending migrations and local/debug/log-mail settings; do not confuse it with isolated staging |
-| Real browser / responsive UI | Earlier evidence only | Original/remediation checks included responsive widths and PDF navigation; full current end-to-end browser acceptance was not rerun |
+| Real browser / responsive UI | October 12 theme check: **172 page/theme/viewport combinations passed** | Chromium 153, 43 factory-rendered route states, light/dark, 1440×900 and 390×844; contrast/layout and interactive component checks. No production login, real upload, or full end-to-end browser acceptance claimed |
 
 The October 5 diagnostic probes are historical evidence. Their failures are now
 covered by normal regressions in `ProfileTest`, `AdminUserManagementTest`, and
@@ -558,6 +561,83 @@ production configuration was changed, no credentials were introduced, and no
 new release ZIP was built. Deploy these source changes through the existing
 upgrade procedure; do not rerun the fresh-install wizard or treat the older
 ZIP's acceptance results as evidence for a new package.
+
+## Theme and readability follow-up — 12 October 2026
+
+All three requested stages are implemented in source:
+
+1. Centralized page colors correct the Bootstrap light/dark mismatch. Text,
+   surfaces, forms, previews, status feedback, pagination, and modal controls
+   use theme-aware colors; bright text accents are separate from button fills.
+2. A labeled Light / Dark / System selector applies before page styles render,
+   remembers the preference in local storage, follows system changes, and
+   synchronizes tabs. Blocked storage leaves the current page usable; without
+   JavaScript the dark fallback remains readable and the selector is hidden.
+3. Chromium checks use actual Laravel-rendered route responses with factory
+   data, in-memory SQLite, fake storage, and no outgoing mail. The matrix covers
+   public/guest pages, empty/populated Explore and dashboard views, project and
+   checkpoint pages, previews/diffs, profile, pricing, notifications, and admin.
+   Both themes pass at 1440×900 and 390×844 with no detected text-contrast or
+   document-overflow failures. Dropdown hover, mobile navigation, admin modals,
+   keyboard focus, validation styling, persistence, system changes, blocked
+   storage, and the no-JavaScript fallback were checked. Screenshots were reviewed.
+
+The browser audit checks computed text colors against composited solid
+backgrounds, using 4.5:1 for normal text and 3:1 for large text. It does not
+certify WCAG conformance: decorative gradients/images, assistive technology,
+all browsers, production delivery, and complete end-to-end workflows remain
+outside this check. The test waits for finite animations before screenshots.
+
+The shared guest layout also omitted component-slot content, leaving recovery
+forms empty. It now renders either component content or inherited page sections;
+recovery/confirmation controls use the Bootstrap form components. Rendering and
+existing password-workflow tests cover this repair. Mobile admin navigation
+remains available when its desktop sidebar is hidden.
+
+Local verification: the full SQLite suite passes **303 cases, 2,475 assertions**,
+with 15 existing engine/recovery/package cases skipped. Direct JavaScript runs
+pass **8 theme behavior cases** and **5 PDF cases**. The separate opt-in Chromium
+check passes **172 page/theme/viewport combinations**, plus the interactive
+checks above. The production Vite build, Pint, and Git whitespace checks pass.
+The package-builder regression confirms both theme assets are included unchanged.
+
+Deployment status: no live credentials, database, uploads, or cPanel files were
+changed. A subsequent appearance-only ZIP was prepared locally as requested;
+its scope and verification are recorded below. Preserve `.env`, `APP_KEY`, and
+storage; refresh compiled views and verify both themes on the real host. Do not
+rerun the installer or reuse historical fresh-install ZIP acceptance as evidence
+for an upgraded artifact.
+
+### Appearance-only update package
+
+`schoolshare-ethionext-theme-update-2026-10-12.zip` uses the operator's existing
+split layout: `schoolshare/resources/views/` and
+`schoolshare.ethionext.com.et/theme.css` / `theme.js`. An explicit allow-list
+includes 32 templates/components and two assets, plus `UPDATE.md` and payload
+checksums. No environment files, configuration, migrations, dependencies,
+installer files, or stored user data are packaged. The package does not deliver
+separate storage-quota or branding-configuration changes.
+
+The included instructions verify the ZIP and all payload files, extract into a
+new private staging directory, create a private rollback backup in maintenance
+mode, merge only the update files, verify installed checksums, and compile views
+before reopening. They include rollback instructions and require stopping on
+any failure; the archive is not an automatic web updater.
+
+Eight packaging regressions pass, including missing/symlinked source rejection,
+preservation of existing artifacts, public-output rejection, altered-payload
+detection, and a rehearsal of the documented extraction, backup, merge, and
+rollback shell commands in a temporary filesystem. The rehearsal preserves
+fixture configuration, uploads, installation locks, unrelated templates, public
+assets, and the neighboring company website. Artisan is a command-recording
+fixture in that filesystem rehearsal; actual theme rendering and password
+workflows remain covered by the application tests above.
+
+The current full SQLite suite passes **311 cases, 2,595 assertions**, with 15
+existing opt-in skips. JavaScript tests, Pint, whitespace checks, and the generated
+ZIP integrity/checksum checks pass. Production installation and live browser
+smoke checks remain operator actions; local verification is not a guarantee of
+error-free operation on every host.
 
 ## Historical engineering rating — 5 October 2026
 

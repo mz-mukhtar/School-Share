@@ -43,11 +43,11 @@
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
                         <div>
                             <a href="{{ route('projects.checkpoints.show', [$project->slug, $cp->id]) }}"
-                               class="fw-bold text-white text-decoration-none fs-6">
+                               class="fw-bold text-body text-decoration-none fs-6">
                                 {{ $cp->title }}
                             </a>
                             @if($loop->first)
-                                <span class="badge ms-1" style="background:rgba(6,182,212,0.15);color:#67e8f9;font-size:0.65rem;">Latest</span>
+                                <span class="badge ms-1" style="background:rgba(6,182,212,0.15);color:var(--ss-accent);font-size:0.65rem;">Latest</span>
                             @endif
                             <div class="text-muted small mt-1">
                                 <i class="bi bi-person me-1"></i>{{ $cp->author?->name ?? 'Deleted account' }}

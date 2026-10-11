@@ -42,7 +42,7 @@
 
                 <div class="mb-3">
                     <label for="name" class="form-label fw-bold">Name</label>
-                    <input type="text" class="form-control bg-transparent text-white @error('name') is-invalid @enderror" style="border-color: var(--ss-border);" id="name" name="name" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name">
+                    <input type="text" class="form-control bg-transparent text-body @error('name') is-invalid @enderror" style="border-color: var(--ss-border);" id="name" name="name" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name">
                     @error('name')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -50,7 +50,7 @@
 
                 <div class="mb-3">
                     <label for="username" class="form-label fw-bold">Username</label>
-                    <input type="text" class="form-control bg-transparent text-white @error('username') is-invalid @enderror" style="border-color: var(--ss-border);" id="username" name="username" value="{{ old('username', $user->username) }}" autocomplete="username">
+                    <input type="text" class="form-control bg-transparent text-body @error('username') is-invalid @enderror" style="border-color: var(--ss-border);" id="username" name="username" value="{{ old('username', $user->username) }}" autocomplete="username">
                     @error('username')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -58,7 +58,7 @@
 
                 <div class="mb-3">
                     <label for="bio" class="form-label fw-bold">Bio</label>
-                    <textarea class="form-control bg-transparent text-white @error('bio') is-invalid @enderror" style="border-color: var(--ss-border);" id="bio" name="bio" rows="3">{{ old('bio', $user->bio) }}</textarea>
+                    <textarea class="form-control bg-transparent text-body @error('bio') is-invalid @enderror" style="border-color: var(--ss-border);" id="bio" name="bio" rows="3">{{ old('bio', $user->bio) }}</textarea>
                     @error('bio')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -66,7 +66,7 @@
 
                 <div class="mb-4">
                     <label for="email" class="form-label fw-bold">Email</label>
-                    <input type="email" class="form-control bg-transparent text-white @error('email') is-invalid @enderror" style="border-color: var(--ss-border);" id="email" name="email" value="{{ old('email', $user->email) }}" required autocomplete="username">
+                    <input type="email" class="form-control bg-transparent text-body @error('email') is-invalid @enderror" style="border-color: var(--ss-border);" id="email" name="email" value="{{ old('email', $user->email) }}" required autocomplete="username">
                     @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -106,7 +106,7 @@
 
                 <div class="mb-3">
                     <label for="update_password_current_password" class="form-label fw-bold">Current Password</label>
-                    <input type="password" class="form-control bg-transparent text-white @error('current_password', 'updatePassword') is-invalid @enderror" style="border-color: var(--ss-border);" id="update_password_current_password" name="current_password" autocomplete="current-password">
+                    <input type="password" class="form-control bg-transparent text-body @error('current_password', 'updatePassword') is-invalid @enderror" style="border-color: var(--ss-border);" id="update_password_current_password" name="current_password" autocomplete="current-password">
                     @error('current_password', 'updatePassword')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -114,7 +114,7 @@
 
                 <div class="mb-3">
                     <label for="update_password_password" class="form-label fw-bold">New Password</label>
-                    <input type="password" class="form-control bg-transparent text-white @error('password', 'updatePassword') is-invalid @enderror" style="border-color: var(--ss-border);" id="update_password_password" name="password" autocomplete="new-password">
+                    <input type="password" class="form-control bg-transparent text-body @error('password', 'updatePassword') is-invalid @enderror" style="border-color: var(--ss-border);" id="update_password_password" name="password" autocomplete="new-password">
                     @error('password', 'updatePassword')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -122,7 +122,7 @@
 
                 <div class="mb-4">
                     <label for="update_password_password_confirmation" class="form-label fw-bold">Confirm Password</label>
-                    <input type="password" class="form-control bg-transparent text-white @error('password_confirmation', 'updatePassword') is-invalid @enderror" style="border-color: var(--ss-border);" id="update_password_password_confirmation" name="password_confirmation" autocomplete="new-password">
+                    <input type="password" class="form-control bg-transparent text-body @error('password_confirmation', 'updatePassword') is-invalid @enderror" style="border-color: var(--ss-border);" id="update_password_password_confirmation" name="password_confirmation" autocomplete="new-password">
                     @error('password_confirmation', 'updatePassword')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -159,7 +159,7 @@
                 
                 <div class="modal-header border-bottom-0">
                     <h5 class="modal-title fw-bold" id="confirmUserDeletionModalLabel">Are you sure you want to delete your account?</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p class="text-muted small mb-4">
@@ -168,7 +168,7 @@
 
                     <div class="mb-3">
                         <label for="password" class="form-label fw-bold sr-only">Password</label>
-                        <input type="password" class="form-control bg-transparent text-white @error('password', 'userDeletion') is-invalid @enderror" style="border-color: var(--ss-border);" id="password" name="password" placeholder="Password">
+                        <input type="password" class="form-control bg-transparent text-body @error('password', 'userDeletion') is-invalid @enderror" style="border-color: var(--ss-border);" id="password" name="password" placeholder="Password">
                         @error('password', 'userDeletion')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

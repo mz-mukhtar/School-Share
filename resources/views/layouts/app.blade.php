@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ asset('theme.js') }}"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="@yield('meta_description', 'SchoolShare — Your school work, always with you. Upload, version, and access your files anywhere.')">
     
@@ -27,18 +28,6 @@
 
     <style>
         :root {
-            --ss-primary:       #2563eb;
-            --ss-primary-dark:  #1d4ed8;
-            --ss-accent:        #06b6d4;
-            --ss-success:       #10b981;
-            --ss-warning:       #f59e0b;
-            --ss-danger:        #ef4444;
-            --ss-dark:          #0f172a;
-            --ss-dark-2:        #1e293b;
-            --ss-dark-3:        #334155;
-            --ss-text:          #e2e8f0;
-            --ss-text-muted:    #94a3b8;
-            --ss-border:        #2d3748;
             --ss-sidebar-w:     260px;
         }
 
@@ -83,7 +72,7 @@
         }
         .ss-avatar {
             width: 32px; height: 32px; border-radius: 50%;
-            background: var(--ss-primary);
+            background: var(--ss-button-bg);
             display: inline-flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 0.75rem; color: #fff;
         }
@@ -236,17 +225,18 @@
     </style>
 
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('theme.css') }}">
 </head>
 <body>
 
 {{-- ── Top Navbar ─────────────────────────────────────────── --}}
-<nav class="ss-topbar d-flex align-items-center px-3 gap-3">
+<nav class="ss-topbar ss-app-topbar d-flex align-items-center px-3 gap-3">
     <a href="{{ route('dashboard') }}" class="ss-brand me-3">
         School<span>Share</span>
     </a>
 
     {{-- Mobile hamburger --}}
-    <button class="btn btn-sm d-md-none ms-auto me-2" style="color:var(--ss-text-muted);" data-bs-toggle="offcanvas" data-bs-target="#ssSidebar">
+    <button class="btn btn-sm d-md-none ms-auto me-2" aria-label="Open navigation" style="color:var(--ss-text-muted);" data-bs-toggle="offcanvas" data-bs-target="#ssSidebar">
         <i class="bi bi-list fs-5"></i>
     </button>
 
@@ -264,6 +254,7 @@
     </form>
 
     <div class="ms-auto d-flex align-items-center gap-2">
+        <x-theme-switcher />
         {{-- Notifications Bell --}}
         @auth
         <a href="{{ route('notifications.index') }}" class="btn btn-sm position-relative d-flex align-items-center justify-content-center" style="color:var(--ss-text-muted); width:36px; height:36px; background:var(--ss-dark-3); border-radius:8px; border:1px solid var(--ss-border);">
@@ -289,7 +280,7 @@
         {{-- User dropdown --}}
         @auth
         <div class="dropdown">
-            <button class="btn d-flex align-items-center gap-2 p-0 border-0" type="button" data-bs-toggle="dropdown" style="background:none;">
+            <button class="btn d-flex align-items-center gap-2 p-0 border-0" type="button" aria-label="Account menu" data-bs-toggle="dropdown" style="background:none;">
                 @if(auth()->user()->avatar_path)
                     <img src="{{ Storage::url(auth()->user()->avatar_path) }}" alt="{{ auth()->user()->name }}" class="rounded-circle object-fit-cover" width="32" height="32">
                 @else
@@ -305,7 +296,7 @@
                 <li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="dropdown-item" style="color:#fca5a5;">
+                        <button type="submit" class="dropdown-item" style="color:var(--ss-danger);">
                             <i class="bi bi-box-arrow-right me-2"></i>Log Out
                         </button>
                     </form>
@@ -380,7 +371,7 @@
     <div class="offcanvas offcanvas-start" tabindex="-1" id="ssSidebar" style="background:var(--ss-dark-2);border-right:1px solid var(--ss-border);">
         <div class="offcanvas-header">
             <span class="ss-brand">School<span>Share</span></span>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-0">
             <div class="ss-sidebar-section">Main</div>

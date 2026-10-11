@@ -8,7 +8,7 @@
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item"><a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none text-muted">{{ $project->name }}</a></li>
             <li class="breadcrumb-item"><a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}" class="text-decoration-none text-muted">{{ $file->original_name }}</a></li>
-            <li class="breadcrumb-item active text-white" aria-current="page">Diff</li>
+            <li class="breadcrumb-item active text-body" aria-current="page">Diff</li>
         </ol>
     </nav>
 </div>
@@ -27,7 +27,7 @@
     <style>
         .diff-wrapper {
             background-color: var(--ss-dark-1);
-            color: #e2e8f0;
+            color: var(--ss-text);
             font-size: 0.9rem;
             font-family: monospace;
             overflow-x: auto;

@@ -17,7 +17,7 @@
         
         <div class="mb-4">
             <label for="name" class="form-label fw-bold">Project Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control bg-transparent text-white @error('name') is-invalid @enderror" style="border-color: var(--ss-border);" id="name" name="name" value="{{ old('name') }}" placeholder="e.g., Biology Final Essay" required autofocus>
+            <input type="text" class="form-control bg-transparent text-body @error('name') is-invalid @enderror" style="border-color: var(--ss-border);" id="name" name="name" value="{{ old('name') }}" placeholder="e.g., Biology Final Essay" required autofocus>
             @error('name')
                 <div class="invalid-feedback">{{ $message }}</div>
             @else
@@ -27,7 +27,7 @@
 
         <div class="mb-4">
             <label for="description" class="form-label fw-bold">Description <span class="text-muted fw-normal">(Optional)</span></label>
-            <textarea class="form-control bg-transparent text-white @error('description') is-invalid @enderror" style="border-color: var(--ss-border);" id="description" name="description" rows="3" placeholder="What is this project about?">{{ old('description') }}</textarea>
+            <textarea class="form-control bg-transparent text-body @error('description') is-invalid @enderror" style="border-color: var(--ss-border);" id="description" name="description" rows="3" placeholder="What is this project about?">{{ old('description') }}</textarea>
             @error('description')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -35,7 +35,7 @@
 
         <div class="mb-4">
             <label for="tags" class="form-label fw-bold">Tags <span class="text-muted fw-normal">(Optional)</span></label>
-            <input type="text" class="form-control bg-transparent text-white @error('tags') is-invalid @enderror" style="border-color: var(--ss-border);" id="tags" name="tags" value="{{ old('tags') }}" placeholder="e.g., Science, Biology, Final">
+            <input type="text" class="form-control bg-transparent text-body @error('tags') is-invalid @enderror" style="border-color: var(--ss-border);" id="tags" name="tags" value="{{ old('tags') }}" placeholder="e.g., Science, Biology, Final">
             @error('tags')
                 <div class="invalid-feedback">{{ $message }}</div>
             @else

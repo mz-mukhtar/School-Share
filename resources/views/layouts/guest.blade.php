@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ asset('theme.js') }}"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="SchoolShare — Your school work, always with you.">
     <title>@yield('title', 'Welcome') — SchoolShare</title>
@@ -13,15 +14,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --ss-primary:     #2563eb;
-            --ss-dark:        #0f172a;
-            --ss-dark-2:      #1e293b;
-            --ss-dark-3:      #334155;
-            --ss-text:        #e2e8f0;
-            --ss-text-muted:  #94a3b8;
-            --ss-border:      #2d3748;
-        }
         * { box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
@@ -90,7 +82,7 @@
         }
         .form-control::placeholder { color: var(--ss-text-muted) !important; }
         .btn-ss-primary {
-            background: var(--ss-primary);
+            background: var(--ss-button-bg);
             color: #fff; border: none;
             border-radius: 8px; font-weight: 600;
             padding: 0.6rem 1rem;
@@ -117,24 +109,30 @@
     </style>
 
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('theme.css') }}">
 </head>
 <body>
 
 <header class="ss-guest-topbar">
     <a href="{{ url('/') }}" class="ss-brand">School<span>Share</span></a>
-    <div class="d-flex gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <x-theme-switcher />
         @if (Route::has('login') && !request()->routeIs('login'))
         <a href="{{ route('login') }}" class="btn btn-sm btn-outline-secondary" style="border-color:var(--ss-border);color:var(--ss-text-muted);">Log in</a>
         @endif
         @if (Route::has('register') && !request()->routeIs('register'))
-        <a href="{{ route('register') }}" class="btn btn-sm" style="background:var(--ss-primary);color:#fff;">Sign up</a>
+        <a href="{{ route('register') }}" class="btn btn-sm" style="background:var(--ss-button-bg);color:#fff;">Sign up</a>
         @endif
     </div>
 </header>
 
 <div class="ss-guest-body">
     <div class="ss-auth-card">
-        @yield('content')
+        @isset($slot)
+            {{ $slot }}
+        @else
+            @yield('content')
+        @endisset
     </div>
 </div>
 

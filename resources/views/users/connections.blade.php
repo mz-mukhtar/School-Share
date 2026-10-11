@@ -48,7 +48,7 @@
                             @endif
                         </a>
                         <div class="d-flex flex-column">
-                            <a href="{{ route('profile.public', $connection->username) }}" class="text-decoration-none fw-bold fs-5 text-white">
+                            <a href="{{ route('profile.public', $connection->username) }}" class="text-decoration-none fw-bold fs-5 text-body">
                                 {{ $connection->name }}
                             </a>
                             <span class="text-muted small">{{ '@' . $connection->username }}</span>

@@ -48,6 +48,17 @@ confirmation. A successful installation does not close those operational gates.
   viewer.
 - Follow users, browse public projects after OTP verification, and use the
   authenticated activity feed.
+- Choose Light, Dark, or System appearance from the header. The browser remembers
+  the choice; System follows the operating system's color preference.
+
+## Appearance
+
+Shared page colors live in `public/theme.css`; the preference controller is
+`public/theme.js`. Bootstrap layouts load these directly, not through Vite.
+Keep both assets with the updated Blade views when deploying a theme change.
+Preferences are browser-local, not account settings. With storage blocked, a
+selection applies to the current page; without JavaScript, pages use a readable
+dark fallback and hide the inactive selector.
 
 ## Important current limits
 
@@ -155,6 +166,18 @@ composer audit --locked
 For the full repository suite, run `php artisan test --compact`. Opt-in engine,
 recovery, and package tests require the isolated setup in the operations guide;
 a normal test run skips them. Test results are dated in the repository review.
+
+The opt-in theme browser check requires installed Chromium, localhost listening
+permission, and access to the existing Bootstrap/font CDNs:
+
+```sh
+THEME_BROWSER=1 node tests/JavaScript/ThemeBrowser.test.mjs
+```
+
+It renders real Laravel route responses with factory data, in-memory SQLite,
+fake storage, and no outgoing mail, then checks both themes at desktop/mobile
+widths. Screenshots and the report are written to a fresh temporary directory.
+This is a rendered-page UI check, not a production or complete end-to-end audit.
 
 OTP codes expire after 15 minutes and are stored as keyed digests bound to the
 account and current email. Five incorrect guesses disable a code. Verification

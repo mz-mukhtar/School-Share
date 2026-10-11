@@ -35,7 +35,7 @@
             <div class="col-md-6 col-lg-4">
                 <div class="ss-card h-100 d-flex flex-column hover-lift">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none fw-bold fs-5 text-white d-flex align-items-center gap-2 text-truncate" style="max-width: 80%;">
+                        <a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none fw-bold fs-5 text-body d-flex align-items-center gap-2 text-truncate" style="max-width: 80%;">
                             <i class="bi {{ $project->visibility === 'public' ? 'bi-globe' : 'bi-lock-fill' }} fs-6 text-muted"></i>
                             <span class="text-truncate">{{ $project->name }}</span>
                         </a>
@@ -44,8 +44,8 @@
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow" style="background:var(--ss-dark-3);border-color:var(--ss-border);">
-                                <li><a class="dropdown-item text-white" href="{{ route('projects.show', $project->slug) }}"><i class="bi bi-folder2-open me-2 text-muted"></i>Open</a></li>
-                                <li><a class="dropdown-item text-white" href="{{ route('projects.edit', $project->slug) }}"><i class="bi bi-gear me-2 text-muted"></i>Settings</a></li>
+                                <li><a class="dropdown-item text-body" href="{{ route('projects.show', $project->slug) }}"><i class="bi bi-folder2-open me-2 text-muted"></i>Open</a></li>
+                                <li><a class="dropdown-item text-body" href="{{ route('projects.edit', $project->slug) }}"><i class="bi bi-gear me-2 text-muted"></i>Settings</a></li>
                                 <li><hr class="dropdown-divider" style="border-color:var(--ss-border);"></li>
                                 <li>
                                     <form method="POST" action="{{ route('projects.destroy', $project->slug) }}" onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
@@ -92,7 +92,7 @@
             <div class="col-md-6 col-lg-4">
                 <div class="ss-card h-100 d-flex flex-column hover-lift">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none fw-bold fs-5 text-white d-flex align-items-center gap-2 text-truncate" style="max-width: 80%;">
+                        <a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none fw-bold fs-5 text-body d-flex align-items-center gap-2 text-truncate" style="max-width: 80%;">
                             <i class="bi bi-people-fill text-ss-primary fs-6"></i>
                             <span class="text-truncate">{{ $project->name }}</span>
                         </a>
@@ -101,7 +101,7 @@
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow" style="background:var(--ss-dark-3);border-color:var(--ss-border);">
-                                <li><a class="dropdown-item text-white" href="{{ route('projects.show', $project->slug) }}"><i class="bi bi-folder2-open me-2 text-muted"></i>Open</a></li>
+                                <li><a class="dropdown-item text-body" href="{{ route('projects.show', $project->slug) }}"><i class="bi bi-folder2-open me-2 text-muted"></i>Open</a></li>
                             </ul>
                         </div>
                     </div>

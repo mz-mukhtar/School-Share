@@ -85,7 +85,7 @@
     <div class="modal-content" style="background:var(--ss-dark-2);border:1px solid var(--ss-border);">
       <div class="modal-header border-0">
         <h5 class="modal-title">Edit Plan: {{ $user->name }}</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="{{ route('admin.users.updatePlan', $user) }}" method="POST">
           @csrf

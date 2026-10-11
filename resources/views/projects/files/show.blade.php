@@ -10,7 +10,7 @@
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item"><a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none text-muted">{{ $project->name }}</a></li>
             <li class="breadcrumb-item"><a href="{{ route('projects.checkpoints.show', [$project->slug, $version->checkpoint_id]) }}" class="text-decoration-none text-muted">{{ $version->checkpoint->title }}</a></li>
-            <li class="breadcrumb-item active text-white" aria-current="page">{{ $file->original_name }}</li>
+            <li class="breadcrumb-item active text-body" aria-current="page">{{ $file->original_name }}</li>
         </ol>
     </nav>
 </div>
@@ -78,15 +78,15 @@
 
     @elseif($file->isPdf($mimeType))
         {{-- PDF preview --}}
-        <div id="pdf-viewer" class="bg-light p-3 rounded text-center overflow-auto" style="height: 750px;">
-            <div id="pdf-loading" class="text-dark py-5">
+        <div id="pdf-viewer" class="p-3 rounded text-center overflow-auto" style="height:750px;background:var(--ss-dark-3);">
+            <div id="pdf-loading" class="text-body py-5">
                 <div class="spinner-border text-primary" role="status"></div>
                 <div class="mt-2">Loading PDF...</div>
             </div>
             <canvas id="pdf-canvas" class="shadow-sm mx-auto d-none" style="max-width: 100%;"></canvas>
             <div id="pdf-controls" class="mt-3 d-none gap-2 justify-content-center">
                 <button class="btn btn-outline-dark btn-sm" id="pdf-prev"><i class="bi bi-chevron-left"></i></button>
-                <span class="text-dark align-self-center mx-2">Page <span id="pdf-page-num">1</span> of <span id="pdf-page-count">1</span></span>
+                <span class="text-body align-self-center mx-2">Page <span id="pdf-page-num">1</span> of <span id="pdf-page-count">1</span></span>
                 <button class="btn btn-outline-dark btn-sm" id="pdf-next"><i class="bi bi-chevron-right"></i></button>
             </div>
         </div>
@@ -227,7 +227,7 @@
             </div>
         </div>
 
-        <div id="fileViewer" class="p-3 rounded" style="background:var(--ss-dark-1);color:#e2e8f0;font-size:0.85rem;overflow:auto;max-height:75vh;white-space:pre-wrap;word-break:break-all;border:1px solid var(--ss-border);"><code>{{ $content }}</code></div>
+        <div id="fileViewer" class="p-3 rounded" style="background:var(--ss-dark-1);color:var(--ss-text);font-size:0.85rem;overflow:auto;max-height:75vh;white-space:pre-wrap;word-break:break-all;border:1px solid var(--ss-border);"><code>{{ $content }}</code></div>
         
         <div id="fileEditorContainer" class="d-none" style="border:1px solid var(--ss-border); border-radius:8px; overflow:hidden;"></div>
 
@@ -333,7 +333,7 @@
         @foreach($file->versions->sortByDesc('id') as $v)
             <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-secondary">
                 <div>
-                    <div class="fw-bold text-white">Version {{ $v->version_number }}</div>
+                    <div class="fw-bold text-body">Version {{ $v->version_number }}</div>
                     <div class="small text-muted">
                         {{ $v->created_at->format('M d, Y H:i') }} &middot; {{ $v->sizeHuman() }} &middot; Checkpoint: <a href="{{ route('projects.checkpoints.show', [$project->slug, $v->checkpoint_id]) }}" class="text-decoration-none">{{ $v->checkpoint->title }}</a>
                     </div>

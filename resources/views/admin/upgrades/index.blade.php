@@ -9,16 +9,16 @@
 <div class="ss-card mb-4">
     <ul class="nav nav-pills gap-2">
         <li class="nav-item">
-            <a class="nav-link {{ $status === 'pending' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'pending']) }}" style="{{ $status === 'pending' ? 'background:var(--ss-primary);color:#fff;' : 'color:var(--ss-text-muted);' }}">Pending</a>
+            <a class="nav-link {{ $status === 'pending' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'pending']) }}" style="{{ $status === 'pending' ? 'background:var(--ss-button-bg);color:#fff;' : 'color:var(--ss-text-muted);' }}">Pending</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {{ $status === 'approved' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'approved']) }}" style="{{ $status === 'approved' ? 'background:var(--ss-primary);color:#fff;' : 'color:var(--ss-text-muted);' }}">Approved</a>
+            <a class="nav-link {{ $status === 'approved' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'approved']) }}" style="{{ $status === 'approved' ? 'background:var(--ss-button-bg);color:#fff;' : 'color:var(--ss-text-muted);' }}">Approved</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {{ $status === 'rejected' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'rejected']) }}" style="{{ $status === 'rejected' ? 'background:var(--ss-primary);color:#fff;' : 'color:var(--ss-text-muted);' }}">Rejected</a>
+            <a class="nav-link {{ $status === 'rejected' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'rejected']) }}" style="{{ $status === 'rejected' ? 'background:var(--ss-button-bg);color:#fff;' : 'color:var(--ss-text-muted);' }}">Rejected</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {{ $status === 'all' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'all']) }}" style="{{ $status === 'all' ? 'background:var(--ss-primary);color:#fff;' : 'color:var(--ss-text-muted);' }}">All</a>
+            <a class="nav-link {{ $status === 'all' ? 'active' : '' }}" href="{{ route('admin.upgrades.index', ['status' => 'all']) }}" style="{{ $status === 'all' ? 'background:var(--ss-button-bg);color:#fff;' : 'color:var(--ss-text-muted);' }}">All</a>
         </li>
     </ul>
 </div>
@@ -97,7 +97,7 @@
             <div class="modal-content" style="background:var(--ss-dark-2);border:1px solid var(--ss-border);">
               <div class="modal-header border-0">
                 <h5 class="modal-title">Reject Upgrade Request</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <form action="{{ route('admin.upgrades.reject', $req) }}" method="POST">
                   @csrf

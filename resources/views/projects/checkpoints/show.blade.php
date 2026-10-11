@@ -86,7 +86,7 @@
                             </td>
                             <td class="align-middle">
                                 <a href="{{ route('projects.files.show', [$project->slug, $file->id]) }}?version_id={{ $version->id }}"
-                                   class="text-decoration-none text-white fw-medium">
+                                   class="text-decoration-none text-body fw-medium">
                                     {{ $fileName }}
                                 </a>
                             </td>
@@ -146,7 +146,7 @@
                 <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <a href="{{ route('profile.public', $comment->user->username) }}" class="fw-bold text-decoration-none text-white">{{ $comment->user->name }}</a>
+                            <a href="{{ route('profile.public', $comment->user->username) }}" class="fw-bold text-decoration-none text-body">{{ $comment->user->name }}</a>
                             <span class="text-muted small ms-2">{{ $comment->created_at->diffForHumans() }}</span>
                         </div>
                         @if(auth()->id() === $comment->user_id || auth()->id() === $project->user_id)
@@ -158,7 +158,7 @@
                             </form>
                         @endif
                     </div>
-                    <div class="mt-1 text-white-50" style="white-space: pre-line;">
+                    <div class="mt-1 text-body-50" style="white-space: pre-line;">
                         {{ $comment->body }}
                     </div>
                 </div>
@@ -174,7 +174,7 @@
         <form method="POST" action="{{ route('projects.checkpoints.comments.store', [$project->slug, $checkpoint->id]) }}">
             @csrf
             <div class="mb-3">
-                <textarea name="body" class="form-control bg-transparent text-white" rows="3" placeholder="Leave a comment..." required></textarea>
+                <textarea name="body" class="form-control bg-transparent text-body" rows="3" placeholder="Leave a comment..." required></textarea>
                 @error('body')
                     <div class="text-danger small mt-1">{{ $message }}</div>
                 @enderror

@@ -6,7 +6,7 @@
 @section('content')
 <div class="container py-5" style="max-width: 800px;">
     <div class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-white mb-3">About <span style="color:var(--ss-primary);">SchoolShare</span></h1>
+        <h1 class="display-5 fw-bold text-body mb-3">About <span style="color:var(--ss-primary);">SchoolShare</span></h1>
         <p class="lead text-muted">A simple, powerful version control system built exclusively for students.</p>
     </div>
 

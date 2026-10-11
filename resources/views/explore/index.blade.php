@@ -15,7 +15,7 @@
                 <i class="bi bi-search"></i>
             </span>
             <input type="hidden" name="type" value="{{ $type }}">
-            <input type="text" name="q" class="form-control bg-transparent text-white" 
+            <input type="text" name="q" class="form-control bg-transparent text-body"
                    style="border-color: var(--ss-border);" 
                    placeholder="Search..." 
                    value="{{ request('q') }}">
@@ -64,7 +64,7 @@
                             <span class="text-muted small text-truncate">{{ $project->owner->name }}</span>
                         </a>
                         
-                        <a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none fw-bold fs-5 text-white mb-2 d-inline-block text-truncate">
+                        <a href="{{ route('projects.show', $project->slug) }}" class="text-decoration-none fw-bold fs-5 text-body mb-2 d-inline-block text-truncate">
                             {{ $project->name }}
                         </a>
                         
@@ -122,7 +122,7 @@
                                 @endif
                             </a>
                             <div class="d-flex flex-column">
-                                <a href="{{ route('profile.public', $user->username) }}" class="text-decoration-none fw-bold fs-5 text-white">
+                                <a href="{{ route('profile.public', $user->username) }}" class="text-decoration-none fw-bold fs-5 text-body">
                                     {{ $user->name }}
                                 </a>
                                 <span class="text-muted small">{{ '@' . $user->username }}</span>

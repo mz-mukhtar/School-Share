@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ asset('theme.js') }}"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') — SchoolShare</title>
 
@@ -12,14 +13,6 @@
 
     <style>
         :root {
-            --ss-primary:       #f59e0b; /* Admin uses amber primary */
-            --ss-primary-dark:  #d97706;
-            --ss-dark:          #0f172a;
-            --ss-dark-2:        #1e293b;
-            --ss-dark-3:        #334155;
-            --ss-text:          #e2e8f0;
-            --ss-text-muted:    #94a3b8;
-            --ss-border:        #2d3748;
             --ss-sidebar-w:     260px;
         }
 
@@ -94,21 +87,28 @@
         .alert-ss { border-radius: 10px; border: 1px solid; font-size: 0.875rem; }
         .alert-ss-success { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
     </style>
+    <link rel="stylesheet" href="{{ asset('theme.css') }}">
 </head>
 <body>
 
-<nav class="ss-topbar d-flex align-items-center px-3 gap-3">
+<nav class="ss-topbar ss-admin-topbar d-flex align-items-center px-3 gap-3">
     <a href="{{ route('admin.dashboard') }}" class="ss-brand me-3">
         Admin<span>Panel</span>
     </a>
     <div class="ms-auto d-flex align-items-center gap-3">
+        <x-theme-switcher />
         <a href="{{ route('dashboard') }}" class="btn btn-sm btn-ss-outline">Exit Admin</a>
         <span class="small" style="color:var(--ss-text-muted);">{{ auth()->user()->name }}</span>
+    </div>
+    <div class="ss-admin-mobile-nav d-md-none">
+        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+        <a href="{{ route('admin.users.index') }}">Users</a>
+        <a href="{{ route('admin.upgrades.index') }}">Upgrade requests</a>
     </div>
 </nav>
 
 <div class="ss-shell">
-    <aside class="ss-sidebar">
+    <aside class="ss-sidebar ss-admin-sidebar">
         <div class="ss-sidebar-section">Overview</div>
         <a href="{{ route('admin.dashboard') }}" class="ss-sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             <i class="bi bi-speedometer2"></i> Dashboard

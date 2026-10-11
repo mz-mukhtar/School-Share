@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ asset('theme.js') }}"></script>
     <meta name="description" content="SchoolShare — Version control for students. Upload your school work, track changes, and access files from anywhere. No terminal required.">
     <meta property="og:title" content="SchoolShare — Version Control for Students">
     <meta property="og:description" content="Upload your school work, track every change, and access files from home, school, or anywhere. No terminal required.">
@@ -23,17 +24,6 @@
            DESIGN TOKENS
         ══════════════════════════════════════════════════════ */
         :root {
-            --ss-primary:   #2563eb;
-            --ss-primary-d: #1d4ed8;
-            --ss-accent:    #06b6d4;
-            --ss-green:     #10b981;
-            --ss-dark:      #0a0f1e;
-            --ss-dark-2:    #111827;
-            --ss-dark-3:    #1e293b;
-            --ss-dark-4:    #334155;
-            --ss-text:      #f1f5f9;
-            --ss-muted:     #94a3b8;
-            --ss-border:    rgba(255,255,255,0.08);
             --nav-h:        64px;
         }
 
@@ -84,7 +74,7 @@
         }
         .ss-nav-links a:hover { color: var(--ss-text); background: rgba(255,255,255,.06); }
         .btn-nav-cta {
-            background: var(--ss-primary) !important;
+            background: var(--ss-button-bg) !important;
             color: #fff !important; border-radius: 8px;
             font-weight: 600 !important;
             padding: 0.42rem 1rem !important;
@@ -148,7 +138,7 @@
         }
         .btn-drawer-cta {
             display: block; width: 100%; text-align: center;
-            background: var(--ss-primary); color: #fff;
+            background: var(--ss-button-bg); color: #fff;
             padding: .75rem; border-radius: 10px;
             font-weight: 700; text-decoration: none;
             margin-top: .5rem;
@@ -198,7 +188,7 @@
         .ss-badge {
             display: inline-flex; align-items: center; gap: .5rem;
             background: rgba(37,99,235,.15); border: 1px solid rgba(37,99,235,.3);
-            color: #93c5fd; font-size: .78rem; font-weight: 600;
+            color: var(--ss-primary); font-size: .78rem; font-weight: 600;
             padding: .3rem .9rem; border-radius: 999px; margin-bottom: 1.25rem;
         }
         .ss-badge .dot {
@@ -311,7 +301,7 @@
            BUTTONS (global reusable)
         ══════════════════════════════════════════════════════ */
         .btn-primary-ss {
-            background: var(--ss-primary);
+            background: var(--ss-button-bg);
             color: #fff; border: none;
             padding: .75rem 1.6rem; border-radius: 10px;
             font-size: .95rem; font-weight: 700;
@@ -443,7 +433,7 @@
         .ss-pricing-badge {
             font-size: .7rem; font-weight: 700; text-transform: uppercase;
             padding: .22rem .7rem; border-radius: 999px;
-            background: var(--ss-primary); color: #fff;
+            background: var(--ss-button-bg); color: #fff;
             margin-bottom: .85rem; display: inline-block;
         }
         .ss-price-amount { font-size: 2.3rem; font-weight: 900; letter-spacing: -.03em; line-height: 1; }
@@ -455,7 +445,7 @@
         }
         .ss-price-feature i { color: var(--ss-green); font-size: .9rem; flex-shrink: 0; margin-top: .07rem; }
         .btn-pricing-primary {
-            background: var(--ss-primary); color: #fff; border: none;
+            background: var(--ss-button-bg); color: #fff; border: none;
             width: 100%; padding: .7rem; border-radius: 10px;
             font-weight: 700; font-size: .9rem;
             text-decoration: none; display: block; text-align: center;
@@ -551,6 +541,7 @@
             .ss-section { padding: 4rem 1rem; }
         }
     </style>
+    <link rel="stylesheet" href="{{ asset('theme.css') }}">
 </head>
 <body>
 
@@ -562,6 +553,7 @@
 
     {{-- Desktop links --}}
     <div class="ss-nav-links">
+        <x-theme-switcher />
         <a href="#how-it-works" class="nav-desktop">How it works</a>
         <a href="#features"     class="nav-desktop">Features</a>
         <a href="{{ route('pricing') }}" class="nav-desktop">Pricing</a>
@@ -580,9 +572,9 @@
 
     {{-- Mobile CTA + burger --}}
     @guest
-        <a href="{{ route('register') }}" class="btn-nav-cta d-lg-none" style="font-size:.82rem;padding:.38rem .8rem;">Get started free</a>
+        <a href="{{ route('register') }}" class="btn-nav-cta d-none d-sm-inline-block d-lg-none" style="font-size:.82rem;padding:.38rem .8rem;">Get started free</a>
     @else
-        <a href="{{ route('dashboard') }}" class="btn-nav-cta d-lg-none" style="font-size:.82rem;padding:.38rem .8rem;">Dashboard</a>
+        <a href="{{ route('dashboard') }}" class="btn-nav-cta d-none d-sm-inline-block d-lg-none" style="font-size:.82rem;padding:.38rem .8rem;">Dashboard</a>
     @endguest
     <button class="ss-burger" id="burgerBtn" aria-label="Open menu">
         <i class="bi bi-list"></i>
@@ -697,10 +689,10 @@
                 <div class="ss-mockup-body">
                     @php
                     $files = [
-                        ['icon'=>'bi-file-earmark-word',        'bg'=>'rgba(37,99,235,.2)',   'ic'=>'#60a5fa','name'=>'history_essay_final.docx','meta'=>'2.3 MB · 2 hours ago',   'badge'=>'Latest','bc'=>'rgba(16,185,129,.15)','btc'=>'#6ee7b7'],
-                        ['icon'=>'bi-file-earmark-slides',      'bg'=>'rgba(245,158,11,.15)', 'ic'=>'#fcd34d','name'=>'presentation_slides.pptx','meta'=>'5.1 MB · Checkpoint #3', 'badge'=>'v3',   'bc'=>'rgba(37,99,235,.15)', 'btc'=>'#93c5fd'],
-                        ['icon'=>'bi-file-earmark-pdf',         'bg'=>'rgba(239,68,68,.15)',  'ic'=>'#fca5a5','name'=>'references.pdf',          'meta'=>'890 KB · Unchanged',      'badge'=>'v1',   'bc'=>'rgba(100,116,139,.15)','btc'=>'#94a3b8'],
-                        ['icon'=>'bi-image',                    'bg'=>'rgba(16,185,129,.15)', 'ic'=>'#6ee7b7','name'=>'map_of_ethiopia.jpg',     'meta'=>'1.1 MB · Added in v2',    'badge'=>'v2',   'bc'=>'rgba(245,158,11,.15)','btc'=>'#fcd34d'],
+                        ['icon'=>'bi-file-earmark-word',        'bg'=>'rgba(37,99,235,.2)',   'ic'=>'#60a5fa','name'=>'history_essay_final.docx','meta'=>'2.3 MB · 2 hours ago',   'badge'=>'Latest','bc'=>'rgba(16,185,129,.15)','btc'=>'var(--ss-success)'],
+                        ['icon'=>'bi-file-earmark-slides',      'bg'=>'rgba(245,158,11,.15)', 'ic'=>'var(--ss-warning)','name'=>'presentation_slides.pptx','meta'=>'5.1 MB · Checkpoint #3', 'badge'=>'v3',   'bc'=>'rgba(37,99,235,.15)', 'btc'=>'var(--ss-primary)'],
+                        ['icon'=>'bi-file-earmark-pdf',         'bg'=>'rgba(239,68,68,.15)',  'ic'=>'#fca5a5','name'=>'references.pdf',          'meta'=>'890 KB · Unchanged',      'badge'=>'v1',   'bc'=>'rgba(100,116,139,.15)','btc'=>'var(--ss-muted)'],
+                        ['icon'=>'bi-image',                    'bg'=>'rgba(16,185,129,.15)', 'ic'=>'var(--ss-success)','name'=>'map_of_ethiopia.jpg',     'meta'=>'1.1 MB · Added in v2',    'badge'=>'v2',   'bc'=>'rgba(245,158,11,.15)','btc'=>'var(--ss-warning)'],
                     ];
                     @endphp
                     @foreach($files as $f)
@@ -723,10 +715,10 @@
                 <div class="ss-mockup-timeline">
                     @php
                     $vers = [
-                        ['label'=>'v1', 'color'=>'rgba(100,116,139,.4)', 'tc'=>'#94a3b8'],
-                        ['label'=>'v2', 'color'=>'rgba(245,158,11,.35)', 'tc'=>'#fcd34d'],
-                        ['label'=>'v3', 'color'=>'rgba(37,99,235,.35)',  'tc'=>'#93c5fd'],
-                        ['label'=>'Now','color'=>'rgba(16,185,129,.4)',  'tc'=>'#6ee7b7'],
+                        ['label'=>'v1', 'color'=>'rgba(100,116,139,.4)', 'tc'=>'var(--ss-muted)'],
+                        ['label'=>'v2', 'color'=>'rgba(245,158,11,.35)', 'tc'=>'var(--ss-warning)'],
+                        ['label'=>'v3', 'color'=>'rgba(37,99,235,.35)',  'tc'=>'var(--ss-primary)'],
+                        ['label'=>'Now','color'=>'rgba(16,185,129,.4)',  'tc'=>'var(--ss-success)'],
                     ];
                     @endphp
                     @foreach($vers as $i => $v)
@@ -837,7 +829,7 @@
             ['icon'=>'bi-camera-video',             'bg'=>'rgba(6,182,212,.2)',   'ic'=>'#22d3ee','label'=>'Video'],
             ['icon'=>'bi-music-note',               'bg'=>'rgba(239,68,68,.15)',  'ic'=>'#f87171','label'=>'Audio'],
             ['icon'=>'bi-file-earmark-code',        'bg'=>'rgba(37,99,235,.2)',   'ic'=>'#818cf8','label'=>'Code'],
-            ['icon'=>'bi-markdown',                 'bg'=>'rgba(100,116,139,.2)', 'ic'=>'#94a3b8','label'=>'Markdown'],
+            ['icon'=>'bi-markdown',                 'bg'=>'rgba(100,116,139,.2)', 'ic'=>'var(--ss-muted)','label'=>'Markdown'],
             ['icon'=>'bi-file-earmark-text',        'bg'=>'rgba(251,191,36,.15)', 'ic'=>'#fbbf24','label'=>'Text'],
         ];
         @endphp
@@ -959,13 +951,13 @@
                     $cannot = ['Remove EthioNext branding (without commercial license)','Sell as your own product','Build a competing commercial product'];
                     @endphp
                     <div style="margin-bottom:.9rem;">
-                        <div style="font-size:.7rem;font-weight:700;color:#34d399;margin-bottom:.45rem;">✅ YOU MAY</div>
+                        <div style="font-size:.7rem;font-weight:700;color:var(--ss-success);margin-bottom:.45rem;">✅ YOU MAY</div>
                         @foreach($can as $c)
                         <div style="font-size:.8rem;color:var(--ss-muted);padding:.2rem 0;">· {{ $c }}</div>
                         @endforeach
                     </div>
                     <div>
-                        <div style="font-size:.7rem;font-weight:700;color:#f87171;margin-bottom:.45rem;">❌ WITHOUT A LICENSE</div>
+                        <div style="font-size:.7rem;font-weight:700;color:var(--ss-danger);margin-bottom:.45rem;">❌ WITHOUT A LICENSE</div>
                         @foreach($cannot as $c)
                         <div style="font-size:.8rem;color:var(--ss-muted);padding:.2rem 0;">· {{ $c }}</div>
                         @endforeach

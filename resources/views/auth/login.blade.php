@@ -7,7 +7,7 @@
 
     {{-- Session Status --}}
     @if (session('status'))
-        <div class="alert alert-success mb-3 py-2 px-3" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;border-radius:8px;font-size:.875rem;">
+        <div class="alert alert-success mb-3 py-2 px-3" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--ss-success);border-radius:8px;font-size:.875rem;">
             {{ session('status') }}
         </div>
     @endif

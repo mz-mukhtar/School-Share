@@ -42,6 +42,8 @@ class CpanelReleaseBuilderTest extends TestCase
         $this->assertNotFalse($archive->locateName('schoolshare/docs/INSTALLATION_CPANEL.md'));
         $this->assertNotFalse($archive->locateName('public_html/.htaccess'));
         $this->assertNotFalse($archive->locateName('public_html/build/manifest.json'));
+        $this->assertSame(File::get(public_path('theme.css')), $archive->getFromName('public_html/theme.css'));
+        $this->assertSame(File::get(public_path('theme.js')), $archive->getFromName('public_html/theme.js'));
         foreach (['schoolshare/.env', 'schoolshare/setup-token.txt', 'schoolshare/database/database.sqlite', 'schoolshare/bootstrap/cache/config.php', 'schoolshare/.git/config', 'public_html/storage', 'public_html/hot'] as $entry) {
             $this->assertFalse($archive->locateName($entry));
         }
@@ -155,7 +157,7 @@ class CpanelReleaseBuilderTest extends TestCase
         foreach (['app', 'config', 'resources', 'routes', 'database/migrations'] as $directory) {
             File::copyDirectory(base_path($directory), $source.'/'.$directory);
         }
-        foreach (['artisan', 'composer.json', 'composer.lock', 'bootstrap/app.php', 'bootstrap/providers.php', 'README.md', 'SELF_HOSTING.md', 'LICENSE.md', 'SECURITY.md', 'docs/INSTALLATION_CPANEL.md', 'public/index.php', 'public/.htaccess'] as $file) {
+        foreach (['artisan', 'composer.json', 'composer.lock', 'bootstrap/app.php', 'bootstrap/providers.php', 'README.md', 'SELF_HOSTING.md', 'LICENSE.md', 'SECURITY.md', 'docs/INSTALLATION_CPANEL.md', 'public/index.php', 'public/.htaccess', 'public/theme.css', 'public/theme.js'] as $file) {
             File::ensureDirectoryExists(dirname($source.'/'.$file));
             File::copy(base_path($file), $source.'/'.$file);
         }
