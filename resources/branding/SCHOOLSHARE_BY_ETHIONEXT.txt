@@ -17,7 +17,7 @@ checkpoint snapshots. It supports browser-based file management and
 owner/editor/viewer collaboration. A project ZIP contains current files;
 it is not a complete historical backup.
 
-  Live App:    https://schoolshare.ethionext.com.et
+  Project website / live app: https://schoolshare.ethionext.com.et
   GitHub:      https://github.com/mz-mukhtar/School-Share
   License:     SchoolShare Community License (SCL v1.0)
 
@@ -26,7 +26,10 @@ Developer and contact
   Name:    Mahi Zeki Mukhtar
   Email:   mahizeki037@gmail.com
   Phone:   +251 992 194 042
-  Website: https://ethionext.com.et
+  Company website: https://ethionext.com.et
+
+EthioNext is a technology solutions provider. Its company website describes
+broader services; SchoolShare's application and project website are separate.
 
 Licensing notice
 

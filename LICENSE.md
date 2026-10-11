@@ -2,7 +2,8 @@
 
 Copyright (c) 2026 Mahi Zeki Mukhtar / EthioNext
 
-- Website: https://ethionext.com.et
+- SchoolShare project website: https://schoolshare.ethionext.com.et
+- EthioNext company website: https://ethionext.com.et
 - Email: mahizeki037@gmail.com
 
 ---
@@ -122,7 +123,7 @@ Contact the copyright holder:
 - Name: Mahi Zeki Mukhtar
 - Email: mahizeki037@gmail.com
 - Phone: +251 992 194 042
-- Website: https://ethionext.com.et
+- EthioNext company website: https://ethionext.com.et
 
 Commercial-license terms, scope, and any issued key are handled by the
 copyright holder. The current application only checks that white-label mode
@@ -136,7 +137,7 @@ has a non-empty `SS-`-prefixed key; it does not perform entitlement validation.
 | White-Label | Custom branding, your own name/logo |
 | SaaS | Resell as a service to your own customers |
 
-Pricing is available at: https://ethionext.com.et/pricing
+Contact the copyright holder using the details above for commercial-license pricing.
 
 ---
 
@@ -170,7 +171,7 @@ For licensing questions, commercial inquiries, or legal matters:
 - Mahi Zeki Mukhtar / EthioNext
 - Email: mahizeki037@gmail.com
 - Phone: +251 992 194 042
-- Website: https://ethionext.com.et
+- EthioNext company website: https://ethionext.com.et
 
 ---
 

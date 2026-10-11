@@ -5,7 +5,8 @@
 Do not open a public GitHub issue for a suspected vulnerability.
 
 - Private reporting email: mahizeki037@gmail.com
-- Project website: https://ethionext.com.et
+- SchoolShare project website: https://schoolshare.ethionext.com.et
+- EthioNext company website: https://ethionext.com.et
 
 Include the affected version/commit, impact, reproducible steps, a safe proof
 of concept, and any suggested mitigation. Do not include live credentials,

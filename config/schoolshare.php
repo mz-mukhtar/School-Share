@@ -82,7 +82,7 @@ return [
     |
     | IMPORTANT: Changing this to "whitelabel" without a valid license key
     | is a violation of the SchoolShare Community License (SCL v1.0).
-    | Purchase a license at: https://ethionext.com.et/pricing
+    | Contact EthioNext for commercial licensing and pricing.
     | Contact: mahizeki037@gmail.com | +251 992 194 042
     |--------------------------------------------------------------------------
     */
@@ -91,12 +91,13 @@ return [
         'license_key' => env('SCHOOLSHARE_LICENSE_KEY', null),
         'app_name' => 'SchoolShare',
         'company_name' => 'EthioNext',
+        'project_url' => 'https://schoolshare.ethionext.com.et',
         'company_url' => 'https://ethionext.com.et',
         'developer' => 'Mahi Zeki Mukhtar',
         'contact_email' => 'mahizeki037@gmail.com',
         'contact_phone' => '+251 992 194 042',
         'github_url' => 'https://github.com/mz-mukhtar/School-Share',
-        'footer_text' => 'SchoolShare by EthioNext · schoolshare.ethionext.com.et',
+        'footer_text' => 'SchoolShare by EthioNext',
         'header_value' => 'EthioNext-SchoolShare', // X-Powered-By header value
         'zip_notice' => 'SCHOOLSHARE_BY_ETHIONEXT.txt', // filename in ZIP downloads
     ],

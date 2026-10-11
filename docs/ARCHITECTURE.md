@@ -28,6 +28,24 @@ sources. An npm audit does not audit the external CDN assets, which still need
 separate release review. Current application pages use the CDN layout rather
 than loading the Vite scaffold with `@vite`.
 
+## Website identity and URL configuration
+
+SchoolShare's public application and EthioNext's broader company website are
+distinct destinations. Their roles are intentionally separate from the address
+of any independently hosted installation.
+
+| Value | Purpose | Default or production value |
+| --- | --- | --- |
+| `app.url` / `APP_URL` | Installed application's base URL, including mail site links and URLs generated outside a request | `https://schoolshare.ethionext.com.et` for the public production installation; use the installation's own domain elsewhere |
+| `schoolshare.branding.project_url` | Official SchoolShare project website | `https://schoolshare.ethionext.com.et` |
+| `schoolshare.branding.company_url` | EthioNext technology solutions provider's company website | `https://ethionext.com.et` |
+
+Blade pages read external branding links from configuration. The landing page's
+canonical and Open Graph URLs use the named `home` route of the current
+installation. OTP and invitation email site links read `app.url`; invitation
+actions continue to use the installed application's named project route. Test
+domains remain reserved examples and must not send traffic to production.
+
 ## Email verification
 
 `EmailOtpService` owns issuance and verification. Both lock the user row in a

@@ -6,6 +6,15 @@ only when a release is actually cut.
 
 ## Unreleased — updated 2026-10-11
 
+### Website identity
+
+- Distinguish the live SchoolShare application at `schoolshare.ethionext.com.et`
+  from EthioNext's technology solutions company website at `ethionext.com.et`.
+- Centralize project/company branding links, remove duplicate footer addresses,
+  and use the current installation for landing-page metadata and email site links.
+- Correct the landing page's cPanel guide link and remove assumptions about a
+  separate company pricing page. Add rendered-page and email-link regressions.
+
 ### Storage allowance
 
 - Increase the Free plan allowance from 1 GiB to 3 GiB (displayed as 3 GB).

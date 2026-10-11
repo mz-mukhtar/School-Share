@@ -398,7 +398,11 @@
             </div>
             <div class="contact-row">
                 <i class="bi bi-globe2"></i>
-                <a href="https://ethionext.com.et" target="_blank">ethionext.com.et</a>
+                <a href="{{ config('schoolshare.branding.project_url') }}">SchoolShare website</a>
+            </div>
+            <div class="contact-row">
+                <i class="bi bi-building"></i>
+                <a href="{{ config('schoolshare.branding.company_url') }}" target="_blank" rel="noopener noreferrer">EthioNext company website</a>
             </div>
             <div class="contact-row">
                 <i class="bi bi-github"></i>

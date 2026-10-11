@@ -115,4 +115,5 @@ For answers to common questions, see the
 
 ---
 
-*SchoolShare by EthioNext — ethionext.com.et*
+*[SchoolShare](https://schoolshare.ethionext.com.et) by
+[EthioNext](https://ethionext.com.et), a technology solutions provider.*

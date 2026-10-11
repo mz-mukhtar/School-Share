@@ -17,7 +17,7 @@
                             <div style="font-size:1.5rem;font-weight:800;color:#2563eb;letter-spacing:-0.5px;">
                                 School<span style="color:#e2e8f0;font-weight:400;">Share</span>
                             </div>
-                            <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">by EthioNext · schoolshare.ethionext.com.et</div>
+                            <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">Student project management · by EthioNext</div>
                         </td>
                     </tr>
 
@@ -65,7 +65,8 @@
                     <tr>
                         <td style="background:#0f172a;border-radius:0 0 20px 20px;padding:20px 40px;border-top:1px solid #1e293b;text-align:center;">
                             <div style="font-size:0.72rem;color:#475569;line-height:1.6;">
-                                SchoolShare by EthioNext · <a href="https://schoolshare.ethionext.com.et" style="color:#475569;text-decoration:none;">schoolshare.ethionext.com.et</a><br>
+                                <a href="{{ config('app.url') }}" style="color:#475569;text-decoration:none;">Open SchoolShare</a>
+                                · by <a href="{{ config('schoolshare.branding.company_url') }}" style="color:#475569;text-decoration:none;">EthioNext</a><br>
                                 Developed by Mahi Zeki Mukhtar
                             </div>
                         </td>

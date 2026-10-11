@@ -140,9 +140,11 @@
 
 <footer class="ss-footer">
     {{ config('schoolshare.branding.footer_text') }} &middot;
-    <a href="https://schoolshare.ethionext.com.et">schoolshare.ethionext.com.et</a>
+    <a href="{{ config('schoolshare.branding.project_url') }}">SchoolShare website</a>
     &middot;
-    <a href="{{ config('schoolshare.branding.github_url') }}" target="_blank">Open Source</a>
+    <a href="{{ config('schoolshare.branding.company_url') }}">EthioNext company website</a>
+    &middot;
+    <a href="{{ config('schoolshare.branding.github_url') }}" target="_blank" rel="noopener noreferrer">Source code</a>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -450,7 +450,9 @@
 {{-- ── Footer ─────────────────────────────────────────────── --}}
 <footer class="ss-footer">
     {{ config('schoolshare.branding.footer_text') }} &middot;
-    <a href="https://schoolshare.ethionext.com.et">schoolshare.ethionext.com.et</a>
+    <a href="{{ config('schoolshare.branding.project_url') }}">SchoolShare website</a>
+    &middot;
+    <a href="{{ config('schoolshare.branding.company_url') }}">EthioNext company website</a>
     &middot;
     <a href="{{ config('schoolshare.branding.github_url') }}" target="_blank">GitHub</a>
     &middot;

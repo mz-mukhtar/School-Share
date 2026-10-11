@@ -6,6 +6,13 @@ first administrator. Do not use this ZIP or wizard to upgrade an existing site.
 For upgrades, coordinated backups, recovery, and operational requirements, use
 [SELF_HOSTING.md](../SELF_HOSTING.md).
 
+The documented live application is
+[SchoolShare](https://schoolshare.ethionext.com.et).
+[EthioNext](https://ethionext.com.et) is the separate technology solutions
+provider's company site. Install SchoolShare into the subdomain's document root;
+do not place it over the company website or use the company URL as `APP_URL`.
+For a different hosting account, use that installation's own HTTPS domain.
+
 ## Before you upload
 
 Confirm your hosting account provides:

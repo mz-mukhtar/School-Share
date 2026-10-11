@@ -6,6 +6,11 @@ application. Read the
 [repository review](docs/REPOSITORY_REVIEW_2026-10-05.md) before changing file,
 checkpoint, access-control, migration, OTP, or deployment behavior.
 
+The public application is [SchoolShare](https://schoolshare.ethionext.com.et).
+[EthioNext](https://ethionext.com.et) is the technology solutions provider's
+company site. Test contributions on an isolated installation, not the public
+application or the company's other websites.
+
 ## Local setup
 
 Use PHP 8.5, Composer 2.x, and Node.js 22.12+/npm 10+ for the supported development

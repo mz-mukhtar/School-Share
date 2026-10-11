@@ -2,7 +2,8 @@
 
 Updated: 11 October 2026
 
-Current source reference: `598876e`. Earlier staging and exact-artifact evidence
+Website-identity review base: `5322c59`, plus the changes recorded below. The
+preceding documentation review referenced `598876e`. Earlier staging and exact-artifact evidence
 was collected from `990758c` plus the October 11 release-preparation changes.
 The initial package predates the subsequent 3 GiB Free-plan change. Historical
 artifact results must not be attributed to a newly built release without rerunning
@@ -65,6 +66,7 @@ The other engine and opt-in results are earlier October 11 staging evidence.
 
 | Check | Current result | Boundary of the evidence |
 | --- | --- | --- |
+| Repository PHP suite after website-identity changes | **293 passed; 2,025 assertions** on SQLite | 308 cases, including 15 skipped opt-in cases. Includes nine new rendered-page/mail-link regressions; production-engine and extracted-package gates were not rerun for this change |
 | Repository PHP suite after quota change | **284 passed; 1,992 assertions** on SQLite and upstream MariaDB 10.11.19 | 299 cases, including 15 skipped opt-in staging/recovery/installation/package cases. Earlier pre-quota ordinary-suite runs passed 277 cases / 1,962 assertions on all three MySQL-family targets. The opt-in results below are earlier separate runs, not part of the 284-case result |
 | Clean/populated migration tests | **6 passed; 58 assertions per engine** (included above) | Isolated databases only: legacy version pointers/bytes, retained billing, root uniqueness, case/accent/trailing-space collation, and pre-existing rename suffixes |
 | Coordinated backup restoration | **1 passed; 22 assertions per engine** | Actual database dump/import plus private-file ZIP and SHA-256 checks; restored reconciliation, download, and checkpoint behavior. Temporary test backups removed; not an off-host production backup drill |
@@ -520,6 +522,42 @@ Remaining security/operational concerns:
 
 Newly discovered, unresolved vulnerability details should be reported privately
 under [SECURITY.md](../SECURITY.md), not added as public exploit instructions.
+
+## Website-identity follow-up — 11 October 2026
+
+The deployment operator confirmed that the public SchoolShare application is
+at `https://schoolshare.ethionext.com.et`. The separate `https://ethionext.com.et`
+website belongs to EthioNext, the broader technology solutions provider.
+
+Documentation now labels those destinations explicitly. The security policy's
+incorrect project-site link was corrected, and unsupported references to a
+company `/pricing` page were removed without changing license permissions.
+Installation guides distinguish those official links from a self-hosted
+installation's `APP_URL` and preserve isolated example domains.
+
+The source audit found duplicated footer addresses, hardcoded external links,
+landing metadata tied to the public instance, and mail footers that always
+linked to that instance. Project/company links now come from branding
+configuration; landing metadata uses the current installation's named home
+route. OTP/invitation site links use `app.url`, while invitation actions remain
+installation-local. About/contact copy now identifies EthioNext as the company,
+and the landing page's cPanel guide link targets `docs/INSTALLATION_CPANEL.md`.
+Existing payment mailbox addresses were not changed: a company-domain mailbox
+is separate from website identity and must be confirmed by the operator.
+
+Validation: all nine new regressions failed against the previous source and
+passed after the fixes. Focused website/mail/OTP checks passed 28 cases with 289
+assertions. The full SQLite suite passed 293 cases with 2,025 assertions; 15
+opt-in cases were skipped. The JavaScript test runner and production frontend
+build passed. All 13 Markdown files rendered, local file links had no broken
+targets, and formatting/whitespace checks passed.
+
+These are local source checks. Direct production-page inspection was unavailable
+from this environment; the public-domain identity is operator-provided. No
+production configuration was changed, no credentials were introduced, and no
+new release ZIP was built. Deploy these source changes through the existing
+upgrade procedure; do not rerun the fresh-install wizard or treat the older
+ZIP's acceptance results as evidence for a new package.
 
 ## Historical engineering rating — 5 October 2026
 

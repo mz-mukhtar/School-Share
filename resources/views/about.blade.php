@@ -48,10 +48,10 @@
                     <h5 class="fw-bold mb-0">EthioNext</h5>
                 </div>
                 <p class="text-muted mb-0">
-                    Proudly built by EthioNext. We specialize in creating high-quality, open-source and white-label web applications tailored for specific communities.
+                    EthioNext is a technology solutions provider. SchoolShare is its application for student project management and collaboration; the company website covers its broader services.
                 </p>
                 <div class="mt-3">
-                    <a href="https://ethionext.com.et" target="_blank" class="text-decoration-none text-primary"><i class="bi bi-globe me-1"></i> ethionext.com.et</a>
+                    <a href="{{ config('schoolshare.branding.company_url') }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary"><i class="bi bi-globe me-1"></i> EthioNext company website</a>
                 </div>
             </div>
         </div>

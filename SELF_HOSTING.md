@@ -9,6 +9,22 @@ For a **new cPanel installation**, use the ready-to-upload package and
 [browser installation guide](docs/INSTALLATION_CPANEL.md). That wizard is
 fresh-install only and must not be used to upgrade an existing site.
 
+## Website identity
+
+The public SchoolShare application is hosted at
+[schoolshare.ethionext.com.et](https://schoolshare.ethionext.com.et).
+[ethionext.com.et](https://ethionext.com.et) is EthioNext's company website for
+its broader technology solutions. They are separate sites; deploying SchoolShare
+must not overwrite or redirect the company website.
+
+Set `APP_URL` to the HTTPS address of **your installation**. For the public
+SchoolShare deployment this is `https://schoolshare.ethionext.com.et`; a separate
+self-hosted installation must use its own domain. This value supplies email
+site links and URLs generated outside an HTTP request. Page metadata uses the
+current installation's named routes. The official project and company links
+are separate branding values in `config/schoolshare.php`, not replacements for
+`APP_URL`. Keep `schoolshare.example` examples below reserved for isolated tests.
+
 ## Release gate
 
 Local staging now uses PHP 8.5.11, MySQL 8.4.11, MariaDB 11.4.13, and upstream

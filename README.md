@@ -4,6 +4,11 @@ SchoolShare is a server-rendered Laravel application for student projects. It
 organises files into projects, records checkpoint-based file versions, supports
 private collaboration, and provides browser previews for selected file types.
 
+The live project website is [SchoolShare](https://schoolshare.ethionext.com.et).
+[EthioNext](https://ethionext.com.et) is the technology solutions provider behind
+the application; its company website covers its broader services, not the
+SchoolShare sign-in or installation workflow.
+
 ## Start here
 
 | Goal | Guide |

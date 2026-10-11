@@ -7,10 +7,10 @@
     <meta property="og:title" content="SchoolShare — Version Control for Students">
     <meta property="og:description" content="Upload your school work, track every change, and access files from home, school, or anywhere. No terminal required.">
     <meta property="og:image" content="{{ asset('images/og-image.png') }}">
-    <meta property="og:url" content="https://schoolshare.ethionext.com.et">
+    <meta property="og:url" content="{{ route('home') }}">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="canonical" href="https://schoolshare.ethionext.com.et">
+    <link rel="canonical" href="{{ route('home') }}">
     <title>SchoolShare — Version Control for Students · by EthioNext</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
@@ -1003,9 +1003,9 @@
                     <i class="bi bi-github"></i>
                     <span>github.com/mz-mukhtar/School-Share</span>
                 </a>
-                <a href="https://ethionext.com.et" target="_blank" class="ss-dev-link" id="contact-website">
+                <a href="{{ config('schoolshare.branding.company_url') }}" target="_blank" rel="noopener noreferrer" class="ss-dev-link" id="contact-website">
                     <i class="bi bi-globe2"></i>
-                    <span>ethionext.com.et</span>
+                    <span>EthioNext company website</span>
                 </a>
             </div>
         </div>
@@ -1022,7 +1022,7 @@
                 <div class="ss-footer-brand"><span class="accent">School</span>Share</div>
                 <div class="ss-footer-tagline">Version control for everyone. No terminal required.</div>
                 <div style="font-size:.76rem;color:var(--ss-muted);">
-                    by <a href="https://ethionext.com.et" style="color:var(--ss-primary);text-decoration:none;">EthioNext</a>
+                    by <a href="{{ config('schoolshare.branding.company_url') }}" style="color:var(--ss-primary);text-decoration:none;">EthioNext</a>
                     · Developed by Mahi Zeki Mukhtar
                 </div>
             </div>
@@ -1048,7 +1048,7 @@
             <div class="col-6 col-md-2">
                 <div class="ss-footer-col-title">Self-hosting</div>
                 <ul class="ss-footer-links">
-                    <li><a href="{{ config('schoolshare.branding.github_url') }}/blob/main/SELF_HOSTING.md" target="_blank">cPanel Guide</a></li>
+                    <li><a href="{{ config('schoolshare.branding.github_url') }}/blob/main/docs/INSTALLATION_CPANEL.md" target="_blank" rel="noopener noreferrer">cPanel Guide</a></li>
                     <li><a href="{{ config('schoolshare.branding.github_url') }}/blob/main/SECURITY.md" target="_blank">Security</a></li>
                     <li><a href="{{ config('schoolshare.branding.github_url') }}/blob/main/docs/ARCHITECTURE.md" target="_blank">Architecture</a></li>
                 </ul>
@@ -1059,7 +1059,8 @@
                     <li><a href="{{ route('terms') }}">Terms of Service</a></li>
                     <li><a href="mailto:mahizeki037@gmail.com">Email us</a></li>
                     <li><a href="tel:+251992194042">+251 992 194 042</a></li>
-                    <li><a href="https://ethionext.com.et" target="_blank">EthioNext</a></li>
+                    <li><a href="{{ config('schoolshare.branding.project_url') }}">SchoolShare website</a></li>
+                    <li><a href="{{ config('schoolshare.branding.company_url') }}" target="_blank" rel="noopener noreferrer">EthioNext company website</a></li>
                 </ul>
             </div>
         </div>
